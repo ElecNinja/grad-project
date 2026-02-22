@@ -6,12 +6,12 @@
 @import url('fontMelodrama.css');
 
 :root {
- --Rosewood: #923641;
- --Olive: #605b3b;
- --Burgundy: #0f0607;
+ --Rosewood: #000034;
+ --Olive: #0F44D9;
+ --Burgundy: #1A73FF;
  --BurgundyFilter: invert(3%) sepia(11%) saturate(4717%) hue-rotate(311deg) brightness(88%) contrast(98%);
- --Chestnut: #6A381D;
- --Yellow: #D9B036;
+ --Chestnut: #00E0FF;
+ --Yellow: dodgerblue;
  --Gray: #e4e3d5;
 
  font-family: 'Nunito-Regular', sans-serif;
