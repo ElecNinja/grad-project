@@ -1,46 +1,86 @@
-.NavBar {
- height: 70px;
- display: flex;
- justify-content: space-around;
- align-items: center;
- position: relative;
+/* Navbar Container */
+.navbar {
+  background-color: #1e3a8a;
+  padding: 15px 40px;
 }
 
-.NavBar-AppName {
- font-family: 'Melodrama-Bold', sans-serif;
- font-size: 32px !important;
- color: var(--Chestnut);
- text-decoration: none;
+/* Inner Layout */
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-@media only screen and (min-width:850px) {
- .NavBar-AppName {
-  font-size: 1.5em;
- }
+/* Left Side */
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 40px;
 }
 
-.NavBar-Items {
- display: flex;
- gap: 20px;
+/* Logo */
+.logo {
+  color: white;
+  font-size: 22px;
+  font-weight: bold;
+  text-decoration: none;
 }
 
-.NavBar-Items li a {
- font-family: 'Nunito-Bold', sans-serif;
- display: flex;
- font-weight: bold;
- text-decoration: none;
- cursor: pointer;
- color: var(--Burgundy);
- font-size: 22px !important;
+/* Main Links */
+.nav-main-links {
+  list-style: none;
+  display: flex;
+  gap: 25px;
+  margin: 0;
+  padding: 0;
 }
 
-.NavBar-Items li a.active {
- color: var(--Olive);
+/* Links */
+.nav-link {
+  color: white;
+  text-decoration: none;
+  font-size: 15px;
+  transition: 0.3s;
 }
 
-@media (hover: hover) {
- .NavBar-Items li a:hover {
-  font-weight: bolder;
-  color: var(--Olive);
- }
+.nav-link:hover {
+  opacity: 0.8;
+}
+
+/* Right Side */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Primary Button */
+.btn-primary {
+  background-color: white;
+  color: #1e3a8a;
+  padding: 8px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.btn-primary:hover {
+  background-color: #f1f1f1;
+}
+
+/* Outline Button */
+.btn-outline {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-outline:hover {
+  background-color: white;
+  color: #1e3a8a;
 }
