@@ -1,57 +1,87 @@
+/* footer.css */
+
 .Footer {
- display: flex;
- flex-direction: column;
- gap: 7px;
- height: 50px;
- padding: 10px;
+  background: #1d4ed8;
+  color: #ffffff;
+  padding: 40px 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.Footer>div,
-.Footer>ul {
- display: flex;
- gap: 10px;
- align-items: center;
- justify-content: center;
+.Footer-Container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 60px;
 }
 
-.Footer>div>* {
- height: 20px;
+.Footer-Section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.Footer p {
- color: var(--Burgundy);
- display: flex;
- align-items: center;
- justify-content: center;
+.Footer-Title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #ffffff;
 }
 
-.Footer a {
- display: block;
+.Footer-Text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.95);
 }
 
-.Footer img {
- height: 20px;
- filter: var(--BurgundyFilter);
+.Footer-Contact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.Footer-Nav {
- padding: 0;
- display: flex;
- flex-direction: column;
+.Footer-Social-List {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 5px;
 }
 
-.Footer-Nav>li>a {
- color: var(--Olive);
- text-decoration: none;
- cursor: pointer;
+.Footer-Social-Link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  padding: 4px 0;
 }
 
-@media (hover: hover) {
- Footer img:hover {
-  transform: scale(1.5) rotateZ(360deg);
- }
+.Footer-Social-Link:hover {
+  color: #93c5fd;
+  transform: translateX(5px);
+}
 
- .Footer-Nav>li>a:hover {
-  font-weight: bold;
- }
+.Footer-Social-Link svg {
+  flex-shrink: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .Footer-Container {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+}
+
+@media (max-width: 480px) {
+  .Footer {
+    padding: 30px 15px;
+  }
+  
+  .Footer-Container {
+    gap: 30px;
+  }
 }
