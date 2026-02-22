@@ -1,6 +1,6 @@
 /* Navbar Container */
 .navbar {
-  background-color: #1e3a8a;
+  background-color: #1d4ed8;
   padding: 15px 40px;
 }
 
@@ -57,7 +57,7 @@
 /* Primary Button */
 .btn-primary {
   background-color: white;
-  color: #1e3a8a;
+  color: #1d4ed8;
   padding: 8px 18px;
   border-radius: 8px;
   text-decoration: none;
@@ -82,5 +82,5 @@
 
 .btn-outline:hover {
   background-color: white;
-  color: #1e3a8a;
+  color: #1d4ed8;
 }
