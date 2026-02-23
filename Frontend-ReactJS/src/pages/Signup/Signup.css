@@ -1,0 +1,113 @@
+.signup-wrapper {
+  min-height: 100vh;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.signup-card {
+  width: 1200px;
+  max-width: 95%;
+  background: #f2f3f5;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+}
+
+.top-bar {
+  background: #2d5bff;
+  padding: 18px 30px;
+  color: white;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.signup-content {
+  padding: 60px 100px;
+  display: flex;
+  flex-direction: column;
+}
+
+.role-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.role-toggle button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  background: #d9e2ff;
+  cursor: pointer;
+}
+
+.role-toggle .active {
+  background: #2d5bff;
+  color: white;
+}
+
+.signup-content h2 {
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.form-group {
+  width: 100%;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.form-group input {
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #cfd4dc;
+  width: 100%;
+}
+
+.primary-btn,
+.google-btn {
+  width: 60%;
+  margin: 8px 0;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.primary-btn {
+  background: #2d5bff;
+  color: white;
+  border: none;
+}
+
+.google-btn {
+  background: #d9e2ff;
+  border: none;
+}
+
+.login-text {
+  margin-top: 25px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.login-text a {
+  color: #2d5bff;
+  text-decoration: none;
+}
