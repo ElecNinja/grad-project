@@ -1,8 +1,12 @@
 {
   "name": "registration-template",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
+  "description": "<div align=\"center\">\r   <br>\r   <h1><b>Express + React App Registration Template</b></h1>\r   <strong>React + Vite Front-end</strong>\r </div>\r <br>",
+  "license": "ISC",
+  "author": "",
   "type": "module",
+  "main": "eslint.config.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

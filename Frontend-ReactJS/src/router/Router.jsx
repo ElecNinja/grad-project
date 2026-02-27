@@ -13,6 +13,7 @@ import DeletedAccount from "../pages/DeletedAccount/DeletedAccount"
 // Protected pages
 import ProtectedUserRoute from "./ProtectedRoute"; //wrapper
 import Dashboard from "../pages/Dashboard/Dashboard";
+import Addmaterial from "../pages/Addmaterial/Addmaterial";
 
 const Router = () => {
  //Loader
@@ -28,6 +29,7 @@ const Router = () => {
     <Route exact path="terms" element={<Terms />} />
     <Route exact path="login" element={<Login />} />
     <Route exact path="signup" element={<Signup />} />
+    <Route path="add-material" element={<Addmaterial />} />
     <Route exact path="deletedAccount" element={<DeletedAccount />} />
     <Route element={<ProtectedUserRoute />}>
      <Route index element={<Navigate to="dashboard" replace />} />
