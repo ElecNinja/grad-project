@@ -1,41 +1,1444 @@
-.Homepage-Image {
-  position: relative;
-  min-height: 100vh;
+/* home.css */
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+.homepage {
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  padding: 40px 0;
+  color: white;
+}
+
+.hero-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.hero-content {
+  flex: 1;
+}
+
+.hero-image {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hero-image img {
   width: 100%;
-  background-image: url("../../assets/images/homepage.jpeg");
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-attachment: fixed;
+  max-width: 500px;
+  height: auto;
+}
+
+/* Hero Typography */
+.hero-title {
+  margin-bottom: 0;
+}
+
+.struggling {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 3.2rem;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 15px;
+  color: white;
+}
+
+.simple {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 2.8rem;
+  font-weight: 400;
+  display: block;
+  color: white;
+}
+
+/* White Section */
+.white-section {
+  background: white;
+  padding: 40px 0 60px;
+}
+
+/* Search Bar */
+.search-container {
+  max-width: 700px;
+  margin: 0 auto 30px;
+}
+
+.search-wrapper {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 50px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 16px 24px;
+  font-size: 1rem;
+  background: transparent;
+}
+
+.search-button {
+  padding: 16px 32px;
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.search-button:hover {
+  background: #1e40af;
+}
+
+/* Upload Area - Simplified */
+.upload-area-simple {
+  max-width: 600px;
+  margin: 30px auto;
+  text-align: center;
+}
+
+.upload-label {
+  font-size: 1rem;
+  color: #4b5563;
+  margin-bottom: 15px;
+}
+
+.upload-button-large {
+  padding: 16px 40px;
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.upload-button-large:hover {
+  background: #1e40af;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(29, 78, 216, 0.3);
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  max-width: 900px;
+  margin: 40px auto 0;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+/* How It Works Section */
+.how-it-works-section {
+  background: #1d4ed8;
+  padding: 60px 0 80px;
+}
+
+.section-title.centered {
+  text-align: center;
+  color: white;
+  margin-bottom: 50px;
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+.steps-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.step-card {
+  background: white;
+  border-radius: 24px;
+  padding: 40px 30px;
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.step-number {
+  font-size: 5rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  opacity: 0.15;
+  position: absolute;
+  top: 20px;
+  right: 30px;
+}
+
+.step-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 15px;
+}
+
+.step-description {
+  color: #4b5563;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+
+.drop-zone {
+  border: 3px dashed #1d4ed8;
+  border-radius: 16px;
+  padding: 25px;
+  text-align: center;
+  background: rgba(29, 78, 216, 0.05);
+  color: #1d4ed8;
+  font-weight: 600;
+  margin-top: auto;
+}
+
+/* Testimonials Section */
+.testimonials-section {
+  padding: 60px 0 80px;
+  background: white;
+}
+
+.testimonials-swiper {
+  padding: 20px 0 50px;
+}
+
+.testimonial-card {
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 30px;
+  border: 1px solid #e5e7eb;
+  height: 100%;
+}
+
+.testimonial-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.testimonial-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: white;
+  padding: 8px;
+  border: 2px solid #1d4ed8;
+}
+
+.testimonial-header h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 5px;
+}
+
+.testimonial-rating {
+  display: flex;
+  gap: 2px;
+}
+
+.testimonial-quote {
+  color: #4b5563;
+  line-height: 1.7;
+  font-style: italic;
+}
+
+/* Experts Section */
+.experts-section {
+  padding: 60px 0 80px;
+  background: #f8fafc;
+}
+
+.experts-swiper {
+  padding: 20px 0 50px;
+}
+
+.expert-card {
+  background: white;
+  border-radius: 24px;
+  padding: 30px 25px;
+  border: 1px solid #e5e7eb;
+  height: 100%;
+  text-align: center;
+}
+
+.expert-image-wrapper {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, #1d4ed8, #60a5fa);
+}
+
+.expert-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: white;
+  border: 2px solid white;
+}
+
+.expert-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 5px;
+}
+
+.expert-role {
+  color: #1d4ed8;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.expert-rating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+}
+
+.rating-value {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.expert-description {
+  color: #4b5563;
+  line-height: 1.7;
+  font-size: 0.95rem;
+  text-align: left;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+/* Blue Bar Title */
+.section-title.blue-bar {
+  background: #1d4ed8;
+  color: white;
+  padding: 12px 30px;
+  border-radius: 50px;
+  display: inline-block;
+  margin: 0 auto 40px;
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* CTA Section */
+.cta-section {
+  padding: 80px 0;
+  background: white;
+  text-align: center;
+}
+
+.cta-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.cta-stuck {
+  color: #1d4ed8;
+  font-size: 2.8rem;
+  font-weight: 700;
+}
+
+.cta-blue {
+  color: #1d4ed8;
+}
+
+.cta-description {
+  font-size: 1.2rem;
+  color: #4b5563;
+  line-height: 1.8;
+  margin-bottom: 40px;
+}
+
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 48px;
+  background: #1d4ed8;
+  color: white;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 25px rgba(29, 78, 216, 0.3);
+}
+
+.cta-button:hover {
+  background: #1e40af;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(29, 78, 216, 0.4);
+}
+
+/* Swiper Navigation */
+.swiper-button-next,
+.swiper-button-prev {
+  color: #1d4ed8;
+  background: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.swiper-button-next:after,
+.swiper-button-prev:after {
+  font-size: 18px;
+}
+
+.swiper-pagination-bullet {
+  width: 10px;
+  height: 10px;
+  background: #cbd5e1;
+  opacity: 1;
+}
+
+.swiper-pagination-bullet-active {
+  background: #1d4ed8;
+  width: 24px;
+  border-radius: 5px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .hero-wrapper {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .hero-image {
+    justify-content: center;
+  }
+  
+  .steps-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .struggling {
+    font-size: 2.8rem;
+  }
+  
+  .simple {
+    font-size: 2.2rem;
+  }
+  
+  .steps-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .section-title.blue-bar {
+    font-size: 1.5rem;
+    padding: 10px 20px;
+  }
+  
+  .cta-title {
+    font-size: 2rem;
+  }
+  
+  .cta-stuck {
+    font-size: 2.2rem;
+  }
+  
+  .search-wrapper {
+    flex-direction: column;
+  }
+  
+  .search-button {
+    width: 100%;
+  }
+}
+/* Animation keyframes */
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0); 
+  }
+  50% { 
+    transform: translateY(-20px); 
+  }
+}
+
+/* Applied to the hero image */
+.hero-image img {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Add these to your home.css file */
+
+/* Modern Title Style for Sections */
+.section-title.modern-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 50px;
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  background: transparent;
+  color: #1a1a1a;
+  padding: 0;
+}
+
+.section-title.modern-title::before {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, #1d4ed8, #60a5fa, #93c5fd);
+  border-radius: 4px;
+}
+
+.section-title.modern-title::after {
+  content: '';
+  position: absolute;
+  bottom: -19px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: #1d4ed8;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.2);
+}
+
+/* For the testimonial and experts sections, replace the blue-bar class with: */
+.testimonials-section .section-title,
+.experts-section .section-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 50px;
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  background: transparent;
+  color: #1a1a1a;
+  padding: 0;
+}
+
+.testimonials-section .section-title::before,
+.experts-section .section-title::before {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, #1d4ed8, #60a5fa, #93c5fd);
+  border-radius: 4px;
+}
+
+.testimonials-section .section-title::after,
+.experts-section .section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -19px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: #1d4ed8;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.2);
+}
+
+/* Fix for expert images to fit perfectly in circle */
+.expert-image-wrapper {
+  width: 130px;
+  height: 130px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6, #60a5fa);
+  box-shadow: 0 10px 25px rgba(29, 78, 216, 0.3);
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Dark overlay for better text readability */
-.Homepage-Image::before {
+.expert-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover; /* This ensures the image covers the entire circle */
+  object-position: center top; /* Adjusts focus point - change to 'center' if needed */
+  background: white;
+  border: 2px solid white;
+  transition: transform 0.3s ease;
+}
+
+.expert-card:hover .expert-image {
+  transform: scale(1.05);
+}
+
+/* Alternative if images are still not fitting well - use this as a fallback */
+.expert-image-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: contain; /* Shows full image but might leave empty space */
+  background: #f0f9ff;
+  padding: 15px; /* Adds padding inside the circle */
+}
+
+/* For testimonial avatars to match */
+.testimonial-avatar-wrapper {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, #1d4ed8, #60a5fa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.testimonial-avatar-modern {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: white;
+  border: 2px solid white;
+}
+
+/* Colorful step numbers for How StudyBuddy works */
+.step-card .step-number {
+  font-size: 6rem;
+  font-weight: 800;
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  line-height: 1;
+  opacity: 0.2;
+  transition: opacity 0.3s ease;
+}
+
+.step-card:hover .step-number {
+  opacity: 0.4;
+}
+
+/* Different colors for each step number */
+.step-card:nth-child(1) .step-number {
+  color: #1d4ed8; /* Blue */
+  text-shadow: 0 5px 15px rgba(29, 78, 216, 0.3);
+}
+
+.step-card:nth-child(2) .step-number {
+  color: #7c3aed; /* Purple */
+  text-shadow: 0 5px 15px rgba(124, 58, 237, 0.3);
+}
+
+.step-card:nth-child(3) .step-number {
+  color: #ea580c; /* Orange */
+  text-shadow: 0 5px 15px rgba(234, 88, 12, 0.3);
+}
+
+/* Optional: Add colored borders or accents to match */
+.step-card:nth-child(1) {
+  border-top: 4px solid #1d4ed8;
+}
+
+.step-card:nth-child(2) {
+  border-top: 4px solid #7c3aed;
+}
+
+.step-card:nth-child(3) {
+  border-top: 4px solid #ea580c;
+}
+
+/* For the drop zone in step 1 */
+.step-card:nth-child(1) .drop-zone {
+  border-color: #1d4ed8;
+  color: #1d4ed8;
+  background: rgba(29, 78, 216, 0.05);
+}
+
+/* Modern title for How it works section */
+.how-it-works-section .section-title.centered {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 50px;
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+}
+
+.how-it-works-section .section-title.centered::before {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 4px;
+  background: linear-gradient(90deg, white, rgba(255,255,255,0.5));
+  border-radius: 4px;
+}
+
+/* Add these styles to your home.css */
+
+/* ===== TESTIMONIALS SECTION - MODERN GLASS DESIGN ===== */
+.testimonials-section {
+  padding: 80px 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative background elements */
+.testimonials-section::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(29, 78, 216, 0.03) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.testimonials-section::after {
+  content: '';
+  position: absolute;
+  bottom: -100px;
+  left: -100px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(29, 78, 216, 0.03) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+/* Modern title with gradient text */
+.testimonials-section .section-title,
+.experts-section .section-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 60px;
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(135deg, #1e293b, #1d4ed8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+  width: 100%;
+  letter-spacing: -0.02em;
+}
+
+.testimonials-section .section-title::after,
+.experts-section .section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 4px;
+  background: linear-gradient(90deg, #1d4ed8, #60a5fa, #93c5fd);
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(29, 78, 216, 0.3);
+}
+
+/* Modern Testimonial Card - Glass morphism */
+.testimonial-card-modern {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  padding: 35px;
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.testimonial-card-modern::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #1d4ed8, #60a5fa, #a78bfa);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.testimonial-card-modern:hover {
+  transform: translateY(-15px) scale(1.02);
+  box-shadow: 0 40px 60px -15px rgba(29, 78, 216, 0.3);
+  border-color: rgba(29, 78, 216, 0.2);
+}
+
+.testimonial-card-modern:hover::before {
+  transform: translateX(0);
+}
+
+/* Floating quote icon */
+.testimonial-quote-icon-modern {
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  font-size: 8rem;
+  font-family: 'Georgia', serif;
+  color: #1d4ed8;
+  opacity: 0.1;
+  line-height: 1;
+  transition: all 0.3s ease;
+}
+
+.testimonial-card-modern:hover .testimonial-quote-icon-modern {
+  transform: scale(1.1);
+  opacity: 0.15;
+}
+
+/* Testimonial header with avatar */
+.testimonial-header-modern {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 25px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Fixed avatar with perfect circle fit */
+.testimonial-avatar-wrapper-modern {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, #1d4ed8, #60a5fa, #a78bfa);
+  box-shadow: 0 10px 25px rgba(29, 78, 216, 0.3);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.testimonial-avatar-modern {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: white;
+  border: 3px solid white;
+  transition: transform 0.5s ease;
+}
+
+.testimonial-card-modern:hover .testimonial-avatar-modern {
+  transform: scale(1.1);
+}
+
+/* Avatar animation */
+@keyframes avatarPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(29, 78, 216, 0); }
+}
+
+.testimonial-avatar-wrapper-modern {
+  animation: avatarPulse 3s infinite;
+}
+
+/* Testimonial name and rating */
+.testimonial-name-modern {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, #1e293b, #1d4ed8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.testimonial-rating-modern {
+  display: flex;
+  gap: 3px;
+}
+
+.testimonial-rating-modern svg {
+  filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.3));
+  transition: transform 0.2s ease;
+}
+
+.testimonial-rating-modern svg:hover {
+  transform: scale(1.2);
+}
+
+/* Testimonial quote text */
+.testimonial-quote-modern {
+  color: #475569;
+  line-height: 1.8;
+  font-style: italic;
+  font-size: 1.05rem;
+  position: relative;
+  z-index: 2;
+  padding-left: 10px;
+  border-left: 3px solid #1d4ed8;
+  transition: border-color 0.3s ease;
+}
+
+.testimonial-card-modern:hover .testimonial-quote-modern {
+  border-left-color: #60a5fa;
+}
+
+/* ===== EXPERTS SECTION - MODERN CARD DESIGN ===== */
+.experts-section {
+  padding: 80px 0;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Modern Teacher Card */
+.teacher-card-modern {
+  background: white;
+  border-radius: 40px;
+  padding: 35px 25px 30px;
+  height: 100%;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.teacher-card-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at top right, rgba(29, 78, 216, 0.05), transparent 70%);
+  pointer-events: none;
+}
+
+.teacher-card-modern::after {
+  content: '';
+  position: absolute;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5); /* Adjust opacity as needed */
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: linear-gradient(90deg, #1d4ed8, #60a5fa, #f97316);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s ease;
+}
+
+.teacher-card-modern:hover {
+  transform: translateY(-15px);
+  box-shadow: 0 40px 60px -20px rgba(29, 78, 216, 0.4);
+  border-color: #1d4ed8;
+}
+
+.teacher-card-modern:hover::after {
+  transform: scaleX(1);
+}
+
+/* Perfect circle image for experts - FIXED */
+.teacher-image-container-modern {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 25px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Outer ring with gradient */
+.teacher-image-ring {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1d4ed8, #60a5fa, #f97316);
+  opacity: 0.7;
+  filter: blur(5px);
+  transition: all 0.4s ease;
+  animation: rotate 10s linear infinite;
+}
+
+.teacher-card-modern:hover .teacher-image-ring {
+  opacity: 1;
+  filter: blur(8px);
+  transform: scale(1.1);
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Inner image wrapper - perfect circle */
+.teacher-image-wrapper-modern {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, #1d4ed8, #60a5fa);
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 15px 35px rgba(29, 78, 216, 0.3);
+}
+
+/* The image itself - FIXED to fill circle properly */
+.teacher-image-modern {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top; /* Adjust this to focus on face */
+  background: white;
+  border: 3px solid white;
+  transition: transform 0.5s ease;
+}
+
+/* Alternative for square images - use object-position to adjust */
+.teacher-image-modern[alt="Walter White"] {
+  object-position: center 30%; /* Adjust for each image as needed */
+}
+
+.teacher-image-modern[alt="Jinx"] {
+  object-position: center 20%;
+}
+
+.teacher-card-modern:hover .teacher-image-modern {
+  transform: scale(1.1);
+}
+
+/* Teacher info */
+.teacher-name-modern {
+  font-size: 1.5rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 5px;
+  background: linear-gradient(135deg, #1e293b, #1d4ed8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.teacher-role-modern {
+  color: #64748b;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Rating with better stars */
+.teacher-rating-modern {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.teacher-stars-modern {
+  display: flex;
+  gap: 4px;
+}
+
+.teacher-stars-modern svg {
+  filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.3));
+  transition: transform 0.2s ease;
+}
+
+.teacher-stars-modern svg:hover {
+  transform: scale(1.2) rotate(72deg);
+}
+
+.teacher-rating-value-modern {
+  background: #f1f5f9;
+  padding: 5px 12px;
+  border-radius: 30px;
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.95rem;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Teacher description with gradient text */
+.teacher-description-modern {
+  color: #475569;
+  line-height: 1.7;
+  font-size: 0.95rem;
+  text-align: left;
+  max-height: 110px;
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.teacher-card-modern:hover .teacher-description-modern {
+  background: white;
+  border-color: #1d4ed8;
+  box-shadow: 0 5px 15px rgba(29, 78, 216, 0.1);
+}
+
+/* View profile button */
+.teacher-view-btn-modern {
+  background: transparent;
+  border: 2px solid #1d4ed8;
+  color: #1d4ed8;
+  padding: 12px 20px;
+  border-radius: 40px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
   z-index: 1;
 }
 
-/* Content that sits above the overlay */
-.homepage-content {
-  position: relative;
-  z-index: 2;
-  color: white;
-  text-align: center;
-  padding: 20px;
-  max-width: 800px;
+.teacher-view-btn-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #1d4ed8, #60a5fa);
+  transition: left 0.3s ease;
+  z-index: -1;
 }
 
-@media only screen and (max-width: 1000px) {
-  .Homepage-Image {
-    background-position: 70% center; /* Keeps the focus on important part on mobile */
-  }
+.teacher-view-btn-modern:hover {
+  color: white;
+  border-color: transparent;
+}
+
+.teacher-view-btn-modern:hover::before {
+  left: 0;
+}
+
+
+
+/* ===== COLORFUL STEP NUMBERS - IMPROVED ===== */
+.step-card:nth-child(1) .step-number {
+  color: #1d4ed8; /* Rich blue */
+  text-shadow: 0 10px 20px rgba(29, 78, 216, 0.3);
+  background: linear-gradient(135deg, #1d4ed8, #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.step-card:nth-child(2) .step-number {
+  color: #f97316; /* Vibrant orange - much better than purple */
+  text-shadow: 0 10px 20px rgba(249, 115, 22, 0.3);
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.step-card:nth-child(3) .step-number {
+  color: #10b981; /* Fresh green */
+  text-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #10b981, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Add matching accents */
+.step-card:nth-child(1) {
+  border-top: 4px solid #1d4ed8;
+}
+
+.step-card:nth-child(2) {
+  border-top: 4px solid #f97316;
+}
+
+.step-card:nth-child(3) {
+  border-top: 4px solid #10b981;
+}
+
+.step-card:nth-child(1) .drop-zone {
+  border-color: #1d4ed8;
+  color: #1d4ed8;
+  background: rgba(29, 78, 216, 0.05);
+}
+
+.step-card:nth-child(1):hover .drop-zone {
+  background: rgba(29, 78, 216, 0.1);
+}
+
+/* Optional: add icons to step cards */
+.step-card::before {
+  content: '';
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  width: 40px;
+  height: 40px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.1;
+  z-index: 0;
+}
+
+/* Step 1 - Deep Blue */
+.step-card:nth-child(1) {
+  background: linear-gradient(145deg, #ffffff, #eff6ff);
+  border-left: 6px solid #2563eb;
+}
+
+.step-card:nth-child(1) .step-number {
+  color: #2563eb;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Step 2 - Cyan */
+.step-card:nth-child(2) {
+  background: linear-gradient(145deg, #ffffff, #ecfeff);
+  border-left: 6px solid #06b6d4;
+}
+
+.step-card:nth-child(2) .step-number {
+  color: #06b6d4;
+  background: linear-gradient(135deg, #06b6d4, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Step 3 - Teal */
+.step-card:nth-child(3) {
+  background: linear-gradient(145deg, #ffffff, #f0fdfa);
+  border-left: 6px solid #14b8a6;
+}
+
+.step-card:nth-child(3) .step-number {
+  color: #14b8a6;
+  background: linear-gradient(135deg, #14b8a6, #2dd4bf);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ===== COLORFUL STEP CARDS - HOW STUDYBUDDY WORKS ===== */
+
+/* Step 1 - Upload Card - Blue Theme */
+.step-card:nth-child(1) {
+  background: linear-gradient(145deg, #ffffff, #f0f7ff);
+  border-left: 6px solid #1d4ed8;
+  border-top: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-card:nth-child(1)::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(29, 78, 216, 0.05) 0%, transparent 70%);
+  animation: rotate 20s linear infinite;
+}
+
+.step-card:nth-child(1) .step-number {
+  color: #1d4ed8;
+  text-shadow: 0 10px 20px rgba(29, 78, 216, 0.2);
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.step-card:nth-child(1) .step-title {
+  color: #1d4ed8;
+}
+
+.step-card:nth-child(1) .drop-zone {
+  background: linear-gradient(145deg, rgba(29, 78, 216, 0.05), rgba(59, 130, 246, 0.1));
+  border: 2px dashed #1d4ed8;
+  color: #1d4ed8;
+}
+
+/* Step 2 - Find Your Expert Card - Orange/Amber Theme */
+.step-card:nth-child(2) {
+  background: linear-gradient(145deg, #ffffff, #fff7ed);
+  border-left: 6px solid #f97316;
+  border-top: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-card:nth-child(2)::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.05) 0%, transparent 70%);
+  animation: rotate 20s linear infinite;
+}
+
+.step-card:nth-child(2) .step-number {
+  color: #f97316;
+  text-shadow: 0 10px 20px rgba(249, 115, 22, 0.2);
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.step-card:nth-child(2) .step-title {
+  color: #f97316;
+}
+
+/* Step 3 - Make Progress Card - Green/Teal Theme */
+.step-card:nth-child(3) {
+  background: linear-gradient(145deg, #ffffff, #f0fdf4);
+  border-left: 6px solid #10b981;
+  border-top: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-card:nth-child(3)::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+  animation: rotate 20s linear infinite;
+}
+
+.step-card:nth-child(3) .step-number {
+  color: #10b981;
+  text-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+  background: linear-gradient(135deg, #10b981, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.step-card:nth-child(3) .step-title {
+  color: #10b981;
+}
+
+/* Animation for background */
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
