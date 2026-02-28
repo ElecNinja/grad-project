@@ -14,6 +14,7 @@ import DeletedAccount from "../pages/DeletedAccount/DeletedAccount"
 import ProtectedUserRoute from "./ProtectedRoute"; //wrapper
 import Dashboard from "../pages/Dashboard/Dashboard";
 import Addmaterial from "../pages/Addmaterial/Addmaterial";
+import Offers from "../pages/Offers/offer";
 
 const Router = () => {
  //Loader
@@ -30,6 +31,7 @@ const Router = () => {
     <Route exact path="login" element={<Login />} />
     <Route exact path="signup" element={<Signup />} />
     <Route path="add-material" element={<Addmaterial />} />
+    <Route path="offers" element={<Offers />} />
     <Route exact path="deletedAccount" element={<DeletedAccount />} />
     <Route element={<ProtectedUserRoute />}>
      <Route index element={<Navigate to="dashboard" replace />} />
