@@ -1,0 +1,3509 @@
+By:Mo’Men_el_Sayed 
+1 
+Lecture 1: Operating System Structures 
+1. What is an Operating System (OS)? 
+• 
+Definition: An OS is software that manages hardware resources and provides services 
+for application programs. It acts as an intermediary between users and the computer 
+hardware. 
+• 
+Functions: 
+o 
+Allocates resources (CPU, memory, storage). 
+o 
+Manages execution of processes. 
+o 
+Provides interfaces (e.g., graphical or command-line). 
+Examples: 
+• 
+Windows facilitates user interaction with a graphical interface. 
+• 
+Linux is widely used for servers due to its efficiency. 
+ 
+2. Objectives of an Operating System 
+• 
+Convenience: Makes computing easier with interfaces (e.g., Windows' Start menu). 
+• 
+Efficiency: Ensures optimal resource utilization. 
+o 
+Example: Multitasking in Linux uses CPU cycles efficiently. 
+• 
+Security: Protects user data and prevents unauthorized access. 
+o 
+Example: Android restricts app permissions to protect user privacy. 
+• 
+Flexibility: Allows system updates and adaptations without major disruptions. 
+o 
+Example: macOS regularly adds new features while maintaining stability. 
+ 
+3. Services Provided by an OS 
+• 
+Program Development: Includes tools like editors and compilers. 
+o 
+Example: Windows provides Notepad and Visual Studio for programming. 
+• 
+Program Execution: Loads programs, initializes the environment, and schedules 
+execution. 
+o 
+Example: The Task Manager in Windows allows users to view and manage 
+running processes. 
+• 
+Error Handling: Detects and manages software and hardware errors. 
+o 
+Example: A "blue screen" in Windows alerts users of critical failures.
+By:Mo’Men_el_Sayed 
+2 
+4. Types of Computer Systems Managed by OS 
+1. Batch Systems: Process jobs sequentially in batches without user interaction, 
+maximizing resource utilization (e.g., early payroll systems). 
+2. Multi-Programmed Batch Systems: Handle multiple programs in memory, using 
+job scheduling to optimize CPU and I/O usage (e.g., one program processes 
+while another waits for I/O). 
+3. Time-Sharing Systems: Enable multiple users to interact simultaneously with 
+rapid switching between jobs for low response times (e.g., Unix systems). 
+4. Personal Computer Systems: Designed for single users with dedicated 
+hardware; data sharing possible via networking (e.g., Windows and macOS 
+desktops). 
+5. Distributed Systems: Networked computers operate as a cohesive system; 
+examples include cloud computing with client-server or peer-to-peer setups. 
+6. Parallel Systems: Utilize multiple CPUs to process independent tasks 
+concurrently, ideal for high-performance applications like scientific simulations 
+(e.g., supercomputers). 
+7. Clustered Systems: Multiple systems work together, sharing resources to 
+enhance reliability; can be asymmetric (standby systems) or symmetric (all 
+active) (e.g., high-availability server clusters). 
+8. Real-Time Systems: Operate under strict timing constraints for critical 
+applications: 
+o Hard Real-Time: Guarantees timely task completion (e.g., industrial 
+robots). 
+o Soft Real-Time: Prioritizes tasks without strict timing guarantees (e.g., 
+multimedia systems). 
+9. Handheld Systems: Feature limited resources and compact designs for mobile 
+use (e.g., smartphones and tablets). 
+10. Hybrid Systems: Combine features from various system types for versatility, 
+such as batch processing with time-sharing (e.g., Linux). 
+ 
+ 5. Categories of Computers 
+• 
+Mobile Devices: 
+o 
+Small, portable devices with limited processing power. 
+o 
+Example: Smartphones and tablets. 
+• 
+Microcomputers (PCs): 
+o 
+Individual use for business or personal tasks.
+By:Mo’Men_el_Sayed 
+3 
+o 
+Example: Laptops running Windows or macOS. 
+• 
+Midrange Computers: 
+o 
+Larger capacity than PCs, used in small-to-medium organizations. 
+o 
+Example: Minicomputers for departmental data management. 
+• 
+Mainframes: 
+o 
+High-volume transaction processing. 
+o 
+Example: IBM Z-series for banking operations. 
+• 
+Supercomputers: 
+o 
+Handle massive calculations with immense speed. 
+o 
+Example: NASA's systems for space simulations. 
+Lecture 2: Operating System Structures 
+ 
+1. System Components 
+• 
+CPU: Central Processing Unit responsible for executing instructions. 
+• 
+Storage-Device Hierarchy: Organized by speed, cost, and volatility. 
+• 
+Random Access Memory (RAM): Volatile memory with individual addresses for each 
+byte. 
+2. CPU and Machine Cycle 
+• 
+Machine Cycle:  
+o 
+Fetch: Instruction is fetched. 
+o 
+Decode: Instruction is decoded for execution. 
+o 
+Execute: Instructions are carried out. 
+o 
+Store: Results are stored in CPU registers. 
+3. Storage Devices 
+• 
+Magnetic Hard Drives: Organized into tracks, sectors, clusters, and cylinders. 
+• 
+Reading/Writing Data: Can be impeded by obstacles damaging the disk surface. 
+4. Common System Components 
+• 
+Process Management: Manages processes, their creation, deletion, and 
+synchronization. 
+• 
+Main Memory Management: Tracks memory usage and allocates/deallocates memory. 
+• 
+Secondary-Storage Management: Manages disk space and storage allocation. 
+• 
+I/O System Management: Manages input/output operations. 
+• 
+File Management: Handles file creation, deletion, and access.
+By:Mo’Men_el_Sayed 
+4 
+• 
+Protection System: Controls access to resources. 
+• 
+Networking: Manages network connections. 
+• 
+Command-Interpreter System: Interprets commands given to the OS. 
+5. Process Management 
+• 
+A process is a program in execution, requiring resources like CPU time and memory. 
+• 
+Responsibilities:  
+o 
+Process creation and deletion. 
+o 
+Synchronization and communication. 
+6. Main-Memory Management 
+• 
+Volatile Storage: Loses data on failure. 
+• 
+OS Responsibilities:  
+o 
+Track memory usage. 
+o 
+Allocate and deallocate memory. 
+7. Secondary-Storage Management 
+• 
+Provides non-volatile storage for data and programs. 
+• 
+OS Responsibilities:  
+o 
+Free space management. 
+o 
+Storage allocation and disk scheduling. 
+8. I/O System Management 
+• 
+Comprises:  
+o 
+Buffer-caching system. 
+o 
+Device-driver interface. 
+• 
+I/O Operations:  
+o 
+Devices execute concurrently with the CPU. 
+o 
+Device controllers manage specific devices. 
+9. Interrupts 
+• 
+Common Functions: 
+o 
+Transfers control to the interrupt service routine (ISR). 
+o 
+Saves the state of the CPU. 
+o 
+Disables incoming interrupts during processing. 
+• 
+Classes of Interrupts:
+By:Mo’Men_el_Sayed 
+5 
+o 
+Program (e.g., arithmetic overflow). 
+o 
+Timer. 
+o 
+I/O. 
+o 
+Hardware failure. 
+10. I/O Methods 
+• 
+Synchronous I/O: Process waits for I/O completion. 
+• 
+Asynchronous I/O: Control returns immediately; I/O continues in the background. 
+11. Direct Memory Access (DMA) 
+• 
+High-speed I/O devices transfer data directly to main memory without CPU 
+intervention. 
+12. File Management 
+• 
+Manages files and directories. 
+• 
+OS Responsibilities:  
+o 
+File creation, deletion, and manipulation. 
+13. Protection System 
+• 
+Controls access to resources, distinguishing authorized from unauthorized usage. 
+14. Command-Interpreter System 
+• 
+Interprets control statements for process and I/O management. 
+15. System Calls 
+• 
+Interface between running programs and the OS. 
+• 
+Parameter Passing Methods:  
+o 
+Registers. 
+o 
+Memory tables. 
+o 
+Stack operations. 
+16. System Programs 
+• 
+Provide a development environment, including file manipulation and programming 
+language support.
+By:Mo’Men_el_Sayed 
+6 
+17. System Structure 
+• 
+Simple Approach: MS-DOS and UNIX have limited structuring. 
+• 
+Layered Approach: The OS is divided into layers, with each layer built on the functions 
+of lower layers. 
+18. System Design Goals 
+• 
+User Goals: Convenience, reliability, and performance. 
+• 
+System Goals: Flexibility, maintainability, and efficiency. 
+19. System Implementation 
+• 
+Modern OS can be written in high-level languages for easier development and 
+portability. 
+Examples 
+• 
+Process Management: Creating a new process when a user opens an application. 
+• 
+Memory Management: Allocating memory for a new program while ensuring existing 
+programs remain unaffected. 
+• 
+File Management: Creating a new file and managing its access permissions. 
+• 
+I/O Management: Using DMA for fast data transfer when reading from a hard disk. 
+Lecture 3 & 4: Process Management 
+I. Processes 
+Process Concept 
+• 
+A Process is a program in execution, which is the entity assigned to processors. 
+• 
+Terms "job" and "process" are often used interchangeably. 
+Process States 
+• 
+New: Process is being created. 
+• 
+Running: Instructions are being executed (has the CPU). 
+• 
+Waiting (Blocked): Process is waiting for an event (e.g., I/O completion). 
+• 
+Ready: Process is ready to use the CPU. 
+• 
+Terminated: Process has finished execution. 
+Process Control Block (PCB)
+By:Mo’Men_el_Sayed 
+7 
+• 
+Also known as "process descriptor." 
+• 
+Contains:  
+o 
+Current state 
+o 
+Unique identification 
+o 
+Pointers to parent and child processes 
+o 
+Pointers to allocated resources (e.g., memory range) 
+o 
+CPU scheduling information 
+Process Scheduling Queues 
+• 
+Job Queue: All processes in the system. 
+• 
+Ready Queue: Processes ready to execute. 
+• 
+Device Queues: Processes waiting for I/O devices. 
+• 
+Processes migrate between these queues. 
+Schedulers 
+• 
+Long-term Scheduler (Job Scheduler): Decides which processes to bring into the ready 
+queue. 
+• 
+Short-term Scheduler (CPU Scheduler): Decides which process to execute next. 
+• 
+Medium-term Scheduler: Handles processes that need to be swapped out. 
+Operations on Processes 
+• 
+Create, destroy, suspend, resume, change priority, block, wake up, dispatch, and enable 
+interprocess communication. 
+Process Creation 
+• 
+Steps:  
+o 
+Define the process name. 
+o 
+Insert it into the process table. 
+o 
+Set initial priority and create the PCB. 
+o 
+Allocate initial resources. 
+• 
+Parent Process: Creates a child process. 
+• 
+Resource Sharing:  
+o 
+Parent and child can share all resources, some, or none. 
+o 
+Parent and children execute concurrently. 
+Process Termination
+By:Mo’Men_el_Sayed 
+8 
+• 
+Involves removing the process from the system, returning resources, and erasing the 
+PCB. 
+Threads 
+• 
+A Thread (lightweight process) is a basic unit of CPU utilization, sharing code, data, and 
+OS resources. 
+• 
+Multiple threads can run concurrently, improving performance (e.g., Producer-
+Consumer Problem). 
+• 
+Types:  
+o 
+Kernel-level threads: Managed by the OS. 
+o 
+User-level threads: Managed by user-level libraries. 
+o 
+Hybrid: Combines both. 
+Interprocess Communication (IPC) 
+• 
+Mechanism for processes to communicate and synchronize. 
+• 
+Message System: Processes communicate without shared variables. 
+• 
+Operations:  
+o 
+send(message) 
+o 
+receive(message) 
+Logical IPC 
+• 
+Communication can be direct or indirect. 
+• 
+Can be symmetric or asymmetric, with various buffering strategies. 
+Direct Communication 
+• 
+Processes must name each other explicitly:  
+o 
+send(P, message) to send to process P. 
+o 
+receive(Q, message) to receive from Q. 
+Indirect Communication 
+• 
+Messages are sent and received from mailboxes (ports). 
+• 
+Operations include creating, sending, receiving, and destroying mailboxes. 
+Buffering Strategies 
+1. Zero Capacity: Sender waits for receiver. 
+2. Bounded Capacity: Finite length; sender waits if full.
+By:Mo’Men_el_Sayed 
+9 
+3. Unbounded Capacity: Infinite; sender never waits. 
+ 
+II. CPU Scheduling 
+Basic Concepts 
+• 
+CPU Scheduling maximizes CPU utilization. 
+• 
+Processes cycle through CPU usage and I/O usage. 
+CPU Burst Times 
+• 
+Described as:  
+o 
+I/O-bound processes: Short CPU bursts. 
+o 
+CPU-bound processes: Long CPU bursts. 
+Preemptive vs. Nonpreemptive Scheduling 
+• 
+Nonpreemptive: Once a process has the CPU, it cannot be taken away. 
+• 
+Preemptive: The CPU can be taken away, useful for high-priority processes. 
+Scheduling Criteria 
+• 
+CPU Utilization: Keep CPU busy. 
+• 
+Throughput: Number of processes completed per time unit. 
+• 
+Turnaround Time: Total time to execute a process. 
+• 
+Waiting Time: Time a process waits in the ready queue. 
+• 
+Response Time: Time from request submission to first response. 
+Optimization Criteria 
+• 
+Maximize CPU utilization and throughput. 
+• 
+Minimize turnaround, waiting, and response times. 
+Priorities 
+• 
+Assigned automatically or externally; can be static (unchanging) or dynamic 
+(changeable).
+By:Mo’Men_el_Sayed 
+10 
+Scheduling Algorithms 
+1. First-Come, First-Served (FCFS) Scheduling 
+Description: Processes are dispatched in the order they arrive. It is a non-preemptive 
+scheduling method. 
+Example: 
+• 
+Processes:  
+o 
+P1: 24 ms 
+o 
+P2: 3 ms 
+o 
+P3: 3 ms  
+| P1 | P2 | P3 | 
+0    24   27   30 
+Waiting Times: 
+• 
+P1: 0 ms 
+• 
+P2: 24 ms 
+• 
+P3: 27 ms 
+• 
+Average Waiting Time: (0 + 24 + 27) / 3 = 17 ms 
+2. Round Robin (RR) Scheduling 
+Description: Each process gets a fixed time slice (quantum). If the process does not 
+finish in its time slice, it is placed at the end of the queue. 
+Example: 
+• 
+Processes:  
+o 
+P1: 53 ms 
+o 
+P2: 17 ms 
+o 
+P3: 68 ms 
+o 
+P4: 24 ms 
+• 
+Time Quantum: 20 ms 
+| P1 | P2 | P3 | P4 | P1 | P3 |
+By:Mo’Men_el_Sayed 
+11 
+0    20   37   57   77   93  111 
+Performance: 
+• 
+Guarantees reasonable response time. 
+• 
+The overhead should be minimized. 
+3. Shortest Job First (SJF) Scheduling 
+Description: The process with the smallest estimated run time is executed next. Can be 
+preemptive or non-preemptive. 
+Example: 
+• 
+Processes:  
+o 
+P1: 8 ms 
+o 
+P2: 4 ms 
+o 
+P3: 9 ms 
+o 
+P4: 5 ms 
+Non-Preemptive 
+| P2 | P4 | P1 | P3 | 
+0    4    9   17   26 
+Waiting Times: 
+• 
+P1: 9 ms 
+• 
+P2: 0 ms 
+• 
+P3: 17 ms 
+• 
+P4: 4 ms 
+• 
+Average Waiting Time: (9 + 0 + 17 + 4) / 4 = 7.5 ms 
+4. Priority Scheduling 
+Description: Each process is assigned a priority. The CPU is allocated to the process 
+with the highest priority (smallest integer). 
+Example:
+By:Mo’Men_el_Sayed 
+12 
+• 
+Processes:  
+o 
+P1: 10 ms (Priority 2) 
+o 
+P2: 1 ms (Priority 1) 
+o 
+P3: 2 ms (Priority 3) 
+| P2 | P3 | P1 | 
+0    1    3    13 
+Waiting Times: 
+• 
+P1: 3 ms 
+• 
+P2: 0 ms 
+• 
+P3: 1 ms 
+• 
+Average Waiting Time: (3 + 0 + 1) / 3 = 1.33 ms 
+Summary of Key Points 
+• 
+FCFS: Simple but can lead to long waiting times for short processes. 
+• 
+RR: Fair sharing of CPU time, good for time-sharing systems. 
+• 
+SJF: Optimal for minimizing average waiting time but can cause starvation. 
+• 
+Priority Scheduling: Can solve starvation with aging techniques. 
+Lecture 5:Deadlocks 
+ 1. Deadlock Problem 
+Example Scenario 
+• 
+System: Two tape drives. 
+• 
+Processes:  
+o 
+P1 holds Tape Drive 1 and waits for Tape Drive 2. 
+o 
+P2 holds Tape Drive 2 and waits for Tape Drive 1. 
+P1: Holds Tape Drive 1 -------> Waits for Tape Drive 2 
+P2: Holds Tape Drive 2 -------> Waits for Tape Drive 1 
+2. Bridge Crossing Example 
+Example Scenario 
+• 
+Traffic: Only flows in one direction on a bridge. 
+• 
+Resource: Each section of the bridge acts as a resource.
+By:Mo’Men_el_Sayed 
+13 
+• 
+Deadlock: If multiple cars reach the bridge and block each other, they must back up to 
+free the bridge. 
+Cars (C1, C2, C3) reach the bridge: 
+C1 <------ C2 <------ C3 
+If C2 wants to go forward but is blocked by C1, a deadlock occurs. 
+3. Resource Allocation Graph (RAG) 
+Example Scenario 
+• 
+Processes: P1 and P2. 
+• 
+Resources: R1 and R2. 
+Graph: 
+• 
+P1 requests R1, and R2 is held by P2. 
+• 
+P2 requests R2, and R1 is held by P1. 
+P1 ---> R1 (holds) 
+P2 ---> R2 (holds) 
+• 
+Circular Wait: P1 waits for R2, and P2 waits for R1. 
+4. Deadlock Prevention Example 
+Scenario 
+• 
+Hold and Wait Prevention: Require processes to request all resources before execution. 
+Example: 
+• 
+Process P1 must request both Tape Drive 1 and Tape Drive 2 before it starts executing. 
+5. Deadlock Avoidance Example 
+Banker's Algorithm Scenario 
+• 
+Processes: P1 and P2. 
+• 
+Resource Requirements:  
+o 
+P1: Maximum 3 units of resource A.
+By:Mo’Men_el_Sayed 
+14 
+o 
+P2: Maximum 2 units of resource A. 
+• 
+Available Resources: 2 units of A. 
+Safe State Example: 
+• 
+If P1 requests 2 units and gets them, it can finish and release resources, allowing P2 to 
+then finish. 
+Available: 2 units 
+P1: Needs 1 more to finish 
+P2: Can be satisfied after P1 finishes 
+6. Deadlock Detection Example 
+Scenario 
+• 
+Wait-For Graph:  
+o 
+P1 waits for P2. 
+o 
+P2 waits for P1. 
+P1 ---> P2 
+P2 ---> P1 
+ 
+• 
+This cycle indicates a deadlock. 
+7. Recovery from Deadlock Example 
+Process Termination 
+• 
+Scenario: Abort one process at a time until the deadlock is resolved. 
+Example: 
+• 
+If P1 and P2 are deadlocked, abort P1 first, check if the deadlock is resolved.
+By:Mo’Men_el_Sayed 
+15 
+8. Resource Preemption Example 
+Scenario 
+• 
+Victim Selection: Choose a process to preempt based on resource usage and priority. 
+ 
+ 
+Lecture 7 & 8: Memory Management and Virtual Memory 
+1. Background 
+• 
+Programs need to be brought into memory for execution. 
+• 
+Input Queue: A collection of processes waiting on disk to be loaded into 
+memory. 
+• 
+Motivation: Multiple processes in memory improve system performance. 
+• 
+Memory is a large array of words/bytes, each with a unique address. 
+• 
+Memory management methods are dependent on both application and 
+hardware. 
+• 
+Challenge: Memory is often insufficient to meet demands, necessitating 
+advanced management techniques. 
+ 
+2. Binding of Instructions and Data to Memory 
+• 
+Compile Time: 
+o Memory location is predetermined. 
+o Changes require recompilation. 
+o Example: MSDOS system files. 
+• 
+Load Time: 
+o Addresses determined during loading. 
+o Relocation addresses are fixed for runtime. 
+o Example: MSDOS applications (historically). 
+• 
+Execution Time: 
+o Binding is delayed until runtime. 
+o Allows processes to move during execution. 
+o Common in modern multitasking systems like UNIX and Windows.
+By:Mo’Men_el_Sayed 
+16 
+3. Logical vs. Physical Address Space 
+• 
+Logical Address: Generated by the CPU. 
+• 
+Physical Address: Corresponds to an actual memory location. 
+• 
+Logical and physical addresses: 
+o Are identical in compile-time binding. 
+o Differ in load-time and execution-time binding. 
+Memory Management Unit (MMU): 
+• 
+A hardware device that maps logical to physical addresses. 
+• 
+Relocation Register: 
+o Value added to logical addresses to produce physical addresses. 
+o User programs deal only with logical addresses. 
+ 
+4. Techniques in Memory Management 
+• 
+Dynamic Loading: 
+o Routines are loaded only when called. 
+o Improves memory utilization. 
+o Ideal for large programs handling infrequent cases. 
+• 
+Dynamic Linking: 
+o Frequently used routines are not linked into the program but accessed 
+via a stub. 
+o Advantages: 
+▪ 
+Saves memory space. 
+▪ 
+Updates to shared libraries benefit all applications. 
+o Disadvantages: 
+▪ 
+New library bugs affect all dependent applications. 
+• 
+Overlays: 
+o Only required instructions and data are loaded into memory. 
+o Useful when process size exceeds available memory. 
+o Complex to implement without OS support.
+By:Mo’Men_el_Sayed 
+17 
+5. Contiguous Allocation 
+• 
+Single Partition: 
+o OS resides in low memory; user processes in high memory. 
+o Protects user processes from each other. 
+• 
+Multiple Partition: 
+o Memory divided into variable-sized holes. 
+o Allocation Strategies: 
+1. First-Fit: Allocates the first available hole. 
+2. Best-Fit: Allocates the smallest hole sufficient for the request. 
+3. Worst-Fit: Allocates the largest available hole. 
+• 
+Fragmentation: 
+o External: Non-contiguous free memory blocks. 
+o Internal: Allocated memory exceeds process requirements. 
+o Compaction: 
+1. Rearranges memory to consolidate free space. 
+2. Requires dynamic relocation. 
+ 
+6. Swapping 
+• 
+Temporarily moves processes from memory to backing store and back. 
+• 
+Backing Store: 
+o High-speed disk to store memory images. 
+• 
+Roll Out, Roll In: 
+o Swaps out lower-priority processes for higher-priority ones. 
+• 
+Swap time is proportional to the amount of memory swapped. 
+• 
+Examples: UNIX uses separate partitions; Windows uses a swap file. 
+ 
+7. Paging 
+• 
+Divides memory into fixed-sized frames and logical memory into pages. 
+• 
+Page Table: 
+o Maps logical to physical addresses. 
+o Consists of a Page-Table Base Register (PTBR) and Page-Table Length 
+Register (PRLR). 
+• 
+Address Translation:
+By:Mo’Men_el_Sayed 
+18 
+o CPU address split into Page Number (p) and Page Offset (d). 
+o Physical address = Base address (from page table) + Offset. 
+• 
+Translation Lookaside Buffer (TLB): 
+o Cache for frequently used page-table entries. 
+o Reduces memory access time. 
+ 
+8. Segmentation 
+• 
+Divides programs into segments based on logical units (e.g., procedures, 
+arrays). 
+• 
+Segment Table: 
+o Maps segment numbers to physical addresses. 
+o Contains: 
+▪ 
+Base: Starting physical address of the segment. 
+▪ 
+Limit: Segment length. 
+• 
+Segmentation with Paging: 
+o Segments are further divided into pages to solve fragmentation issues. 
+o Example: MULTICS system. 
+ 
+9. Virtual Memory 
+• 
+Allows separation of logical memory from physical memory. 
+• 
+Demand Paging: 
+o Pages loaded only when needed. 
+o Reduces memory and I/O requirements. 
+o Page Fault: 
+▪ 
+Occurs when a required page is not in memory. 
+▪ 
+Handled by fetching the page from the backing store. 
+• 
+Page Replacement: 
+o Decides which page to replace when memory is full. 
+o Uses Modify (Dirty) Bit to minimize overhead. 
+Page Replacement Algorithms: 
+1. FIFO: Replaces the oldest page. 
+2. Optimal: Replaces the page not used for the longest time.
+By:Mo’Men_el_Sayed 
+19 
+3. LRU: Replaces the least recently accessed page. 
+ 
+MCQ_Que: 
+Q1.What is operating system? 
+a.collection of programs that manages hardware resources 
+b.system service provider to the application programs 
+c.link to interface the hardware and application programs 
+d.all of the mentioned 
+Q2.To access the services of operating system, the interface is provided by the 
+a.system calls 
+b.API 
+c.library 
+d.assembly instructions 
+Q3.Which one of the following error will be handle by the operating system? 
+a.power failure 
+b.lack of paper in printer 
+c.connection failure in the network 
+d.all of the mentioned 
+Q4.Dual mode operating system of computer system has operations of 
+a.1mode 
+b.2modes 
+c.3modes
+By:Mo’Men_el_Sayed 
+20 
+d.4modes 
+Q5.Logical extension of multiprogramming of operating system is 
+a.time sharing 
+b.multi tasking 
+c.single programing 
+d.both a and b 
+Q6.What is a shell ? 
+a.It is a hardware component 
+b.It is a command interpreter 
+c.It is a part in compiler 
+d.It is a tool in CPU scheduling 
+Q7.The operating system manages ________. 
+a.Memory 
+b.Processor 
+c.Disk and I/O devices 
+d.All of the above 
+Q8.The Hardware mechanism that enables a device to notify the CPU is called 
+__________. 
+a.Polling 
+b.Interrupt 
+c.System Call 
+d.None of the above
+By:Mo’Men_el_Sayed 
+21 
+Q9.A program at the time of executing is called ________. 
+a.Dynamic program 
+b.Static program 
+c.Binded Program 
+d.A Process 
+Q10.The term " Operating System " means ________. 
+a.A set of programs which controls computer working 
+b.The way a computer operator works 
+c.Conversion of high-level language in to machine level language 
+d.The way a floppy disk drive operates 
+Q11.The operating system of a computer serves as a software interface between the user and 
+the ________. 
+a.Hardware 
+b.Peripheral 
+c.Memory 
+d.Screen 
+Q12.The program is known as _________ which interacts with the inner part of called 
+kernel. 
+a.Compiler 
+b.Device Driver 
+c.Protocol 
+d.Shell 
+Q13.Identify the odd thing in the services of operating system.
+By:Mo’Men_el_Sayed 
+22 
+a.Accounting 
+b.Protection 
+c.Error detection and correction 
+d.Dead lock handling 
+Q14.Cryptography technique is used in ________. 
+a.Polling 
+b.Job Scheduling 
+c.Protection 
+d.File Management 
+Q15.Which technique was introduced because a single job could not keep both the CPU 
+and the I/O devices busy? 
+a.Time-sharing 
+b.Spooling 
+c.Preemptive scheduling 
+d.Multiprogramming 
+ 
+ 
+ 
+ 
+ 
+Q16.Software is a program that directs the overall operation of the computer, 
+facilitates its use and interacts with the user. What are the different types of this 
+software ? 
+a.Operating system 
+b.Language Compiler
+By:Mo’Men_el_Sayed 
+23 
+c.Utilities 
+d.All of the above 
+Q17.A __________ is a software that manages the time of a microprocessor to ensure 
+that all time critical events are processed as efficiently as possible. This software 
+allows the system activities to be divided into multiple independent elements called 
+tasks. 
+a.Kernel 
+b.Shell 
+c.Processor 
+d.Device Driver 
+Q18.The primary job of the operating system of a computer is to ________. 
+a.Command Resources 
+b.Manage Resources 
+c.Provide Utilities 
+d.Be user friendly 
+ 
+ 
+Q34. 
+Q19.Who is called a supervisor of computer activity ? 
+a.CPU 
+b.Operating system 
+c.Control unit 
+d.Application Program
+By:Mo’Men_el_Sayed 
+24 
+Q20.The kernel of the operating system remains in the primary memory because 
+________. 
+a.It is mostly called (used) 
+b.It manages all interrupt calls 
+c.It controls all operations in process 
+d.It is low level 
+Q21.Multi-programming systems ________. 
+a.Are easier to develop than single programming systems 
+b.Execute each job faster 
+c.Execute more jobs in the same time 
+d.Are used only on large main frame computers 
+Q22.Multiprocessing ________. 
+a.Make the operating system simpler 
+b.Allows multiple processes to run simultaneously 
+c.Is completely understood by all major computer vendors 
+d.Allows the same computer to have the multiple processors 
+Q23.What is the first step in performing an operating system upgrade ? 
+a.Partition the drive 
+b.Format the drive 
+c.Backup critical data 
+d.Backup old operating system 
+Q24.The technique, for sharing the time of a computer among several jobs, which 
+switches jobs so rapidly such that each job appears to have the computer to itself, is 
+called ________.
+By:Mo’Men_el_Sayed 
+25 
+a.Time Sharing 
+b.Time out 
+c.Time domain 
+d.Multitasking 
+Q25.It is not the layer of the Operating system. 
+a.Kernel 
+b.Shell 
+c.Application program 
+d.Critcal Section 
+Q26.Supervisor state is only allowed to ? 
+a.Utility Softwares 
+b.Application Softwares 
+c.Operating System 
+d.Guest User 
+Q27.Which of the following is always there in a computer ? 
+a.Batch system 
+b.Operating system 
+c.Time sharing system 
+d.Controlling system 
+Q28.Which is not a function of Kernel ? 
+a.Process management 
+b.Memory management
+By:Mo’Men_el_Sayed 
+26 
+c.File system management 
+d.All of Above 
+Q29.Operating system is 
+a.A collection of hardware components 
+b.A collection of input output devices 
+c.A collection of software routines 
+d.All of above 
+Q30.Remote computing services involves the use of timesharing and 
+a.multiprocessing 
+b.interactive processing 
+c.batch processing 
+d.real time processing 
+ 
+Q31.With multiprogramming, ______ is used productively. 
+a.time 
+b.space 
+c.money 
+d.All of these 
+Q32.The main function of the command interpreter is 
+a.To handle the compiler. 
+b.To handle the parser. 
+c.To get and execute the next user-specified command.
+By:Mo’Men_el_Sayed 
+27 
+d.None of the above. 
+Q33.The volatile storage is/are 
+a.Main memory 
+b.Cache 
+c.Register 
+d.All of the above. 
+Q34.The process related to process control, file management, device management, 
+information about system and communication that is requested by any higher level 
+language can be performed by __________. 
+a.Editors 
+b.Compilers 
+c.System Call 
+d.Caching 
+Q35.Message passing system allows processes to : 
+a.communicate with one another without resorting to shared data. 
+b.communicate with one another by resorting to shared data. 
+c.share data 
+d.name the recipient or sender of the message 
+Q36.When a thread needs to wait for an event it will 
+a.Block 
+b.Execute 
+c.Terminate 
+d.Update
+By:Mo’Men_el_Sayed 
+28 
+Q37.In a pure Kernel Level Thread facility all of work of thread management is done by 
+the 
+a.Application 
+b.Program 
+c.Kernel 
+d.Threads 
+Q38.What is inter-process communication? 
+a.communication within the process 
+b.communication between two process 
+c.communication between two threads of same process 
+d.none of the mentioned 
+Q39.Process State is a part of 
+a.Process Control block 
+b.Inode 
+c.File Allocation Table 
+d.None of the above 
+Q40.The kernel keeps track of the state of each task by using a data structure called 
+_________ . 
+a.Process control block 
+b.User control block 
+c.Memory control block 
+d.None of the above 
+Q41.A thread is a __________ process .
+By:Mo’Men_el_Sayed 
+29 
+a.Heavy Weight 
+b.Mutliprocess 
+c.Inter Thread 
+d.Light weight 
+Q42.Information about a process is maintained in a _________. 
+a.Stack 
+b.Translation Lookaside Buffer 
+c.Process Control Block 
+d.Program Control Block 
+Q43.PCB is 
+a.Program Control Block 
+b.Process Control Block 
+c.Process Communication Block 
+d.None of the above 
+Q44.Which of the following is contained in Process Control Block (PCB)? 
+a.Process Number 
+b.List of Open files 
+c.Memory Limits 
+d.All of the Above 
+Q45.In the running state 
+a.only the process which has control of the processor is found 
+b.all the processes waiting for I/O to be completed are found
+By:Mo’Men_el_Sayed 
+30 
+c.all the processes waiting for the processor are found 
+d.none of the above 
+Q46.The kernel keeps track of the state of each task by using a data structure called __ 
+a.Process control block 
+b.User control block 
+c.Memory control block 
+d.None of the above 
+Q47.A thread 
+a.is a lightweight process where the context switching is low 
+b.is a lightweight process where the context swithching is high 
+c.is used to speed up paging 
+d.none of the above 
+Q48.Which is not the state of the process ? 
+a.Blocked 
+b.Running 
+c.Ready 
+d.Privileged 
+Q49.A process is 
+a.program in execution 
+b.a concurrent program 
+c.any sequential program 
+d.something which prevents deadlock
+By:Mo’Men_el_Sayed 
+31 
+Q50.Which of the following is not the state of a process ? 
+a.New 
+b.Old 
+c.Waiting 
+d.Running 
+Q51.The Process Control Block is : 
+a.Process type variable 
+b.Data Structure 
+c.a secondary storage section 
+d.a Block in memory 
+Q52.Which of the following do not belong to queues for processes ? 
+a.Job Queue 
+b.PCB queue 
+c.Device Queue 
+Q53.When the process issues an I/O request : 
+a.It is placed in an I/O queue 
+b.It is placed in a waiting queue 
+c.It is placed in the ready queue 
+d.It is placed in the Job queue 
+Q54.When a process terminates : 
+a.It is removed from all queues 
+b.It is removed from all, but the job queue
+By:Mo’Men_el_Sayed 
+32 
+c.Its process control block is de-allocated 
+d.both a and c 
+Q55.Which one of the following can not be scheduled by the kernel? 
+a.kernel level thread 
+b.user level thread 
+c.process 
+d.none of the mentioned 
+Q56.The two steps of a process execution are : 
+a.I/O Burst and CPU Burst 
+b.Memory Burst and OS Burst 
+c.Memory Burst and CPU Burst 
+d.None of the above 
+Q57.Process is ........................ 
+a.A program in execution 
+b.An instance of a program running on a computer 
+c.The entity that can be assigned to and executed 
+d.All of the above 
+Q58.In Priority Scheduling a priority number (integer) is associated with each process. 
+The CPU is allocated to the process with the highest priority (smallest integer = highest 
+priority). The problem of Starvation of low priority processes may never execute, is 
+resolved by __________. 
+a.Terminating the process 
+b.Aging 
+c.Mutual Exclusion
+By:Mo’Men_el_Sayed 
+33 
+d.Semaphore 
+Q59.CPU performance is measured through ________. 
+a.Throughput 
+b.MHz 
+c.Flaps 
+d.None of the above 
+Q60.With the round robin CPU scheduling in a time-shared system ________. 
+a.Using very large time slice degenerates in to first come first served algorithm 
+b.Using extremely small time slices improve performance 
+c.Using extremely small time slices degenerate in to last in first out algorithm 
+d.Using medium sized time slices leads to shortest request time first algorithm 
+Q61.CPU Scheduling is the basis of _________ operating system. 
+a.Batch 
+b.Real time 
+c.Multiprogramming 
+d.Mono programming 
+Q62.________ scheduler selects the jobs from the pool of jobs and loads into the ready 
+queue. 
+a.Long term 
+b.Short term 
+c.Medium term 
+d.None of the above
+By:Mo’Men_el_Sayed 
+34 
+Q63.In the blocked state 
+a.the processes waiting for I/O are found 
+b.the process which is running is found 
+c.the processes waiting for the processor are found 
+d.none of the above 
+Q64.The number of processes completed per unit time is known as __________. 
+a.Output 
+b.Throughput 
+c.Efficiency 
+d.Capacity 
+Q65.The collection of processes on the disk that is waiting to be brought into memory 
+for execution forms the ___________ . 
+a.Ready queue 
+b.Device queue 
+c.Input queue 
+d.Priority queue 
+Q66.Which scheduler controls the degree of multi programming? 
+a.Short term scheduler 
+b.Long term scheduler 
+c.Middle term scheduler 
+d.None of the above 
+Q67.A scheduling algorithm is fair 
+a.if no process faces starvation
+By:Mo’Men_el_Sayed 
+35 
+b.if a process is starved, detect it and run it with high priority 
+c.if it uses semaphores 
+d.only if a queue is used for scheduling 
+Q68.In a time-sharing operating system, when the time slot given to a process is 
+completed, the process goes from the running state to the : 
+a.Blocked state 
+b.Ready state 
+c.Suspended state 
+d.Terminated state 
+Q69.A process said to be in ___________ state if it was waiting for an event that will 
+never occur. 
+a.Safe 
+b.Unsafe 
+c.Starvation 
+d.Dead lock 
+Q70.In one of the deadlock prevention methods, impose a total ordering of all resource 
+types, and require that each process requests resources in an increasing order of 
+enumeration. This violates the _______________ condition of deadlock. 
+a.Mutual exclusion 
+b.Hold and Wait 
+c.Circular Wait 
+d.No Preemption 
+Q71.The state of a process after it encounters an I/O instruction is __________. 
+a.Ready
+By:Mo’Men_el_Sayed 
+36 
+b.Blocked/Waiting 
+c.Idle 
+d.Running 
+Q72.What is an ISR ? 
+a.Information Service Request 
+b.Interrupt Service Request 
+c.Interrupt Service Routine 
+d.Information Service Routine 
+Q73.An interrupt vector 
+a.is an address that is indexed to an interrupt handler 
+b.is a unique device number that is indexed by an address 
+c.is a unique identity given to an interrupt 
+d.None of these 
+Q74.DMA is used for : 
+a.High speed devices(disks and communications network) 
+b.Low speed devices 
+c.Saving CPU cycles 
+d.Both a and c 
+Q75.In an interrupt driven input/output : 
+a.the CPU uses polling to watch the control bit constantly, looping to see if device is 
+ready 
+b.the CPU writes one data byte to the data register and sets a bit in control register to 
+show that a byte is available
+By:Mo’Men_el_Sayed 
+37 
+c.the CPU receives an interrupt when the device is ready for the next byte 
+d.the CPU runs a user written code and does accordingly 
+Q76.Super computers typically employ _______. 
+a.Real time Operating system 
+b.Multiprocessors OS 
+c.desktop OS 
+d.None of the above 
+Q77.Distributed systems have ? 
+a.high security 
+b.better resource sharing 
+c.better system utilization 
+d.low system overhead 
+Q78.Which amongst the following is not an advantage of Distributed systems? 
+a.Reliability 
+b.Incremental growth 
+c.Resource sharing 
+d.None of the above 
+Q79._______ OS pays more attention on the meeting of the time limits. 
+a.Distributed 
+b.Network 
+c.Real time 
+d.Online
+By:Mo’Men_el_Sayed 
+38 
+Q80.Real time systems are ________. 
+a.Primarily used on mainframe computers 
+b.Used for monitoring events as they occur 
+c.Used for program development 
+d.Used for real time interactive users 
+Q81.In ______ OS, the response time is very critical. 
+a.Multitasking 
+b.Batch 
+c.Online 
+d.Real-time 
+Q82.In real time operating system 
+a.all processes have the same priority 
+b.a task must be serviced by its deadline period 
+c.process scheduling can be done only once 
+d.kernel is not required 
+Q83.Hard real time operating system has ___ jitter than a soft real time operating 
+system. 
+a.less 
+b.more 
+c.equal 
+d.none of the mentioned 
+Q84.For real time operating systems, interrupt latency should be 
+a.minimal
+By:Mo’Men_el_Sayed 
+39 
+b.maximum 
+c.zero 
+d.dependent on the scheduling 
+Q85.Real time systems need to __________ the interrupt latency. 
+a.minimize 
+b.maximize 
+c.not bother about 
+d.none of the mentioned 
+ 
+Q86.Switching the CPU to another Process requires to save state of the old process 
+and loading new process state is called as __________. 
+a.Process Blocking 
+b.Context Switch 
+c.Time Sharing 
+d.None of the above 
+Q87.Which of the following is a criterion to evaluate a scheduling algorithm? 
+a.CPU Utilization: Keep CPU utilization as high as possible 
+b.Throughput: number of processes completed per unit time 
+c.Waiting Time: Amount of time spent ready to run but not running 
+d.All of the above 
+Q88._________ does the job of allocating a process to the processor. 
+a.Long term scheduler
+By:Mo’Men_el_Sayed 
+40 
+b.Short term scheduler 
+c.Medium term scheduler 
+d.Dispatcher 
+Q89.Saving the state of the old process and loading the saved state of the new process 
+is called ________. 
+a.Context Switch 
+b.State 
+c.Multi programming 
+d.None of the above 
+Q90.The degree of Multiprogramming is controlled by 
+a.CPU Scheduler 
+b.Context Switching 
+c.Long-term Scheduler 
+d.Medium term Scheduler 
+Q91.What is a long-term scheduler ? 
+a.It selects which process has to be brought into the ready queue 
+b.It selects which process has to be executed next and allocates CPU 
+c.It selects which process to remove from memory by swapping 
+d.None of these 
+Q92.A major problem with priority scheduling is _________. 
+a.Definite blocking 
+b.Starvation 
+c.Low priority
+By:Mo’Men_el_Sayed 
+41 
+d.None of the above 
+Q93.The host repeatedly checks if the controller is busy until it is not. It is in a loop that 
+status register's busy bit becomes clear. This is called _____________ and a mechanism 
+for the hardware controller to notify the CPU that it is ready is called ___________. 
+a.Interrupt and Polling 
+b.Polling and Spooling 
+c.Polling and Interrupt 
+d.Deadlock and Starvation 
+Q94.An optimal scheduling algorithm in terms of minimizing the average waiting time 
+of a given set of processes is ________. 
+a.FCFS scheduling algorithm 
+b.Round robin scheduling algorithm 
+c.Shorest job - first scheduling algorithm 
+d.None of the above 
+Q95.In Priority Scheduling a priority number (integer) is associated with each process. 
+The CPU is allocated to the process with the highest priority (smallest integer = highest 
+priority). The problem of Starvation of low priority processes may never execute, is 
+resolved by __________. 
+a.Terminating the process 
+b.Aging 
+c.Mutual Exclusion 
+d.Semaphore 
+Q96.With the round robin CPU scheduling in a time-shared system ________. 
+a.Using very large time slice degenerates in to first come first served algorithm 
+b.Using extremely small time slices improve performance
+By:Mo’Men_el_Sayed 
+42 
+c.Using extremely small time slices degenerate in to last in first out algorithm 
+d.Using medium sized time slices leads to shortest request time first algorithm 
+Q97.Which of the following is a criterion to evaluate a scheduling algorithm? 
+a.CPU Utilization: Keep CPU utilization as high as possible 
+b.Throughput: number of processes completed per unit time 
+c.Waiting Time: Amount of time spent ready to run but not running 
+d.All of the above 
+Q98._________ does the job of allocating a process to the processor. 
+a.Long term scheduler 
+b.Short term scheduler 
+c.Medium term scheduler 
+d.Dispatcher 
+Q99.In interactive environments such as time-sharing systems, the primary 
+requirement is to provide reasonably good response time and in general, to share 
+system resources equitably. In such situations, the scheduling algorithm that is most 
+popularly applied is ________. 
+a.Shortest Remaining Time Next (SRTN) Scheduling 
+b.Priority Based Preemptive Scheduling 
+c.Round Robin Scheduling 
+d.None of the above 
+Q100.In the multi-programming environment, the main memory consisting of _________ number 
+of process. 
+a.Greater than 100 
+b.Only one
+By:Mo’Men_el_Sayed 
+43 
+c.Greater than 50 
+d.More than one 
+Q101.Saving the state of the old process and loading the saved state of the new process is 
+called ________. 
+a.Context Switch 
+b.State 
+c.Multi programming 
+d.None of the above 
+Q102.Round robin scheduling is essentially the preemptive version of ________. 
+a.FIFO 
+b.Shortest job first 
+c.Shortes remaining 
+d.Longest time first 
+Q103.The collection of processes on the disk that is waiting to be brought into memory 
+for execution forms the ___________ . 
+a.Ready queue 
+b.Device queue 
+c.Input queue 
+d.Priority queue 
+Q104.Which scheduler controls the degree of multi programming? 
+a.Short term scheduler 
+b.Long term scheduler 
+c.Middle term scheduler
+By:Mo’Men_el_Sayed 
+44 
+d.None of the above 
+Q105.A scheduling algorithm is fair 
+a.if no process faces starvation 
+b.if a process is starved, detect it and run it with high priority 
+c.if it uses semaphores 
+d.only if a queue is used for scheduling 
+Q106.What is a long-term scheduler ? 
+a.It selects which process has to be brought into the ready queue 
+b.It selects which process has to be executed next and allocates CPU 
+c.It selects which process to remove from memory by swapping 
+d.None of these 
+Q107.The only state transition that is initiated by the user process itself is : 
+a.block 
+b.wakeup 
+c.dispatch 
+d.None of these 
+Q108.In a time-sharing operating system, when the time slot given to a process is 
+completed, the process goes from the running state to the : 
+a.Blocked state 
+b.Ready state 
+c.Suspended state 
+d.Terminated state 
+Q109.In a multi-programming environment :
+By:Mo’Men_el_Sayed 
+45 
+a.the processor executes more than one process at a time 
+b.the programs are developed by more than one person 
+c.more than one process resides in the memory 
+d.a single user can execute many programs at the same time 
+Q110.Suppose that a process is in “Blocked” state waiting for some I/O service. When 
+the service is completed, it goes to the : 
+a.Running state 
+b.Ready state 
+c.Suspended state 
+d.Terminated state 
+Q111.The context of a process in the PCB of a process does not contain : 
+a.the value of the CPU registers 
+b.the process state 
+c.memory-management information 
+d.context switch time 
+Q112.Which of the following does not interrupt a running process ? 
+a.A device 
+b.Timer 
+c.Scheduler process 
+d.Power failure 
+Q113.Which of the following state transitions is not possible ? 
+a.blocked to running 
+b.ready to running
+By:Mo’Men_el_Sayed 
+46 
+c.blocked to ready 
+d.running to blocked 
+Q114.Which scheduling policy is most suitable for time shared operating system ? 
+a.Shortest job first 
+b.FCFS 
+c.LCFS 
+d.Round robin 
+Q115.Which among following scheduling algorithms give minimum average waiting time 
+a.FCFS 
+b.SJF 
+c.Round robin 
+d.On priority 
+Q116.In which scheduling policies, context switching never takes place 
+a.FCFS 
+b.round robin 
+c.Shortest job first 
+d.Pre-empitive 
+Q117.Dispatcher function is to 
+a.put tasks in I/O wait 
+b.schedule tasks in processor 
+c.change task priorities 
+d.All of above
+By:Mo’Men_el_Sayed 
+47 
+Q118.Shortest Job First executes first the job 
+a.with the least processor needs 
+b.that first entered the queue 
+c.that has been in the queue for the longest 
+d.that last entered the queue 
+Q119.Which is non pre-emptive 
+a.Round robin 
+b.FIFO 
+c.MQS 
+d.MQSF 
+Q120.Which scheduling algorithm allocates the CPU first to the process that requests 
+the CPU first? 
+a.first-come, first-served scheduling 
+b.shortest job scheduling 
+c.priority scheduling 
+d.none of the mentioned 
+Q121.Time quantum is defined in 
+a.shortest job scheduling algorithm 
+b.round robin scheduling algorithm 
+c.priority scheduling algorithm 
+d.multilevel queue scheduling algorithm 
+Q122.Scheduling is done so as to: 
+a.increase the turnaround time
+By:Mo’Men_el_Sayed 
+48 
+b.decrease the turnaround time 
+c.keep the turnaround time same 
+d.there is no relation between scheduling and turnaround time 
+Q123.Waiting time is : 
+a.the total time in the blocked and waiting queues 
+b.the total time spent in the ready queue 
+c.the total time spent in the running queue 
+d.the total time from the completion till the submission of a process 
+Q124.Response time is : 
+a.the total time taken from the submission time till the completion time 
+b.the total time taken from the submission time till the first response is produced 
+c.the total time taken from submission time till the response is output 
+d.None of these 
+Q125.To purpose of CPU Scheduling is: 
+a.increase the response time 
+b.keep the response time the same 
+c.decrease the response time 
+d.None of these 
+Q126.Round robin scheduling falls under the category of : 
+a.Non preemptive scheduling 
+b.Preemptive scheduling 
+c.Both of the above
+By:Mo’Men_el_Sayed 
+49 
+d.None of the above 
+Q127.With round robin scheduling algorithm in a time shared system, 
+a.using very large time slices converts it into First come First served scheduling 
+algorithm 
+b.using very small time slices converts it into First come First served scheduling 
+algorithm 
+c.using extremely small time slices increases performance 
+d.using very small time slices converts it into Shortest Job First algorithm 
+Q128.The FIFO algorithm : 
+a.first executes the job that came in last in the queue 
+b.first executes the job that came in first in the queue 
+c.first executes the job that needs minimal processor 
+d.first executes the job that has maximum processor needs 
+Q129.Which of the following statements are true ? 
+I. Shortest remaining time first scheduling may cause starvation 
+II. Preemptive scheduling may cause starvation 
+III. Round robin is better than FCFS in terms of response time 
+a.I only 
+b.I and III only 
+c.II and III only 
+d.I, II and III 
+Q130.The most optimal scheduling algorithm is : 
+a.FCFS – First come First served 
+b.SJF – Shortest Job First 
+c.RR – Round Robin
+By:Mo’Men_el_Sayed 
+50 
+d.None of these 
+Q131.Consider the following set of processes, the length of the CPU burst time given in 
+milliseconds : 
+Process Burst time 
+P1 6 
+P2 8 
+P3 7 
+P4 3 
+i) Assuming the above process being scheduled with the SJF scheduling algorithm : 
+a.The waiting time for process P1 is 3ms. 
+b.The waiting time for process P1 is 0ms. 
+c.The waiting time for process P1 is 16ms. 
+d.The waiting time for process P1 is 9ms. 
+Q132.Consider the following set of processes, the length of the CPU burst time given in 
+milliseconds : 
+Process Burst time 
+P1 6 
+P2 8 
+P3 7 
+P4 3 
+Assuming the above process being scheduled with the SJF scheduling algorithm : 
+a.The waiting time for process P2 is 3ms. 
+b.The waiting time for process P2 is 0ms. 
+c.The waiting time for process P2 is 16ms. 
+d.The waiting time for process P2 is 9ms. 
+Q133.Consider the following set of processes, the length of the CPU burst time given in 
+milliseconds : 
+Process Burst time 
+P1 6 
+P2 8 
+P3 7
+By:Mo’Men_el_Sayed 
+51 
+P4 3 
+Assuming the above process being scheduled with the SJF scheduling algorithm: 
+a.The waiting time for process P4 is 3ms. 
+b.The waiting time for process P4 is 0ms. 
+c.The waiting time for process P4 is 16ms. 
+d.The waiting time for process P4 is 9ms. 
+Q134.Consider the following set of processes, the length of the CPU burst time given in 
+milliseconds : 
+Process Burst time 
+P1 6 
+P2 8 
+P3 7 
+P4 3 
+Assuming the above process being scheduled with the SJF scheduling algorithm : 
+a.The waiting time for process P3 is 3ms. 
+b.The waiting time for process P3 is 0ms. 
+c.The waiting time for process P3 is 16ms. 
+d.The waiting time for process P3 is 9ms. 
+Q135.One of the disadvantages of the priority scheduling algorithm is that : 
+a.it schedules in a very complex manner 
+b.its scheduling takes up a lot of time 
+c.it can lead to some low priority process waiting indefinitely for the CPU 
+d.None of these 
+Q136.‘Aging’ is : 
+a.keeping track of cache contents 
+b.keeping track of what pages are currently residing in memory
+By:Mo’Men_el_Sayed 
+52 
+c.keeping track of how many times a given page is referenced 
+d.increasing the priority of jobs to ensure termination in a finite time 
+Q137.A solution to the problem of indefinite blockage of low – priority processes is : 
+a.Starvation 
+b.Wait queue 
+c.Ready queue 
+d.Aging 
+Q138.Consider a uniprocessor computer system that has 2 processes and both of them 
+alternate 10ms CPU bursts with 90ms I / O bursts. Both the processes were created at 
+nearly the same time and can proceed in parallel. What is the scheduling strategy for 
+this system that will result in the least CPU utilization (over a long period of time) ? 
+a.Round Robin scheduling with a time quantum of 5ms 
+b.First Come First Served scheduling 
+c.Shortest remaining time first 
+d.Static priority scheduling with different priorities for the two processes 
+Q139.We have a uniprocessor machine where a set of n tasks with known run times r1, 
+r2, r3,….rn are to be run. What will be the maximum throughput result of the processor 
+scheduling algorithm? 
+a.Shortest Job First 
+b.First Come First Served 
+c.Round Robin 
+d.Highest Response Ratio Next 
+Q140.Three CPU intensive processes requires 10, 20 and 30 time units and arrive at 
+times 0, 2 and 6 respectively. The operating system implements a shortest remaining 
+time first scheduling algorithm. Considering that the context switches at time zero and 
+at the end are not counted the number of context switches are needed is ______.
+By:Mo’Men_el_Sayed 
+53 
+a.4 
+b.3 
+c.2 
+d.1 
+Q141.Program ‘preemption’ is 
+a.forced de allocation of the CPU from a program which is executing on the CPU. 
+b.release of CPU by the program after completing its task. 
+c.forced allotment of CPU by a program to itself. 
+d.a program terminating itself due to detection of an error. 
+Q142.___________ is a technique of improving the priority of process waiting in Queue for 
+CPU allocation. 
+a.Starvation 
+b.Ageing 
+c.Revocation 
+d.Relocation 
+Q143............... refers to a situation in which a process is ready to execute but is 
+continuously denied access to a processor in deference to other processes. 
+a.Synchronization 
+b.Mutual Exclusion 
+c.Dead lock 
+d.Starvation 
+Q144.Which of the following are the states of a five state process model? 
+ 
+i) Running ii) Ready iii) New iv) Exit v) Destroy
+By:Mo’Men_el_Sayed 
+54 
+a.i, ii, iii and v only 
+b.i, ii, iv and v only 
+c.i, ii, iii, and iv only 
+d.All i, ii, iii, iv and v 
+Q145.State which statement is true for Suspended process? 
+ 
+i) The process is not immediately available for execution. 
+ii) The process may be removed from suspended state automatically without removal order. 
+a.i only 
+b.ii only 
+c.i and ii only 
+d.None of the above 
+Q146.In process scheduling, …………………… determines when new processes are admitted to the 
+system. 
+a.long term scheduling 
+b.medium term scheduling 
+c.short term scheduling 
+d.none of the above 
+Q147.In process scheduling, ………………… determines which ready process will be executed next 
+by processor. 
+a.long term scheduling 
+b.medium term scheduling 
+c.short term scheduling 
+d.none of the above
+By:Mo’Men_el_Sayed 
+55 
+Q148.With deadlock detection, requested resources are granted to 
+a.Resources 
+b.Programs 
+c.Processes 
+d.Users 
+Q149.A set of processes is deadlock if 
+a.each process is blocked and will remain so forever 
+b.each process is terminated 
+c.all processes are trying to kill each other 
+d.none of the mentioned 
+Q150.A process said to be in ___________ state if it was waiting for an event that will 
+never occur. 
+a.Safe 
+b.Unsafe 
+c.Starvation 
+d.Dead lock 
+Q151.Resource locking ________. 
+a.Allows multiple tasks to simultaneously use resourc 
+b.Forces only one task to use any resource at any time 
+c.Can easily cause a dead lock condition 
+d.Is not used for disk drives 
+Q152.A set of resources' allocations such that the system can allocate resources to each 
+process in some order, and still avoid a deadlock is called ________.
+By:Mo’Men_el_Sayed 
+56 
+a.Unsafe state 
+b.Safe state 
+c.Starvation 
+d.Greeedy allocation 
+Q153.A process is starved 
+a.if it is permanently waiting for a resource 
+b.if semaphores are not used 
+c.if a queue is not used for scheduling 
+d.if demand paging is not properly implemented 
+Q154.The state of a process after it encounters an I/O instruction is __________. 
+a.Ready 
+b.Blocked/Waiting 
+c.Idle 
+d.Running 
+Q155.Semophores are used to solve the problem of 
+a.race condition 
+b.process synchronization 
+c.mutual exclusion 
+d.belady problem 
+Q156.Semaphores function is to 
+a.synchronize critical resources to prevent deadlock
+By:Mo’Men_el_Sayed 
+57 
+b.synchronize processes for better CPU utilization 
+c.used for memory management 
+d.none of above 
+Q157.Four necessary conditions for deadlock are non pre-emption, circular wait, hold 
+and wait and 
+a.mutual exclusion 
+b.race condition 
+c.buffer overflow 
+d.None of above 
+Q158.A problem encountered in multitasking when a process is perpetually denied 
+necessary resources is called 
+a.deadlock 
+b.starvation 
+c.inversion 
+d.aging 
+Q159.To avoid deadlock 
+a.there must be a fixed number of resources to allocate 
+b.resource allocation must be done only once 
+c.all deadlocked processes must be aborted 
+d.inversion technique can be used 
+Q160.The number of resources requested by a process : 
+a.must always be less than the total number of resources available in the system 
+b.must always be equal to the total number of resources available in the system
+By:Mo’Men_el_Sayed 
+58 
+c.must not exceed the total number of resources available in the system 
+d.must exceed the total number of resources available in the system 
+Q161.The wait-for graph is a deadlock detection algorithm that is applicable when : 
+a.all resources have a single instance 
+b.all resources have multiple instances 
+c.all resources have a single 7 multiple instance 
+d.all of the mentioned 
+Q162.If the wait for graph contains a cycle : 
+a.then a deadlock does not exist 
+b.then a deadlock exists 
+c.then the system is in a safe state 
+d.either deadlock exists or system is in a safe state 
+Q163.A deadlock can be broken by : 
+a.abort one or more processes to break the circular wait 
+b.abort all the process in the system 
+c.preempt all resources from all processes 
+d.none of the mentioned 
+Q164.In memory management , a technique called as paging, physical memory is 
+broken into fixed-sized blocks called ___________. 
+a.Pages 
+b.Frames 
+c.Blocks 
+d.Segments
+By:Mo’Men_el_Sayed 
+59 
+Q165.Memory protection is normally done by 
+a.the processor and the associated hardware 
+b.the operating system 
+c.the compiler 
+d.the user program 
+Q166.CPU can access which type of memory directly? 
+a.random-access memory 
+b.magnetic disk 
+c.magnetic tape 
+d.None of the above 
+Q167.What works on the principle of locality? 
+a.Cache memory 
+b.Interrupts 
+c.Polling 
+d.DMA 
+Q168.The memory allocation scheme subject to “external” fragmentation is 
+a.segmentation 
+b.swapping 
+c.pure demand paging 
+d.multiple fixed contiguous partitions 
+Q169.The different types of tables maintained by the operating system are ............. 
+a.memory, logical , I/O file
+By:Mo’Men_el_Sayed 
+60 
+b.memory, I/O, file, physical 
+c.memory, I/O, file, process 
+d.memory, logical, I/O, physical 
+Q170.Which of the following information not included in memory table ? 
+a.The allocation of main memory to process 
+b.The allocation of secondary memory to process 
+c.Any information needed to manage virtual memory 
+d.Any information about the existence of file 
+Q171.Memory management is 
+a.not used in modern operating system 
+b.replaced with virtual memory on current system 
+c.not used on multiprogramming systems 
+d.critical for even the simplest operating system 
+Q172.Run time mapping from virtual to physical address is done by 
+a.Memory management unit 
+b.CPU 
+c.PCI 
+d.None of the mentioned 
+Q173.Memory management technique in which system stores and retrieves data from 
+secondary storage for use in main memory is called 
+a.fragmentation 
+b.paging 
+c.mapping
+By:Mo’Men_el_Sayed 
+61 
+d.none of the mentioned 
+Q174.Program always deals with 
+a.logical address 
+b.absolute address 
+c.physical address 
+d.relative address 
+Q175.The page table contains 
+a.base address of each page in physical memory 
+b.page offset 
+c.page size 
+d.none of the mentioned 
+Q176.What is compaction? 
+a.a technique for overcoming internal fragmentation 
+b.a paging technique 
+c.a technique for overcoming external fragmentation 
+d.a technique for overcoming fatal error 
+Q177.Operating System maintains the page table for 
+a.each process 
+b.each thread 
+c.each instruction 
+d.each address 
+Q178.The main memory accommodates : 
+a.operating system
+By:Mo’Men_el_Sayed 
+62 
+b.cpu 
+c.user processes 
+d.all of the mentioned 
+Q179.The operating system is : 
+a.in the low memory 
+b.in the high memory 
+c.either low or high memory (depending on the location of interrupt vector) 
+d.none of the mentioned 
+Q180.In contiguous memory allocation : 
+a.each process is contained in a single contiguous section of memory 
+b.all processes are contained in a single contiguous section of memory 
+c.the memory space is contiguous 
+d.none of the mentioned 
+Q181.When memory is divided into several fixed sized partitions, each partition may 
+contain ________ 
+a.exactly one process 
+b.at least one process 
+c.multiple processes at once 
+d.none of the mentioned 
+Q182.In fixed sized partition, the degree of multi programming is bounded by ___________ 
+a.the number of partitions 
+b.the CPU utilization 
+c.the memory size
+By:Mo’Men_el_Sayed 
+63 
+d.all of the mentioned 
+Q183.The first fit, best fit and worst fit are strategies to select a ______ 
+a.process from a queue to put in memory 
+b.processor to run the next process 
+c.free hole from a set of available holes 
+d.all of the mentioned 
+Q184.In internal fragmentation, memory is internal to a partition and : 
+a.is being used 
+b.is not being used 
+c.is always used 
+d.none of the mentioned 
+Q185.A solution to the problem of external fragmentation is : 
+a.compaction 
+b.larger memory space 
+c.smaller memory space 
+d.none of the mentioned 
+Q186.Another solution to the problem of external fragmentation problem is to : 
+a.permit the logical address space of a process to be noncontiguous 
+b.permit smaller processes to be allocated memory at last 
+c.permit larger processes to be allocated memory at last 
+d.all of the mentioned 
+Q187.If relocation is static and is done at assembly or load time, compaction _________ 
+a.cannot be done
+By:Mo’Men_el_Sayed 
+64 
+b.must be done 
+c.must not be done 
+d.can be done 
+Q188.The disadvantage of moving all process to one end of memory and all holes to the 
+other direction, producing one large hole of available memory is : 
+a.the cost incurred 
+b.the memory used 
+c.the CPU used 
+d.all of the mentioned 
+Q189.__________ is generally faster than _________ and _________ 
+a.first fit, best fit, worst fit 
+b.best fit, first fit, worst fit 
+c.worst fit, best fit, first fit 
+d.none of the mentioned 
+Q190.External fragmentation exists when : 
+a.enough total memory exists to satisfy a request but it is not contiguous 
+b.the total memory is insufficient to satisfy a request 
+c.a request cannot be satisfied even when the total memory is free 
+d.none of the mentioned 
+Q191.External fragmentation will not occur when : 
+a.first fit is used 
+b.best fit is used
+By:Mo’Men_el_Sayed 
+65 
+c.worst fit is used 
+d.no matter which algorithm is used, it will always occur 
+Q192.Sometimes the overhead of keeping track of a hole might be : 
+a.larger than the memory 
+b.larger than the hole itself 
+c.very small 
+d.all of the mentioned 
+Q193.When the memory allocated to a process is slightly larger than the process, then : 
+a.internal fragmentation occurs 
+b.external fragmentation occurs 
+c.both internal and external fragmentation occurs 
+d.neither internal nor external fragmentation occurs 
+Q194.Physical memory is broken into fixed-sized blocks called ________ 
+a.frames 
+b.pages 
+c.backing store 
+d.none of the mentioned 
+Q195.Logical memory is broken into blocks of the same size called _________ 
+a.frames 
+b.pages 
+c.backing store 
+d.none of the mentioned
+By:Mo’Men_el_Sayed 
+66 
+Q196.Every address generated by the CPU is divided into two parts : 
+a.frame bit & page number 
+b.page number & page offset 
+c.page offset & frame bit 
+d.frame offset & page offset 
+Q197.The __________ is used as an index into the page table. 
+a.frame bit 
+b.page number 
+c.page offset 
+d.frame offset 
+Q198.The _____ table contains the base address of each page in physical memory. 
+a.process 
+b.memory 
+c.page 
+d.frame 
+Q199.The size of a page is typically : 
+a.varied 
+b.power of 2 
+c.power of 4 
+d.none of the mentioned 
+Q200.With paging there is no ________ fragmentation. 
+a.internal
+By:Mo’Men_el_Sayed 
+67 
+b.external 
+c.either type of 
+d.none of the mentioned 
+Q201.The operating system maintains a ______ table that keeps track of how many 
+frames have been allocated, how many are there, and how many are available. 
+a.page 
+b.mapping 
+c.frame 
+d.memory 
+Q202.Paging increases the ______ time. 
+a.waiting 
+b.execution 
+c.context – switch 
+d.all of the mentioned 
+Q203.Paging _________. 
+a.solves the memory fragmentation problem 
+b.allows modular programming 
+c.allows structured programming 
+d.avoids deadlock 
+Q204.Thrashing occurs ________. 
+a.when excessive swapping takes place 
+b.when you thrash your computer 
+c.whenever deadlock occurs
+By:Mo’Men_el_Sayed 
+68 
+d.when no swapping takes place 
+Q205.Thrashing ________. 
+a.Reduces page I/O 
+b.Decreases the degree of multiprogramming 
+c.Implies excessive page I/O 
+d.Improve the system performance 
+Q206.If the property of locality of reference is well pronounced in a program 
+a.the number of page faults will be more 
+b.the number of page faults will be less 
+c.the number of page faults will same 
+d.none of above 
+Q207.Which scheduler performs the "swapping out" or "swapping in"? 
+a.Long-term scheduling 
+b.Medium-term scheduling 
+c.Short-term scheduling 
+d.None of the above. 
+Q208.Which technique is used to temporarily removing non-active programs from the 
+memory of computer system? 
+a.Swapping 
+b.Spooling 
+c.Scheduler 
+d.None of the above. 
+Q209.Where does the swap space reside?
+By:Mo’Men_el_Sayed 
+69 
+a.Disk 
+b.ROM 
+c.RAM 
+d.On - chip cache 
+Q210.Which of the following is / are the essential contents in each entry of a page 
+table? 
+a.Page frame number 
+b.Virtual page number 
+c.Access right information 
+d.Both page frame number and virtual page number 
+Q211.The term ‘page traffic’ describes 
+a.number of pages in memory at a given instant. 
+b.number of papers required to be brought in at a given page request. 
+c.the movement of pages in and out of memory. 
+d.number of pages of executing programs loaded in memory. 
+Q212.Poor response time is usually caused by 
+a.Process busy 
+b.High I/O rates 
+c.High paging rates 
+d.Any of the above 
+Q213.____________ is a technique of temporarily removing inactive programs from the 
+memory of computer system 
+a.Swapping
+By:Mo’Men_el_Sayed 
+70 
+b.Spooling 
+c.Semaphore 
+d.Scheduler 
+Q214.State true of false. 
+ 
+i) With paging, each process is divided into relatively small, fixed-size pages. 
+ii) Segmentation provides for the use of pieces of varying size. 
+a.True, False 
+b.True, True 
+c.False, True 
+d.False, False 
+Q215.Moving Process from main memory to disk is called 
+a.scheduling 
+b.caching 
+c.swapping 
+d.spooling 
+Q216.Address Binding is : 
+a.going to an address in memory 
+b.locating an address with the help of another address 
+c.binding two addresses together to form a new address in a different memory space 
+d.a mapping from one address space to another 
+Q217.Binding of instructions and data to memory addresses can be done at : 
+a.Compile time
+By:Mo’Men_el_Sayed 
+71 
+b.Load time 
+c.Execution time 
+d.All of the mentioned 
+Q218.If the process can be moved during its execution from one memory segment to 
+another, then binding must be : 
+a.delayed until run time 
+b.preponed to compile time 
+c.preponed to load time 
+d.none of the mentioned 
+Q219.Dynamic loading is : 
+a.loading multiple routines dynamically 
+b.loading a routine only when it is called 
+c.loading multiple routines randomly 
+d.none of the mentioned 
+Q220.The advantage of dynamic loading is that : 
+a.A used routine is used multiple times 
+b.An unused routine is never loaded 
+c.CPU utilization increases 
+d.All of the mentioned 
+Q221.The idea of overlays is to : 
+a.data that are needed at any given time 
+b.enable a process to be larger than the amount of memory allocated to it
+By:Mo’Men_el_Sayed 
+72 
+c.keep in memory only those instructions 
+d.all of the mentioned 
+Q222.The ___________ must design and program the overlay structure. 
+a.programmer 
+b.system architect 
+c.system designer 
+d.none of the mentioned 
+Q223.The ___________ swaps processes in and out of the memory. 
+a.Memory manager 
+b.CPU 
+c.CPU manager 
+d.User 
+Q224.If binding is done at assembly or load time, then the process _____ be moved to 
+different locations after being swapped out and in again. 
+a.can 
+b.must 
+c.can never 
+d.may 
+Q225.In a system that does not support swapping, 
+a.the compiler normally binds symbolic addresses (variables) to relocatable addresses 
+b.the compiler normally binds symbolic addresses to physical addresses 
+c.the loader binds relocatable addresses to physical addresses
+By:Mo’Men_el_Sayed 
+73 
+d.binding of symbolic addresses to physical addresses normally takes place during 
+execution 
+Q226.The address generated by the CPU is referred to as : 
+a.Physical address 
+b.Logical address 
+c.Neither physical nor logical 
+d.None of the mentioned 
+Q227.The address loaded into the memory address register of the memory is referred 
+to as : 
+a.Physical address 
+b.Logical address 
+c.Neither physical nor logical 
+d.None of the mentioned 
+Q228.The run time mapping from virtual to physical addresses is done by a hardware 
+device called the : 
+a.Virtual to physical mapper 
+b.Memory management unit 
+c.Memory mapping unit 
+d.None of the mentioned 
+Q229.The size of a process is limited to the size of : 
+a.physical memory 
+b.external storage 
+c.secondary storage
+By:Mo’Men_el_Sayed 
+74 
+d.none of the mentioned 
+Q230.If execution time binding is being used, then a process ______ be swapped to a 
+different memory space. 
+a.has to be 
+b.can never 
+c.must 
+d.may 
+Q231.Swapping requires a _________ 
+a.motherboard 
+b.keyboard 
+c.monitor 
+d.backing store 
+Q232.The _________ time in a swap out of a running process and swap in of a new process into 
+the memory is very high. 
+a.context – switch 
+b.waiting 
+c.execution 
+d.all of the mentioned 
+Q233.The major part of swap time is _______ time. 
+a.waiting 
+b.transfer 
+c.execution 
+d.none of the mentioned
+By:Mo’Men_el_Sayed 
+75 
+Q234.Swapping _______ be done when a process has pending I/O, or has to execute I/O 
+operations only into operating system buffers. 
+a.must 
+b.can 
+c.must never 
+d.maybe 
+Q235.Swap space is allocated : 
+a.as a chunk of disk 
+b.separate from a file system 
+c.into a file system 
+d.all of the mentioned 
+Q236.Which of the following is TRUE ? 
+a.Overlays are used to increase the size of physical memory 
+b.Overlays are used to increase the logical address space 
+c.When overlays are used, the size of a process is not limited to the size of the physical 
+memory 
+d.Overlays are used whenever the physical address space is smaller than the logical 
+address space 
+Q237.Swapping 
+a.works best with many small partitions 
+b.allows many programs to use memory simultaneously 
+c.allows each program in turn to use the memory 
+d.does not work with overlaying
+By:Mo’Men_el_Sayed 
+76 
+Q238.Memory tables are used to keep track of 
+a.Real and Virtual Memory 
+b.I/O Devices 
+c.Resources 
+d.I/O Modules 
+Q239.Virtual Memory is commonly implemented by __________. 
+a.Segmentation 
+b.Swapping 
+c.Demand Paging 
+d.None of the above 
+Q240.Virtual memory is __________. 
+a.An extremely large main memory 
+b.An extremely large secondary memory 
+c.An illusion of extremely large main memory 
+d.A type of memory used in super computers 
+Q241.The high paging activity is called ________. 
+a.Inter process communication 
+b.Thrashing 
+c.Context Switch 
+d.None of the above 
+Q242.In a virtual memory environment 
+a.segmentation and page tables are stored in the cache and do not add any substantial 
+overhead
+By:Mo’Men_el_Sayed 
+77 
+b.slow down the computer system considerable 
+c.segmentation and page tables are stored in the RAM 
+d.none of the above 
+Q243.The mechanism that bring a page into memory only when it is needed is called 
+_____________ 
+a.Segmentation 
+b.Fragmentation 
+c.Demand Paging 
+d.Page Replacement 
+Q244.Demand paged memory allocation 
+a.allows the virtual address space to be independent of the physical memory 
+b.allows the virtual address space to be a multiple of the physical memory size 
+c.allows deadlock tobe detected in paging schemes 
+d.is present only in Windows NT 
+Q245.What is a page fault ? 
+a.is an spelling error in a page in memory 
+b.is a reference to a page which is in another program 
+c.is an access to a page not currently in memory 
+d.always occurs whenever a page is accessed 
+Q246.Size of virtual memory depends on 
+a.size of data bus 
+b.size of address bus
+By:Mo’Men_el_Sayed 
+78 
+c.size of main memory 
+d.none of above 
+Q247.If hardware does not support _________ then a multi - user and multi - processing 
+operating system cannot be implemented. 
+a.At least two modes of CPU execution 
+b.Demand paging 
+c.DMA for disk transfer 
+d.Address translation 
+Q248.A set of techniques that allow to execute a program which is not entirely in 
+memory is called 
+a.demand paging 
+b.virtual memory 
+c.auxiliary memory 
+d.secondary memory 
+Q249.Page fault frequency in an operating system is reduced when the 
+a.processes tend to the I/O-bound 
+b.size of pages is reduced 
+c.processes tend to be CPU-bound 
+d.locality of reference is applicable to the process 
+Q250.Virtual memory can be implemented with 
+a.Segmentation 
+b.Paging 
+c.None of the above
+By:Mo’Men_el_Sayed 
+79 
+d.Both of the above 
+Q251.A process that execute only in main memory is referred to as ……………… and that allocated 
+in disk is referred to a ……………. 
+a.virtual memory, true memory 
+b.virtual memory, real memory 
+c.real memory, virtual memory 
+d.imaginary memory, real memory 
+Q252.Paging 
+a.is a method of memory allocation by which the program is subdivided into equal 
+portions, or pages and core is subdivided into equal portions or blocks. 
+b.consists of those addresses that may be generated by a processor during execution 
+of a computation. 
+c.is a method of allocating processor time. 
+d.allows multiple programs to reside in separate areas of core at the time. 
+Q253.Virtual Memory 
+a.is a method of memory allocation by which the program is subdivided into equal 
+portions, or pages and core is subdivided into equal portions or blocks. 
+b.consists of those addresses that may be generated by a processor during execution 
+of a computation. 
+c.is a method of allocating processor time. 
+d.allows multiple programs to reside in separate areas of core at the time. 
+Q254.Paging is implemented in 
+a.Operating System 
+b.Hardware 
+c.Software
+By:Mo’Men_el_Sayed 
+80 
+d.All of them 
+Q255.Page-Table length register (PTLR) indicates size of 
+a.Page Table 
+b.Paging File 
+c.Main Memory 
+d.Virtual Memory 
+Q256.Dived logical memory into blocks with the same size as frames are called 
+a.Pages 
+b.Frames 
+c.Page Table 
+d.Segmentation 
+Q257.Which memory allocation policy allocate the largest hole to the process? 
+a.Best-Fit 
+b.Worst-Fit 
+c.First-Fit 
+d.None of them 
+Q258.When there is enough memory to fit a process in memory, but the space is not 
+contiguous we need 
+a.Internal Fragmentation 
+b.Virtual Fragmentation 
+c.External Fragmentation 
+d.None of them
+By:Mo’Men_el_Sayed 
+81 
+Q259.The problem of thrashing is effected scientifically by ________. 
+a.Program structure 
+b.Program size 
+c.Primary storage size 
+d.None of the above 
+Q260._________ allocates the largest hole (free fragment) available in the memory. 
+a.Best Fit 
+b.Worst Fit 
+c.First Fit 
+d.None of the above 
+Q261.If all page frames are initially empty, and a process is allocated 3 page frames in 
+real memory and references its pages in the order 1 2 3 2 4 5 2 3 2 4 1 and the page 
+replacement is FIFO, the total number of page faults caused by the process will be 
+__________. 
+a.10 
+b.7 
+c.8 
+d.9 
+Q262.A page fault occurs 
+a.when the page is not in the memory 
+b.when the page is in the memory 
+c.when the process enters the blocked state 
+d.when the process is in the ready state 
+Q263.The LRU algorithm
+By:Mo’Men_el_Sayed 
+82 
+a.pages out pages that have been used recently 
+b.pages out pages that have not been used recently 
+c.pages out pages that have been least used recently 
+d.pages out the first page in a given area 
+Q264.Operating system supports different page replacement policy. From the given 
+below option which is not a valid page replacement policy? 
+a.Least Recently Used 
+b.First in first out 
+c.Currently used policy 
+d.Optimal page replacement policy 
+Q265.The optimal page replacement algorithm will select the page that 
+a.has been used least number of times. 
+b.has been used most number of times. 
+c.has been used for the longest time in the past. 
+d.will not be used for the longest time in future. 
+Q266.When size of the memory is increased the page replacement policy that 
+sometimes leads to more page faults is called _________ . 
+a.FIFO 
+b.Optimal 
+c.LRU 
+d.None of the above 
+Q267.We have a process that has been allocated 3 page frames and initially none of the 
+pages of the process are available in the memory. The following sequence of page 
+references (reference string) is made by the process :
+By:Mo’Men_el_Sayed 
+83 
+1, 2, 1, 3, 7, 4, 5, 6, 3, 1 
+If Optimal Page Replacement policy is used, _______ page faults will occur for the above 
+reference string. 
+a.7 
+b.8 
+c.9 
+d.6 
+Q268.‘LRU’ page replacement policy is 
+a.Last Replaced Unit. 
+b.Last Restored Unit. 
+c.Least Recently Used. 
+d.Least Required Unit. 
+Q269.Which of the following statements is false ? 
+a.the technique of storage compaction involves moving all occupied areas of storage to 
+one end or other of main storage 
+b.compaction does not involve relocation of programs 
+c.compaction is also know as garbage collection 
+d.the system must stop everything while it performs the compaction 
+Ans: 
+1. 
+d 
+2. 
+a 
+3. 
+d 
+4. 
+b 
+5. 
+d 
+6. 
+b
+By:Mo’Men_el_Sayed 
+84 
+7. 
+d 
+8. 
+b 
+9. 
+d 
+10. a 
+11. 
+a 
+12. d 
+13. c 
+14. c 
+15. d 
+16. d 
+17. a 
+18. b 
+19. b 
+20. a 
+21. c 
+22. d 
+23. c 
+24. a 
+25. d 
+26. c 
+27. b 
+28. d 
+29. c 
+30. c 
+31. a 
+32. c 
+33. d 
+34. c 
+35. a 
+36. a 
+37. c 
+38. b 
+39. a 
+40. a
+By:Mo’Men_el_Sayed 
+85 
+41. d 
+42. c 
+43. b 
+44. d 
+45. a 
+46. a 
+47. a 
+48. d 
+49. a 
+50. b 
+51. b 
+52. b 
+53. a 
+54. d 
+55. b 
+56. a 
+57. d 
+58. b 
+59. a 
+60. a 
+61. c 
+62. a 
+63. a 
+64. b 
+65. c 
+66. b 
+67. a 
+68. b 
+69. d 
+70. c 
+71. b 
+72. c 
+73. a 
+74. d
+By:Mo’Men_el_Sayed 
+86 
+75. c 
+76. b 
+77. b 
+78. a 
+79. c 
+80. b 
+81. d 
+82. b 
+83. a 
+84. a 
+85. a 
+86. b 
+87. d 
+88. d 
+89. a 
+90. c 
+91. a 
+92. b 
+93. c 
+94. c 
+95. b 
+96. a 
+97. d 
+98. d 
+99. c 
+100. d 
+101. a 
+102. a 
+103. c 
+104. b 
+105. a 
+106. a 
+107. a 
+108. b
+By:Mo’Men_el_Sayed 
+87 
+109. c 
+110. b 
+111. d 
+112. c 
+113. a 
+114. d 
+115. b 
+116. a 
+117. a 
+118. a 
+119. b 
+120. a 
+121. b 
+122. b 
+123. b 
+124. b 
+125. c 
+126. b 
+127. a 
+128. b 
+129. d 
+130. b 
+131. a 
+132. c 
+133. b 
+134. d 
+135. c 
+136. d 
+137. d 
+138. a 
+139. a 
+140. c 
+141. a 
+142. b
+By:Mo’Men_el_Sayed 
+88 
+143. d 
+144. c 
+145. a 
+146. a 
+147. c 
+148. c 
+149. a 
+150. d 
+151. b 
+152. b 
+153. a 
+154. b 
+155. c 
+156. a 
+157. a 
+158. b 
+159. a 
+160. c 
+161. a 
+162. b 
+163. a 
+164. b 
+165. a 
+166. a 
+167. a 
+168. a 
+169. c 
+170. d 
+171. b 
+172. a 
+173. b 
+174. a 
+175. a 
+176. c
+By:Mo’Men_el_Sayed 
+89 
+177. a 
+178. a 
+179. c 
+180. a 
+181. a 
+182. a 
+183. c 
+184. b 
+185. a 
+186. a 
+187. a 
+188. a 
+189. a 
+190. a 
+191. d 
+192. b 
+193. a 
+194. a 
+195. b 
+196. b 
+197. b 
+198. c 
+199. b 
+200. b 
+201. c 
+202. c 
+203. a 
+204. a 
+205. c 
+206. b 
+207. b 
+208. a 
+209. a 
+210. a
+By:Mo’Men_el_Sayed 
+90 
+211. c 
+212. d 
+213. a 
+214. b 
+215. c 
+216. d 
+217. d 
+218. a 
+219. b 
+220. b 
+221. d 
+222. a 
+223. a 
+224. c 
+225. a 
+226. b 
+227. a 
+228. b 
+229. a 
+230. d 
+231. d 
+232. a 
+233. b 
+234. c 
+235. a 
+236. c 
+237. c 
+238. a 
+239. c 
+240. c 
+241. b 
+242. c 
+243. c 
+244. a
+By:Mo’Men_el_Sayed 
+91 
+245. c 
+246. b 
+247. b 
+248. b 
+249. d 
+250. d 
+251. c 
+252. a 
+253. b 
+254. b 
+255. a 
+256. a 
+257. b 
+258. c 
+259. a 
+260. b 
+261. d 
+262. a 
+263. c 
+264. c 
+265. d 
+266. a 
+267. a 
+268. c 
+269. b 
+ 
+SIM_MID_2022: 
+Questions with Chosen Options: 
+ 1. Information about a process is maintained in a: 
+a) Stack
+By:Mo’Men_el_Sayed 
+92 
+b) Translation lookaside buffer 
+c) Process Control Block 
+d) Program control Block 
+ 2. Real-time systems are: 
+a) Primarily used on mainframe computers 
+b) Used for monitoring events as they occur 
+c) Used for program development 
+d) Used for real-time interactive users 
+ 3. PCB is: 
+a) Program Control Block 
+b) Process Control Block 
+c) Process Communication Block 
+d) None of the above 
+ 4. Inter-process communication can be done through: 
+a) Mails 
+b) Messages 
+c) System calls 
+d) Traps 
+ 5. What is an operating system? 
+a) Collection of programs that manages hardware resources 
+b) System service provider to the application programs 
+c) Link to interface the hardware and application programs 
+d) All of the mentioned 
+ 6. Which of the following is contained in a Process Control Block (PCB)?
+By:Mo’Men_el_Sayed 
+93 
+a) Process Number 
+b) List of Open files 
+c) Memory Limits 
+d) All of the Above 
+ 7. To access the services of the operating system, the interface is provided by the: 
+a) System calls 
+b) API 
+c) Library 
+d) Assembly instructions 
+ 8. A software that manages the time of a microprocessor is called: 
+a) Kernel 
+b) Shell 
+c) Processor 
+d) Device Driver 
+ 9. Supercomputers typically employ: 
+a) Real-time Operating system 
+b) Multiprocessors OS 
+c) Desktop OS 
+d) None of the above 
+ 10. The process-related activities can be performed by: 
+a) Editors 
+b) Compilers 
+c) System Call 
+d) Caching
+By:Mo’Men_el_Sayed 
+94 
+ 11. What is a shell? 
+a) It is a hardware component 
+b) It is a command interpreter 
+c) It is a part in compiler 
+d) It is a tool in CPU scheduling 
+ 12. The operating system manages: 
+a) Memory 
+b) Processor 
+c) Disk and I/O devices 
+d) All of the above 
+ 13. The hardware mechanism that enables a device to notify the CPU is called: 
+a) Polling 
+b) Interrupt 
+c) System call 
+d) None of the above 
+ 14. In Unix, which system call creates a new process? 
+a) Fork 
+b) Create 
+c) New 
+d) None of the mentioned 
+ 15. Process state is a part of: 
+a) Process Control Block 
+b) Inode 
+c) File Allocation Table
+By:Mo’Men_el_Sayed 
+95 
+d) None of the above 
+ 16. Switching the CPU to another process is called: 
+a) Process Blocking 
+b) Context Switch 
+c) Time sharing 
+d) None of the above 
+ 17. In the running state: 
+a) Only the process which has control of the processor is found 
+b) All the processes waiting for I/O to be completed are found 
+c) All the processes waiting for the processor are found 
+d) None of the above 
+ 18. The OS that focuses on meeting time limits is: 
+a) Distributed 
+b) Network 
+c) Real-time 
+d) Online 
+ 19. What is inter-process communication? 
+a) Communication within the process 
+b) Communication between two processes 
+c) Communication between two threads of the same process 
+d) None of the mentioned 
+ 20. A thread is a: 
+a) Heavyweight process 
+b) Multiprocess
+By:Mo’Men_el_Sayed 
+96 
+c) Inter Thread 
+d) Lightweight process 
+ 21. In a pure Kernel Level Thread facility, thread management is done by the: 
+a) Application 
+b) Program 
+c) Kernel 
+d) Threads 
+ 22. The technique for sharing computer time among jobs is called: 
+a) Time sharing 
+b) Time out 
+c) Time domain 
+d) Multitasking 
+ 23. Which scheduler controls the degree of multi-programming? 
+a) Short-term scheduler (STS) 
+b) Long-term scheduler (LTS) 
+c) Middle-term scheduler 
+d) None of the above 
+ 24. A process is: 
+a) Program in execution 
+b) A concurrent program 
+c) Any sequential program 
+d) Something which prevents deadlock 
+ 25. The state of a process after it encounters an I/O instruction is: 
+a) Ready
+By:Mo’Men_el_Sayed 
+97 
+b) Blocked/Waiting 
+c) Idle 
+d) Running 
+ 26. The kernel keeps track of tasks using: 
+a) Process control block 
+b) User control block 
+c) Memory control block 
+d) None of the above 
+ 27. Which is not a state of the process? 
+a) Blocked 
+b) Running 
+c) Ready 
+d) Privileged 
+ 28. The process that spends most of its time on the CPU is called: 
+a) Lightweight process 
+b) Heavyweight process 
+c) I/O-bound process 
+d) CPU-bound process 
+ 29. When a thread needs to wait for an event, it will: 
+a) Block 
+b) Execute 
+c) Terminate 
+d) Update 
+ 30. In a real-time OS, the response time is:
+By:Mo’Men_el_Sayed 
+98 
+a) Multitasking 
+b) Batch 
+c) Online 
+d) Real-time 
+ 31.The process that spends most of its time on I/O devices is called: 
+a) Lightweight process 
+b) Heavyweight process 
+c) I/O-bound process 
+d) CPU-bound process 
+ 32. In a real-time operating system: 
+a) All processes have the same priority 
+b) A task must be serviced by its deadline period 
+c) Process scheduling can be done only once 
+d) Kernel is not required 
+ 33. Main memory of the computer system is also called: 
+a) Non-volatile 
+b) Volatile 
+c) Reserved 
+d) Large 
+ 34. The state of a process is defined by: 
+a) The final activity of the process 
+b) The activity just executed by the process 
+c) The activity to next be executed by the process 
+d) The current activity of the process
+By:Mo’Men_el_Sayed 
+99 
+ 35. What is a trap/exception? 
+a) Hardware-generated interrupt caused by an error 
+b) Software-generated interrupt caused by an error 
+c) User-generated interrupt caused by an error 
+d) None of these 
+Questions with Chosen Options (Continued): 
+ 36. What is an ISR? 
+a) Information Service Request 
+b) Interrupt Service Request 
+c) Interrupt Service Routine 
+d) Information Service Routine 
+ 37. In the layered approach of Operating Systems: 
+a) Bottom Layer(0) is the User interface 
+b) Highest Layer(N) is the User interface 
+c) Bottom Layer(0) is the hardware 
+d) Both b and c 
+ 38. How does the hardware trigger an interrupt? 
+a) Sending signals to CPU through system bus 
+b) Executing a special program called interrupt program 
+c) Executing a special program called system program 
+d) Executing a special operation called system call 
+ 39. Which operation is performed by an interrupt handler? 
+a) Saving the current state of the system 
+b) Loading the interrupt handling code and executing it
+By:Mo’Men_el_Sayed 
+100 
+c) Once done handling, bringing back the system to the original state it was before the interrupt 
+occurred 
+d) All of these 
+ 40. Which scheduler selects the jobs from the pool of jobs and loads them into the ready 
+queue? 
+a) Long-term 
+b) Short-term 
+c) Medium-term 
+d) None of the above 
+ 41. In the blocked state: 
+a) The processes waiting for I/O are found 
+b) The process which is running is found 
+c) The processes waiting for the processor are found 
+d) None of the above 
+ 42. What is a long-term scheduler? 
+a) It selects which process has to be brought into the ready queue 
+b) It selects which process has to be executed next and allocates CPU 
+c) It selects which process to remove from memory by swapping 
+d) None of these 
+ 43. What is a short-term scheduler? 
+a) It selects which process has to be brought into the ready queue 
+b) It selects which process has to be executed next and allocates CPU 
+c) It selects which process to remove from memory by swapping 
+d) None of these 
+ 44. The distinction between short-term and long-term schedulers is:
+By:Mo’Men_el_Sayed 
+101 
+a) The length of their queues 
+b) The type of processes they schedule 
+c) The frequency of their execution 
+d) None of these 
+ 45. The only state transition initiated by the user process itself is: 
+a) Block 
+b) Wake up 
+c) Dispatch 
+d) None of these 
+ 46. In a time-sharing operating system, when the time slot ends, the process moves to: 
+a) Blocked state 
+b) Ready state 
+c) Suspended state 
+d) Terminated state 
+ 47. If a process is in the blocked state and its I/O service is completed, it moves to: 
+a) Running state 
+b) Ready state 
+c) Suspended state 
+d) Terminated state 
+ 48. Which state transition is not possible? 
+a) Blocked to running 
+b) Ready to running 
+c) Blocked to ready 
+d) Running to blocked
+By:Mo’Men_el_Sayed 
+102 
+ 49. Which module gives control of the CPU to the process selected by the short-term 
+scheduler? 
+a) Dispatcher 
+b) Interrupt 
+c) Scheduler 
+d) None of the mentioned 
+ 50. The processes ready and waiting to execute are kept in: 
+a) Job queue 
+b) Ready queue 
+c) Execution queue 
+d) Process queue 
+ANS: 
+1. Process Control Block 
+ 2. Used for monitoring events as they occur 
+ 3. Process Control Block 
+ 4. Messages 
+ 5. All of the mentioned 
+ 6. All of the Above 
+ 7. System calls 
+ 8. Kernel 
+ 9. Multiprocessors OS 
+ 10. System Call 
+ 11. Command interpreter 
+ 12. All of the above
+By:Mo’Men_el_Sayed 
+103 
+ 13. Interrupt 
+ 14. Fork 
+ 15. Process Control Block 
+ 16. Context Switch 
+ 17. Only the process which has control of the processor is found 
+ 18. Real-time 
+ 19. Communication between two processes 
+ 20. Lightweight process 
+ 21. Kernel 
+ 22. Time Sharing 
+ 23. Long-term scheduler (LTS) 
+ 24. Program in execution 
+ 25. Blocked/Waiting 
+ 26. Process Control Block 
+ 27. Privileged 
+ 28. CPU-bound process 
+ 29. Block 
+ 30. Real-time 
+ 31. I/O-bound process 
+ 32. A task must be serviced by its deadline period 
+ 33. Volatile 
+ 34. The current activity of the process 
+ 35. Software-generated interrupt caused by an error 
+ 36. Interrupt Service Routine
+By:Mo’Men_el_Sayed 
+104 
+ 37. Both b and c 
+ 38. Sending signals to CPU through system bus 
+ 39. All of these 
+ 40. Long-term 
+ 41. The processes waiting for I/O are found 
+ 42. It selects which process has to be brought into the ready queue 
+ 43. It selects which process has to be executed next and allocates CPU 
+ 44. The frequency of their execution 
+ 45. Block 
+ 46. Ready state 
+ 47. Ready state 
+ 48. Blocked to running 
+ 49. Dispatcher 
+ 50. Ready queue 
+Final 2021 Mcq Que: 
+1. Information about a process is maintained in a: 
+ a) Stack                              b) Translation Lookaside Buffer  
+c) Process Control Block     d) Program Control Block    
+2. Real-time systems are: 
+ a) Primarily used on mainframe computers             b) Used for monitoring events as 
+they occur c) Used for program development                            d) Used for real-time 
+interactive users    
+3. Inter-process communication can be done through:
+By:Mo’Men_el_Sayed 
+105 
+a) Mails                       b) Messages 
+ c) System calls            d) Traps 
+4. In Priority Scheduling, a priority number (integer) is associated with each process. 
+The CPU is allocated to the process with the highest priority (smallest integer = highest 
+priority). The problem of starvation of low-priority processes can be resolved by: 
+ a) Terminating the process                       b) Aging 
+ c) Mutual Exclusion                                d) Semaphore    
+5. Which of the following is contained in the Process Control Block (PCB)?  
+a) Process Number                       b) List of Open Files 
+ c) Memory Limits                       d) All of the Above 
+6. A software that manages the time of a microprocessor to ensure that all time-
+critical events are processed as efficiently as possible is: 
+ a) Kernel                       b) Shell  
+c) Device Driver             d) Processor    
+7. With the round robin CPU scheduling in a time-shared system: 
+a) Using very large time slices degenerates into a first-come-first-served algorithm  
+b) Using extremely small time slices improve performance  
+c) Using extremely small time slices degenerate into last come first served algorithm 
+d) Using medium-sized time slices leads to shortest request time first algorithm 
+8. Which of the following is a criterion to evaluate a scheduling algorithm? 
+a) CPU Utilization: Keep CPU utilization as high as possible.  
+b) Throughput: Number of processes completed per unit time.
+By:Mo’Men_el_Sayed 
+106 
+c) Waiting Time: Amount of time spent ready to run but not running. 
+ d) All of the above    
+9. Super computers typically employ: 
+ a) Real-time Operating system                       b) Multiprocessors OS  
+c) Desktop OS                                                      d) None of the above 
+10. What is a shell? 
+ a) It is a hardware component                        b) It is a command interpreter  
+c) It is a part in compiler                                    d) It is a tool in CPU scheduling    
+ 
+11. The operating system manages: 
+ a) Memory                           b) Processor  
+c) Disk and I/O devices     d) All of the above 
+12. The Hardware mechanism that enables a device to notify the CPU is called: 
+ a) Polling                        b) Interrupt 
+ c) System Call                d) None of the above    
+13. Process State is a part of: 
+ a) Inode                                                      b) Process Control block 
+ c) File Allocation Table                        d) None of the above 
+14. Switching the CPU to another Process requires to save state of the old process and 
+loading new process state is called as: 
+ a) Process Blocking                        b) Context Switch
+By:Mo’Men_el_Sayed 
+107 
+ c) Time Sharing                              d) None of the above    
+15. OS pays more attention on the meeting of the time limits: 
+ a) Distributed                        b) Network 
+ c) Real-time                           d) Online 
+16. A process said to be in state if it was waiting for an event that will never occur.  
+a) Safe                                     b) Unsafe 
+ c) Starvation                        d) Deadlock   
+17. A thread is a: 
+ a) Heavy Weight process                        b) Multiprocess  
+c) Inter Thread                                             d) Light weight 
+18. A major problem with priority scheduling is:  
+a) Definite blocking                        b) Starvation 
+ c) Low priority                                 d) None of the above 
+19. The technique, for sharing the time of a computer among several jobs, which 
+switches jobs so rapidly that each job appears to have the computer to itself, is called: 
+ a) Time domain                        b) Time out 
+ c) Time Sharing                       d) Multitasking 
+20. Mutual exclusion:  
+a) If one process is in a critical region others are excluded  
+b) Prevents deadlock 
+c) Requires semaphores to implement
+By:Mo’Men_el_Sayed 
+108 
+d) Is found only in the Windows NT operating system  
+21.Which scheduler controls the degree of multiprogramming?  
+a) Short-term scheduler                        b) Long-term scheduler  
+c) Middle-term scheduler                     d) None of the above    
+22.The state of a process after it encounters an I/O instruction is: 
+ a) Ready                        b) Blocked/Waiting 
+ c) Idle                            d) Running 
+23.In one of the deadlock prevention methods, impose a total ordering of all resource 
+types, and require that each process requests resources in an increasing order of 
+enumeration. This violates the condition of deadlock: 
+ a) Mutual exclusion                        b) Hold and Wait 
+ c) Circular Wait                              d) No Preemption    
+24.A scheduling algorithm is fair: 
+a) If no process faces starvation            
+b) If a process is starved, detect it and run it with high priority 
+c) If it uses semaphores  
+d) Only if a queue is used for scheduling    
+25.Round robin scheduling is essentially the preemptive version of: 
+a) FIFO                                                      b) Shortest job first 
+c) Shortest remaining time                        d) Longest time first    
+26.Maximize throughput, minimize response time, and accommodate as many users as 
+possible is considered as:
+By:Mo’Men_el_Sayed 
+109 
+ a) Fairness                                               b) Efficiency 
+c) Differential responsiveness                  d) All of the above 
+27.Which is not the state of the process? 
+ a) Blocked                        b) Running 
+ c) Ready                           d) Privileged 
+28.Which technique was introduced because a single job could not keep both the CPU 
+and the I/O devices busy? 
+a) Time-sharing                        b) SPOOLing  
+c) Preemptive scheduling         d) Multiprogramming    
+29.FIFO scheduling is: 
+a) Preemptive Scheduling                        b) Non-Preemptive Scheduling  
+c) Deadline Scheduling                           d) Fair share scheduling 
+30.The state of a process during an I/O instruction is: 
+a) Ready                        b) Blocked/Waiting  
+c) Idle                             d) Running 
+ 
+Answers: 
+1. c 
+2. b 
+3. b 
+4. b 
+5. d 
+6. a 
+7. a
+By:Mo’Men_el_Sayed 
+110 
+8. d 
+9. b 
+10. b 
+11. d 
+12. b 
+13. b 
+14. b 
+15. c 
+16. d 
+17. d 
+18. b 
+19. c 
+20. a 
+21. b 
+22. b 
+23. c 
+24. a 
+25. a 
+26. b 
+27. d 
+28. d 
+29. b 
+30. b 
+Question Two  
+Find the average waiting time for the following set of processes given their arrival 
+time in the order: 
+Process Burst Time Arrival Time 
+P1 
+10 
+0 
+P2 
+2 
+1 
+P3 
+1 
+2 
+P4 
+1 
+5
+By:Mo’Men_el_Sayed 
+111 
+Process Burst Time Arrival Time 
+P5 
+5 
+12 
+Using each of the following algorithms: 
+a) First Come First Served (FCFS) algorithm. 
+b) Round Robin (RR) scheduling algorithm with a quantum time slice of 4. 
+c) Shortest Job First (SJF) scheduling algorithm. 
+d) Shortest Remaining Time First (SRTF) algorithm. 
+Solution: 
+ 
+Mcq: 
+1. First Come First Served (FCFS) Algorithm  
+1.1 What is the average waiting time for the processes? 
+a) 6.2                                                b) 8.4
+By:Mo’Men_el_Sayed 
+112 
+c) 9.8                                                d) 11.0 
+2. Round Robin (RR) Scheduling Algorithm with Quantum Time Slice of 4 
+2.1 Which process completes its execution first?  
+a) P1                                                b) P2 
+c) P3                                                d) P4 
+2.2 What is the average waiting time for the processes? 
+a) 5.2                                                b) 7.6  
+c) 8.8                                                d) 10.2 
+3. Shortest Job First (SJF) Scheduling Algorithm  
+3.1 Which process is scheduled first?  
+a) P1                                                b) P2  
+c) P3                                                d) P4 
+3.2 What is the average waiting time for the processes? 
+a) 5.8                                                b) 7.6  
+c) 8.8                                                d) 10.2 
+4. Shortest Remaining Time First (SRTF) Algorithm 
+ 4.1 Which process has the shortest remaining time after the first scheduling?  
+a) P1                                                b) P2  
+c) P3                                                d) P4 
+4.2 What is the average response time for the processes?
+By:Mo’Men_el_Sayed 
+113 
+a) 3.4                                                b) 4.2  
+c) 0.6                                                d) 6.3 
+ 
+Question Three  
+1. Convert the following Resource-Allocation Graph to a Wait-for Graph. 
+ 
+Solution: 
+ 
+Mcq: 
+Which of the following represents the correct Wait-for Graph (WFG)? 
+ 
+A. 
+• 
+P1→P4 
+• 
+P4→P3 
+• 
+P3→P2
+By:Mo’Men_el_Sayed 
+114 
+• 
+P2→P1 
+B. 
+• 
+P1→P2 
+• 
+P2→P4 
+• 
+P4→P3 
+• 
+P3→P1 
+C. 
+• 
+P1→P3 
+• 
+P3→P2 
+• 
+P2→P4 
+• 
+P4→P1 
+D. 
+• 
+P1→P4 
+• 
+P4→P2 
+• 
+P2→P3 
+• 
+P3→P1  
+Page Reference String Analysis: 
+                                                               <1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5> 
+How many page faults would occur for the following replacement algorithms, 
+assuming four frames (initially empty)? 
+a) FCFS replacement 
+b) Optimal replacement 
+c) Least Recently Used (LRU) replacement 
+Solution:
+By:Mo’Men_el_Sayed 
+115 
+ 
+Mcq: 
+5. Resource-Allocation Graph to Wait-for Graph Conversion  
+5.1 Which of the following correctly represents a Wait-for Graph?  
+a) Process A → Process B  
+b) Process B → Process C  
+c) Process C → Process D  
+d) Process D → Process A 
+6. Page Reference String Analysis 
+6.1 How many page faults would occur using the FCFS replacement algorithm?  
+a) 6                           b) 8  
+c) 10                           d) 12
+By:Mo’Men_el_Sayed 
+116 
+6.2 How many page faults would occur using the Optimal replacement algorithm? 
+a) 4                           b) 5  
+c) 6                           d) 7 
+6.3 How many page faults would occur using the Least Recently Used (LRU) 
+replacement algorithm?  
+a) 6                           b) 7  
+c) 8                           d) 9 
+AIU 
+AL-AMEEN UNIVERSITY Final 2022 
+Question 1: Choose the correct answer (30 marks, 1 mark for each) 
+1. Turnaround time is the amount of time to execute a particular process while 
+waiting time is the amount of time a process has been waiting in the ready 
+queue. 
+2. The Paging approach resolved the external fragmentation problem while 
+internal fragmentation is resolved by segmentation. 
+3. In Parallel systems, a job should be split into small dependent jobs. 
+4. In memory allocations, Best-fit and Worst-fit are better than First-fit in terms of 
+speed and storage utilization. 
+5. Hold-and-wait condition is to allow one or more processes to hold I/O device(s) 
+and wait for another I/O device(s). 
+6. MULTICS solved the problems of external fragmentation and lengthy search 
+times by paging the segments. 
+7. Executing an illegal instruction is considered as an interrupt. 
+8. Time-sharing systems are suitable for Mainframes. 
+9. In the asynchronous I/O structure, control is only returned after I/O is complete. 
+10. Collecting statistics and monitoring performance are essential parts of any 
+operating system. 
+11. System calls provide the interface between a running program and the 
+operating system. 
+12. The interrupt service routine contains the addresses of the interrupt vectors.
+By:Mo’Men_el_Sayed 
+117 
+13. In Simple batch systems, the transition between jobs should be as smooth as 
+possible. 
+14. Module Kernel is responsible for memory management. 
+15. To keep track of the segment table, we use a Limit register that holds the 
+smallest legal physical memory address while the base register contains the 
+size of the range. 
+16. A child process may not be destroyed when its parent process is destroyed. 
+17. In a multiple-threaded task, while one thread is blocked and waiting, a second 
+thread in the same task can proceed. 
+18. Preemptive is useful in systems in which high-priority processes require rapid 
+attention. 
+1. Ans: True: Turnaround time includes execution and waiting, while waiting time is 
+only the time spent waiting in the ready queue. 
+2. False: The Paging approach resolved the external fragmentation problem, but 
+internal fragmentation is resolved by paging itself, not segmentation. 
+3. True: In parallel systems, a job should be split into smaller dependent tasks that 
+can run concurrently. 
+4. False: In memory allocation, Best-fit and Worst-fit are often slower than First-
+fit due to more complex searching methods, even though they can improve 
+storage utilization. 
+5. True: Hold-and-wait condition allows one or more processes to hold I/O devices 
+and wait for another device. 
+6. False: MULTICS did not solve problems by paging the segments; it used 
+segmentation along with paging to address fragmentation and other issues. 
+7. True: Executing an illegal instruction generates an interrupt (exception) that 
+requires the operating system’s intervention. 
+8. False: Time-sharing systems are not specifically designed for mainframes, 
+although they can be used on mainframes. They are more suited for systems 
+with multiple users. 
+9. False: In asynchronous I/O, control returns immediately to the program while 
+the I/O operation is being performed in the background. 
+10. True: Collecting statistics and monitoring performance are vital parts of any 
+operating system for optimization and fault detection. 
+11. True: System calls provide an interface between running programs and the 
+operating system for resource access. 
+12. False: Interrupt service routines do not contain addresses of the interrupt 
+vectors. The interrupt vector table holds those addresses.
+By:Mo’Men_el_Sayed 
+118 
+13. True: In simple batch systems, transitions between jobs should be smooth to 
+ensure efficient use of resources. 
+14. False: The kernel is responsible for many functions, but memory management 
+specifically is handled by the memory manager. 
+15. False: The base register holds the starting address of a segment, and the limit 
+register holds its size. The description in the statement is reversed. 
+16. True: A child process may continue executing even if its parent process is 
+destroyed, though it may become orphaned. 
+17. True: In a multi-threaded environment, while one thread is blocked, other 
+threads can continue execution. 
+18. True: Preemptive scheduling is effective for giving high-priority processes rapid 
+attention in a system. 
+Process 
+ Burst Time 
+ Arrival Time 
+P1 
+7 
+0.0 
+P2 
+4 
+2.0 
+P3 
+1 
+4.0 
+P4 
+4 
+5.0 
+Using each of the following algorithms: 
+a) Round Robin scheduling algorithm with quantum time slice = 4. (2 points) 
+b) Shortest Job First Scheduling algorithm. (2 points)  
+c) Shortest Remaining Time First algorithm. (2 points) 
+Solution:
+By:Mo’Men_el_Sayed 
+119 
+ 
+1. Round Robin Scheduling Algorithm with Quantum Time Slice = 4  
+1.1 Which process completes its execution first?  
+a) P1                                                    b) P2  
+c) P3                                                    d) P4 
+1.2 What is the average waiting time for the processes?  
+a) 2.75                                                    b) 7.5  
+c) 4.5                                                     d) 5.25 
+2. Shortest Job First Scheduling Algorithm  
+2.1 Which process is scheduled first?
+By:Mo’Men_el_Sayed 
+120 
+a) P1                                                    b) P2  
+c) P3                                                    d) P4 
+2.2 What is the average waiting time for the processes?  
+a) 5.75                                                    b) 6.25  
+c) 7.0                                                      d) 4.75 
+3. Shortest Remaining Time First Algorithm  
+3.1 Which process has the shortest remaining time after the first scheduling?  
+a) P1                                                    b) P2  
+c) P3                                                    d) P4 
+3.2 What is the average response time for the processes? 
+a) 1.25                                                    b) 2.0  
+c) 3.25                                                    d) 4.0 
+ 
+Best Wishes
