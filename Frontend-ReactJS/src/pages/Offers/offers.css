@@ -130,9 +130,10 @@
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s;
+  box-shadow: none;
 }
 
-.accept-btn:hover { background: #2563eb; }
+.accept-btn:hover { background: #2563eb; box-shadow: none; }
 
 .message-btn {
   height: 36px;
@@ -148,9 +149,10 @@
   align-items: center;
   gap: 7px;
   transition: background 0.2s;
+  box-shadow: none;
 }
 
-.message-btn:hover { background: #e5e7eb; }
+.message-btn:hover { background: #e5e7eb; box-shadow: none; }
 
 
 .offer-right {
@@ -198,9 +200,10 @@
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.2s;
+  box-shadow: none;
 }
 
-.pdf-btn:hover { background: #dbeafe; }
+.pdf-btn:hover { background: #dbeafe; box-shadow: none; }
 
 
 .ai-wrapper {
