@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 // Components
 import Header from "../components/Header/Header";
@@ -14,28 +14,48 @@ import DeletedAccount from "../pages/DeletedAccount/DeletedAccount"
 import ProtectedUserRoute from "./ProtectedRoute"; //wrapper
 import Dashboard from "../pages/Dashboard/Dashboard";
 
-const Router = () => {
- //Loader
- const loaderDisplay = useSelector((state) => state.loader.display);
+// Create a wrapper component to conditionally show header
+const AppLayout = ({ children }) => {
+  const location = useLocation();
+  
+  // Pages where header should NOT be shown
+  const noHeaderPages = ['/login', '/signup', '/deletedAccount'];
+  
+  // Check if current path is in noHeaderPages
+  const showHeader = !noHeaderPages.includes(location.pathname);
+  
+  return (
+    <>
+      {showHeader && <Header />}
+      {children}
+    </>
+  );
+};
 
- return (
-  <BrowserRouter>
-   {loaderDisplay ? <Loader></Loader> : ""}
-   <Header />
-   <Routes>
-    <Route index element={<Home />} />
-    <Route exact path="/" element={<Home />} />
-    <Route exact path="terms" element={<Terms />} />
-    <Route exact path="login" element={<Login />} />
-    <Route exact path="signup" element={<Signup />} />
-    <Route exact path="deletedAccount" element={<DeletedAccount />} />
-    <Route element={<ProtectedUserRoute />}>
-     <Route index element={<Navigate to="dashboard" replace />} />
-     <Route path="dashboard" element={<Dashboard />} />
-    </Route>
-   </Routes>
-   <Footer />
-  </BrowserRouter>
- )
-}
-export default Router
+const Router = () => {
+  // Loader
+  const loaderDisplay = useSelector((state) => state.loader.display);
+
+  return (
+    <BrowserRouter>
+      {loaderDisplay ? <Loader /> : ""}
+      <AppLayout>
+        <Routes>
+          <Route index element={<Home />} />
+          <Route exact path="/" element={<Home />} />
+          <Route exact path="terms" element={<Terms />} />
+          <Route exact path="login" element={<Login />} />
+          <Route exact path="signup" element={<Signup />} />
+          <Route exact path="deletedAccount" element={<DeletedAccount />} />
+          <Route element={<ProtectedUserRoute />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+          </Route>
+        </Routes>
+      </AppLayout>
+      <Footer />
+    </BrowserRouter>
+  );
+};
+
+export default Router;

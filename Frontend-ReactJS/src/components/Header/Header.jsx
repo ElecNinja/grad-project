@@ -1,17 +1,32 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useSelector } from "react-redux";
+import { ChevronDown, Menu, X } from 'lucide-react';
+import logo from '../../assets/images/logo.png';
 import "./header.css"
-
-/**
- * Component returns nav component.
- * 
- * @returns {React.ReactElement}
- */
-
 
 function Header() {
   const user = useSelector((state) => state.user);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const moreLinks = [
+    { name: 'About Us', path: '/about' },
+    { name: 'Help Center', path: '/help' },
+    { name: 'Contact Us', path: '/contact' },
+  ];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsMoreOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <nav className="navbar">
@@ -20,10 +35,12 @@ function Header() {
         {/* Left Side */}
         <div className="nav-left">
           <NavLink to="/" className="logo">
-            StudyBuddy
+            <img src={logo} alt="StudyBuddy" className="logo-img" />
+            <span className="logo-text">StudyBuddy</span>
           </NavLink>
 
-          <ul className="nav-main-links">
+          {/* Desktop Menu */}
+          <ul className="nav-main-links desktop-menu">
             <li>
               <NavLink to="/find-expert" className="nav-link">
                 Find Expert
@@ -45,12 +62,33 @@ function Header() {
               </NavLink>
             </li>
             <li>
-              <NavLink to="Offer" className="nav-link">
+              <NavLink to="/Offer" className="nav-link">
                 Offer
               </NavLink>
             </li>
-            <li>
-              More
+            <li className="more-dropdown" ref={dropdownRef}>
+              <button 
+                className="more-button" 
+                onClick={() => setIsMoreOpen(!isMoreOpen)}
+              >
+                More <ChevronDown size={16} className={`chevron ${isMoreOpen ? 'rotated' : ''}`} />
+              </button>
+              
+              {/* Dropdown Menu */}
+              {isMoreOpen && (
+                <div className="dropdown-menu">
+                  {moreLinks.map((link, index) => (
+                    <NavLink 
+                      key={index}
+                      to={link.path} 
+                      className="dropdown-item"
+                      onClick={() => setIsMoreOpen(false)}
+                    >
+                      {link.name}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
             </li>
           </ul>
         </div>
@@ -80,8 +118,53 @@ function Header() {
               </button>
             </>
           )}
-        </div>
 
+          {/* Mobile Menu Button */}
+          <button 
+            className="mobile-menu-btn"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+        <div className="mobile-menu-content">
+          <NavLink to="/find-expert" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            Find Expert
+          </NavLink>
+          <NavLink to="/add-material" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            Add Material
+          </NavLink>
+          <NavLink to="/Bootcamp" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            Boot Camp
+          </NavLink>
+          <NavLink to="/Work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            Work
+          </NavLink>
+          <NavLink to="/Offer" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            Offer
+          </NavLink>
+          <div className="mobile-divider"></div>
+          <NavLink to="/about" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            About Us
+          </NavLink>
+          <NavLink to="/help" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            Help Center
+          </NavLink>
+          <NavLink to="/contact" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            Contact Us
+          </NavLink>
+          <div className="mobile-divider"></div>
+          <NavLink to="/login" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            Login
+          </NavLink>
+          <NavLink to="/signup" className="mobile-nav-link highlight" onClick={() => setIsMobileMenuOpen(false)}>
+            JOIN US
+          </NavLink>
+        </div>
       </div>
     </nav>
   );
