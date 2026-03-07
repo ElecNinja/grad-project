@@ -26,7 +26,7 @@ const categories = [
     courses: [
       { id:7, title:"Prompt Engineering", expert:"Bavly", price:"££279.99", rating:4.7, reviews:100, badge:null, image:"https://images.unsplash.com/photo-1677442135703-1787eea5ce01" },
       { id:8, title:"Computer Vision", expert:"Mina", price:"££299.99", rating:4.9, reviews:4000, badge:"Highest Rated", image:"https://images.unsplash.com/photo-1635070041078-e363dbe005cb" },
-      { id:9, title:"Generative AI", expert:"Mina", price:"££149.99", rating:4.6, reviews:10, badge:"New", image:"https://images.unsplash.com/photo-1686191128892-3b37add4c844" },
+      { id:9, title:"Generative AI", expert:"Mina", price:"££149.99", rating:4.6, reviews:10, badge:"New", image:"https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5" },
       { id:10, title:"Machine Learning Basics", expert:"Bavly", price:"££229.99", rating:4.8, reviews:320, badge:null, image:"https://images.unsplash.com/photo-1555949963-aa79dcee981c" },
       { id:11, title:"Deep Learning", expert:"Mina", price:"££319.99", rating:4.9, reviews:500, badge:"Highest Rated", image:"https://images.unsplash.com/photo-1518770660439-4636190af475" },
       { id:12, title:"NLP & ChatBots", expert:"Bavly", price:"££189.99", rating:4.4, reviews:60, badge:"New", image:"https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5" },
