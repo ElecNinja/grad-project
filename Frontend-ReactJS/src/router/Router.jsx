@@ -15,6 +15,9 @@ import ProtectedUserRoute from "./ProtectedRoute"; //wrapper
 import Dashboard from "../pages/Dashboard/Dashboard";
 import Addmaterial from "../pages/Addmaterial/Addmaterial";
 import Offers from "../pages/Offers/offer";
+import Bootcamp from "../pages/Bootcamp/Bootcamp";
+import CourseDetails from "../pages/CourseDetails/CourseDetails";
+
 
 // Create a wrapper component to conditionally show header
 const AppLayout = ({ children }) => {
@@ -51,6 +54,9 @@ const Router = () => {
     <Route exact path="deletedAccount" element={<DeletedAccount />} />
     <Route exact path="add-material" element={<Addmaterial />} />
     <Route exact path="offers" element={<Offers />} />
+    <Route path="/bootcamp" element={<Bootcamp/>} />
+    <Route path="/course" element={<CourseDetails />} />
+
     <Route element={<ProtectedUserRoute />}>
      <Route index element={<Navigate to="dashboard" replace />} />
      <Route path="dashboard" element={<Dashboard />} />
