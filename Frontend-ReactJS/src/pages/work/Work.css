@@ -29,6 +29,7 @@ body {
   background: var(--bg);
   color: var(--text-dark);
   min-height: 100vh;
+
 }
 
 
@@ -104,6 +105,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 24px;
+  overflow: hidden;
 }
 
 .card-title {
@@ -116,10 +118,12 @@ body {
   gap: 8px;
   margin-bottom: 20px;
 }
+
 .upload-new-content-icon {
   width: 20px;
   height: 20px;
 }
+
 .card-title span { font-size: 16px; }
 
 /* ─── Content Type Tabs ───────────────────────────────── */
@@ -167,6 +171,7 @@ body {
   background: var(--primary-light);
   color: var(--primary);
   font-weight: 700;
+
 }
 
 .type-tab svg { font-size: 20px; }
@@ -191,6 +196,7 @@ body {
   text-align: center;
   transition: border-color 0.18s, background 0.18s;
   cursor: pointer;
+  min-height: 180px;
 }
 
 .upload-zone:hover {
@@ -200,7 +206,7 @@ body {
 
 .upload-icon {
   font-size: 28px;
-  color: var(--text-light);
+  color: var(--text-light);  
 }
 
 .upload-text {
@@ -225,6 +231,7 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: background 0.18s, transform 0.15s;
+  margin-top: 4px;
 }
 
 .btn-select:hover {
@@ -271,7 +278,17 @@ body {
   border-color: var(--primary);
 }
 
-.field-textarea { height: 72px; }
+.field-textarea {
+  height: 80px;
+}
+
+/* ─── Online Course simple form ───────────────────────── */
+.simple-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 480px;
+}
 
 /* ─── My Lists ────────────────────────────────────────── */
 .list-card-header {
@@ -314,7 +331,9 @@ body {
   to   { opacity: 1; transform: translateX(0); }
 }
 
-.list-item:last-child { border-bottom: none; }
+.list-item:last-of-type {
+  border-bottom: none;
+}
 
 .list-user {
   display: flex;
@@ -349,6 +368,13 @@ body {
   margin-top: 1px;
 }
 
+.list-students {
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
 .badge-pdf {
   background: var(--primary-light);
   color: var(--primary);
@@ -359,10 +385,13 @@ body {
   border-radius: 5px;
   letter-spacing: 0.5px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
-.badge-pdf:hover { background: var(--primary); color: white; }
+.badge-pdf:hover {
+  background: var(--primary);
+  color: white;
+}
 
 .btn-publish {
   width: 100%;
@@ -444,9 +473,13 @@ body {
   transition: background 0.15s;
 }
 
-.vm-table tbody tr:last-child { border-bottom: none; }
+.vm-table tbody tr:last-child {
+  border-bottom: none;
+}
 
-.vm-table tbody tr:hover { background: #fafbff; }
+.vm-table tbody tr:hover {
+  background: #fafbff;
+}
 
 .vm-table td {
   padding: 12px 10px;
@@ -465,7 +498,7 @@ body {
   width: 38px;
   height: 38px;
   border-radius: 8px;
-  object-fit: cover;
+    object-fit: cover;
   background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
   display: flex;
   align-items: center;
@@ -518,4 +551,32 @@ body {
   transition: color 0.15s, background 0.15s;
 }
 
-.action-btn:hover { color: var(--primary); background: var(--primary-light); }
+.action-btn:hover {
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+/* ─── Responsive ──────────────────────────────────────── */
+@media (max-width: 600px) {
+  .upload-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .type-tabs {
+    gap: 8px;
+  }
+
+  .type-tab {
+    font-size: 11px;
+    padding: 10px 8px;
+  }
+
+  .page-container {
+    padding: 20px 16px;
+  }
+}
