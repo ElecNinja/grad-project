@@ -182,7 +182,7 @@ body {
 
 /* ===== HOW IT WORKS SECTION ===== */
 .how-it-works-section {
-  background: #1d4ed8;
+  background: #ffffff;
   padding: 60px 0 80px;
 }
 
@@ -286,7 +286,6 @@ body {
 /* Step 3 - Blue */
 .step-card.step-3 {
   background: linear-gradient(145deg, #ffffff, #eff6ff);
-  border-left: 6px solid #1d4ed8;
 }
 
 .step-card.step-3 .step-number-box {
@@ -357,7 +356,7 @@ body {
   transform: scale(1.05);
 }
 
-/* ===== TESTIMONIALS SECTION ===== */
+/* ===== TESTIMONIALS SECTION - FIXED SIZE CARDS ===== */
 .testimonials-section {
   padding: 80px 0;
   background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
@@ -365,7 +364,7 @@ body {
   overflow: hidden;
 }
 
-/* Section Title - Shared with Experts */
+/* Section Title */
 .testimonials-section .section-title,
 .experts-section .section-title {
   font-size: 2.5rem;
@@ -402,18 +401,21 @@ body {
   transition-timing-function: linear !important;
 }
 
-/* Testimonial Card */
+/* Testimonial Card - FIXED SIZE */
 .testimonial-card-modern {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
   border-radius: 30px;
   padding: 35px;
-  height: 100%;
+  height: 380px; /* Fixed height for all cards */
+  width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
   transition: all 0.4s ease;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .testimonial-card-modern:hover {
@@ -430,15 +432,17 @@ body {
   color: #1d4ed8;
   opacity: 0.1;
   line-height: 1;
+  z-index: 1;
 }
 
 .testimonial-header-modern {
   display: flex;
   align-items: center;
   gap: 18px;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   position: relative;
   z-index: 2;
+  flex-shrink: 0; /* Prevents header from shrinking */
 }
 
 /* Avatar */
@@ -453,6 +457,7 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .testimonial-avatar-modern {
@@ -476,15 +481,46 @@ body {
   gap: 3px;
 }
 
+/* Quote text - fixed height with scroll if needed */
 .testimonial-quote-modern {
   color: #475569;
-  line-height: 1.8;
+  line-height: 1.7;
   font-style: italic;
-  font-size: 1.05rem;
+  font-size: 1rem;
   position: relative;
   z-index: 2;
-  padding-left: 10px;
+  padding-left: 15px;
   border-left: 3px solid #1d4ed8;
+  margin: 0;
+  flex: 1; /* Takes remaining space */
+  overflow-y: auto; /* Adds scroll if text is too long */
+  max-height: 180px;
+  padding-right: 10px;
+}
+
+/* Custom scrollbar for quote */
+.testimonial-quote-modern::-webkit-scrollbar {
+  width: 4px;
+}
+
+.testimonial-quote-modern::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 2px;
+}
+
+.testimonial-quote-modern::-webkit-scrollbar-thumb {
+  background: #1d4ed8;
+  border-radius: 2px;
+}
+
+/* For Swiper slides to have consistent height */
+.swiper-slide {
+  height: auto;
+  display: flex;
+}
+
+.swiper-slide > div {
+  width: 100%;
 }
 
 
@@ -573,7 +609,7 @@ body {
     width: 100%;
   }
 }
-/* ===== EXPERTS SECTION - SIMPLE WORKING FIX ===== */
+/* ===== EXPERTS SECTION - FIXED SIZE CARDS ===== */
 .experts-section {
   padding: 80px 0;
   background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
@@ -588,9 +624,12 @@ body {
   border-radius: 24px;
   padding: 30px 25px;
   border: 1px solid #e5e7eb;
-  height: 100%;
+  height: 500px; /* Fixed height for expert cards */
+  width: 100%;
   text-align: center;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .expert-card:hover {
@@ -605,15 +644,16 @@ body {
   height: 140px;
   margin: 0 auto 20px;
   border-radius: 50%;
-  overflow: hidden; /* This is KEY - it crops the image to circle */
-  border: 3px solid #1d4ed8; /* Simple blue border */
+  overflow: hidden;
+  border: 3px solid #1d4ed8;
   box-shadow: 0 10px 25px rgba(29, 78, 216, 0.3);
+  flex-shrink: 0;
 }
 
 .expert-image-simple {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* This makes the image fill the circle */
+  object-fit: cover;
   display: block;
   transition: transform 0.3s ease;
 }
@@ -627,12 +667,14 @@ body {
   font-weight: 700;
   color: #1a1a1a;
   margin-bottom: 5px;
+  flex-shrink: 0;
 }
 
 .expert-role {
   color: #1d4ed8;
   font-weight: 600;
   margin-bottom: 15px;
+  flex-shrink: 0;
 }
 
 .expert-rating {
@@ -640,7 +682,8 @@ body {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  flex-shrink: 0;
 }
 
 .stars {
@@ -655,12 +698,28 @@ body {
 
 .expert-description {
   color: #4b5563;
-  line-height: 1.7;
-  font-size: 0.95rem;
+  line-height: 1.6;
+  font-size: 0.9rem;
   text-align: left;
-  max-height: 120px;
+  flex: 1; /* Takes remaining space */
   overflow-y: auto;
-  padding-right: 5px;
+  padding-right: 8px;
+  margin: 0;
+}
+
+/* Custom scrollbar */
+.expert-description::-webkit-scrollbar {
+  width: 4px;
+}
+
+.expert-description::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 2px;
+}
+
+.expert-description::-webkit-scrollbar-thumb {
+  background: #1d4ed8;
+  border-radius: 2px;
 }
 
 /* ===== CTA SECTION ===== */
