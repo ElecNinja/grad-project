@@ -1,34 +1,39 @@
-const bcrypt = require('bcrypt');
+// Backend-ExpressJS/src/config/passport-config.js
 const LocalStrategy = require('passport-local').Strategy;
+const bcrypt = require('bcrypt');
 const supabase = require('./supabase');
 
-function initialize(passport) {
-  const authenticateUser = async (email, password, done) => {
-    try {
-      const { data: users, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .limit(1);
+function initializePassport(passport) {
+  // Strategy بتاعة الـ login
+  passport.use(new LocalStrategy(
+    { usernameField: 'email' },
+    async (email, password, done) => {
+      try {
+        // جيب المستخدم من Supabase
+        const { data: users, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', email)
+          .limit(1);
 
-      if (error || !users || users.length === 0) {
-        return done(null, false, { message: 'No user with that email' });
-      }
+        if (error || !users || users.length === 0) {
+          return done(null, false, { message: 'No user found with that email.' });
+        }
 
-      const user = users[0];
-      const match = await bcrypt.compare(password, user.password);
+        const user = users[0];
 
-      if (match) {
+        // قارن الباسورد
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
+          return done(null, false, { message: 'Incorrect password.' });
+        }
+
         return done(null, user);
-      } else {
-        return done(null, false, { message: 'Incorrect password' });
+      } catch (err) {
+        return done(err);
       }
-    } catch (err) {
-      return done(err);
     }
-  };
-
-  passport.use(new LocalStrategy({ usernameField: 'email' }, authenticateUser));
+  ));
 
   passport.serializeUser((user, done) => {
     done(null, user.id);
@@ -38,11 +43,13 @@ function initialize(passport) {
     try {
       const { data: users, error } = await supabase
         .from('users')
-        .select('*')
+        .select('id, name, email, role')
         .eq('id', id)
         .limit(1);
 
-      if (error || !users || users.length === 0) return done(null, false);
+      if (error || !users || users.length === 0) {
+        return done(null, false);
+      }
       done(null, users[0]);
     } catch (err) {
       done(err);
@@ -50,4 +57,4 @@ function initialize(passport) {
   });
 }
 
-module.exports = initialize;
+module.exports = initializePassport;

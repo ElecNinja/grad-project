@@ -2,8 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import "./Signup.css";
+import { signupUser } from '../../apis/handlers/signupUser';
+import { useDispatch } from 'react-redux';
+import { setLoader } from '../../redux/loaderSlice.js';
 
 function Signup() {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // Step 1: email/password, Step 2: details
   const [role, setRole] = useState('student');
@@ -93,13 +97,30 @@ function Signup() {
     setStep(2);
   };
 
-  const handleStudentSubmit = (e) => {
-    e.preventDefault();
-    if (!validateStudentStep2()) return;
-    // Save user data (would connect to backend in production)
-    console.log('Student data:', { ...formData, role });
-    navigate('/');
-  };
+  const handleStudentSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateStudentStep2()) return;
+
+  dispatch(setLoader(true));
+
+  const result = await signupUser({
+    name: formData.name,
+    email: formData.email,
+    password: formData.password,
+    phone: formData.phone,
+    about: formData.about,
+    photo: formData.photo,
+    role: 'student',
+  });
+
+  dispatch(setLoader(false));
+
+  if (result.response) {
+    navigate('/login'); // أو navigate('/') حسب التصميم
+  } else {
+    setError(result.message);
+  }
+};
 
   const handleTeacherStep2Submit = (e) => {
     e.preventDefault();
@@ -107,13 +128,32 @@ function Signup() {
     setStep(3);
   };
 
-  const handlePaymentSubmit = (e) => {
-    e.preventDefault();
-    if (!validatePaymentStep()) return;
-    // Save teacher data with payment
-    console.log('Teacher data:', { ...formData, role });
-    navigate('/');
-  };
+ const handlePaymentSubmit = async (e) => {
+  e.preventDefault();
+  if (!validatePaymentStep()) return;
+
+  dispatch(setLoader(true));
+
+  const result = await signupUser({
+    name: formData.name,
+    email: formData.email,
+    password: formData.password,
+    phone: formData.phone,
+    about: formData.about,
+    photo: formData.photo,
+    role: 'teacher',
+    education: formData.education,
+    experience: formData.experience,
+  });
+
+  dispatch(setLoader(false));
+
+  if (result.response) {
+    navigate('/login');
+  } else {
+    setError(result.message);
+  }
+};
 
   // Step 1: Email and Password
   if (step === 1) {

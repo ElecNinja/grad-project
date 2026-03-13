@@ -1,24 +1,25 @@
+// Backend-ExpressJS/src/config/app.js
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
+const cors = require('cors');
 const initializePassport = require('./passport-config');
-const supabase = require('./supabase'); // ✅ اتنقل للأول
+const authRoutes = require('../routes/auth');
 
 const app = express();
 
-console.log(supabase) // ✅ دلوقتي شغال
-
-initializePassport(passport);
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// ✅ CORS - لازم يسمح للـ Frontend يتكلم مع الـ Backend
 app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
+  origin: 'http://localhost:5173', // Vite default port
+  credentials: true,
 }));
 
+// Body parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Session (بدون MongoDB - in-memory)
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -26,16 +27,16 @@ app.use(session({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: null
+    maxAge: 1000 * 60 * 60 * 24, // 24 ساعة
   }
 }));
 
+// Passport
+initializePassport(passport);
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(express.static('public'));
 
-const authRoutes = require('../routes/auth');
+// Routes
 app.use('/api', authRoutes);
 
 module.exports = app;
