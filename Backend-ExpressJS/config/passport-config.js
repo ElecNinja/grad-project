@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const supabase = require('./supabase');
 
 function initializePassport(passport) {
-  // Strategy بتاعة الـ login
+  // Strategy login
   passport.use(new LocalStrategy(
     { usernameField: 'email' },
     async (email, password, done) => {
@@ -22,7 +22,7 @@ function initializePassport(passport) {
 
         const user = users[0];
 
-        // قارن الباسورد
+        
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
           return done(null, false, { message: 'Incorrect password.' });

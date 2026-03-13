@@ -29,10 +29,10 @@ router.post('/signup', async (req, res) => {
       return res.status(409).json({ error: 'Email already in use.' });
     }
 
-    // Hash الباسورد
+    // Hash 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // احفظ في Supabase
+    // Supabase
     const { data: newUser, error } = await supabase
       .from('users')
       .insert([{
