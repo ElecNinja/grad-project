@@ -4,10 +4,11 @@ const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
 const initializePassport = require('./passport-config');
+const supabase = require('./supabase'); // ✅ اتنقل للأول
 
 const app = express();
 
-console.log(supabase)
+console.log(supabase) // ✅ دلوقتي شغال
 
 initializePassport(passport);
 
@@ -35,7 +36,6 @@ app.use(passport.session());
 app.use(express.static('public'));
 
 const authRoutes = require('../routes/auth');
-const supabase = require('./supabase');
 app.use('/api', authRoutes);
 
 module.exports = app;

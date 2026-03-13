@@ -1,16 +1,15 @@
 const express = require('express');
+const router = express.Router();
 const bcrypt = require('bcrypt');
 const passport = require('passport');
 const supabase = require('../config/supabase');
 const checkAuthenticated = require('../middleware/authMiddleware');
 const { INPUT_LENGTH } = require('../utils/constants.js');
 
-const router = express.Router();
-
 // Signup
 router.post('/signup', async (req, res) => {
   console.log('📦 Request body:', req.body);
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
   console.log(`New signup requested: ${email}.`);
 
   try {
@@ -31,16 +30,29 @@ router.post('/signup', async (req, res) => {
       .limit(1);
 
     if (existing && existing.length > 0) {
-      return res.status(400).json({ error: 'Email already registered.' });
+      return res.status(409).json({ error: 'Email already registered.' });
     }
 
     const hashedPw = await bcrypt.hash(password, 10);
 
     const { error } = await supabase
       .from('users')
-      .insert([{ name, email, password: hashedPw }]);
+      .insert([{ name, email, password: hashedPw, role: role || 'student' }]);
 
     if (error) throw error;
+
+    const { data: newUser } = await supabase
+      .from('users').select('id').eq('email', email).single();
+
+    if (role === 'student') {
+      await supabase.from('students')
+        .insert([{ name, email, password: hashedPw, "id-student": newUser.id }]);
+    }
+
+    if (role === 'expert') {
+      await supabase.from('teachers')
+        .insert([{ name, email, password: hashedPw, id: newUser.id }]);
+    }
 
     console.log(`New signup: ${email}.`);
     return res.status(201).json({ message: 'User created successfully. Please log in.' });

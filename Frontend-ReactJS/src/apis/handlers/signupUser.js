@@ -1,86 +1,38 @@
-import { api } from "../axios"
-import { apiEndpoints } from "../apiEndpoints"
-import { nameValidation, emailValidation, passwordValidation } from "../../utils/authUtils"
+// Frontend-ReactJS/src/apis/handlers/signupUser.js
 
-/**
- * Function makes api call to register user.
- * 
- * @param {object} data 
- * @param {string} data.name 
- * @param {string} data.email 
- * @param {string} data.password
- * @returns {Promise<object>} // with boolean response and string message
- */
-export function signupUser(data = {}) {
-  // checking if data was received correctly
-  const name = data.name ? data.name : false;
-  const password = data.password ? data.password : false;
-  const email = data.email ? data.email : false;
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-  const errorResponse = {
-    response: false,
-    message: "Error: Invalid input."
-  };
+export async function signupUser(userData) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // مهم لو بتستخدم sessions
+      body: JSON.stringify({
+        email: userData.email,
+        password: userData.password,
+        username: userData.username,
+      }),
+    });
 
-  if (!data.name || !data.email || !data.password) {
-    console.error("One or more required fields missing.")
-    return Promise.resolve(errorResponse)
+    const data = await response.json();
+
+    return {
+      success: response.ok,
+      status: response.status,
+      message: data.message,
+      user: data.data?.user || null,
+    };
+
+  } catch (error) {
+    console.error('Signup request failed:', error);
+    return {
+      success: false,
+      status: 500,
+      message: 'Error: Could not connect to server.',
+      user: null,
+    };
   }
-
-  // validating the input
-  const nameIsValid = nameValidation(name);
-  const passwordIsValid = passwordValidation(password);
-  const emailIsValid = emailValidation(email);
-  const dataIsValid = emailIsValid.response && passwordIsValid.response && nameIsValid.response;
-
-  if (!dataIsValid) {
-    console.error("One or more required fields failed validation.")
-    return Promise.resolve(errorResponse)
-  }
-
-  let requestData = {
-    "name": name,
-    "email": email,
-    "password": password,
-  }
-
-  // preparing the returned response
-  let res = {
-    response: false,
-    message: "",
-  }
-
-  // making the request
-  const signup = async () => {
-    try {
-      const response = await api.post(apiEndpoints.signup, requestData, {
-        validateStatus: () => true //prevents Axios from throwing error is response status not 2XX
-      })
-
-      let responseStatus = response.status;
-
-      switch (responseStatus) {
-        case 200:
-        case 201:
-          res.response = true;
-          res.message = ""
-          break;
-        case 400:
-        case 401:
-        case 409:
-          res.message = response.data?.error || "Error: Registration failed.";
-          break;
-        default:
-          res.message = "Error: Please refresh the page and try again."
-          break;
-      }
-    }
-    catch (error) {
-      res.message = "Error: Please refresh the page and try again."
-      console.warn(`Api handler signup encountered an error: ${error}`)
-    }
-    return res;
-  }
-
-  return signup();
-};
+}
