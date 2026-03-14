@@ -1,0 +1,90 @@
+CHAPTER A Closer Look at 5 Instruction Set Architectures
+The instruction consists of opcodes and operands.
+The opcodes specify the operations to be executed.
+The operands specify register or memory locations of 
+data.
+The instruction sets are differentiated by 
+the following features:
+1- Operand storage in the CPU (data can be stored in  
+stack structure or in registers)
+2 – Number of operands per instruction.
+3 – Operand location ( register to register, register to 
+memory ……).
+4 – Operations.
+5 - Type and size (operands can be addresses, numbers , 
+or characters).
+Instruction Format
+Internal Storage in the CPU
+Stacks VS Registers
+The means of storing data by the CPU
+1 – A stack architecture.
+2 – An accumulator architecture.
+3 – A general purpose register (GPR) architecture.
+Internal Storage in the CPU
+Stacks VS Registers
+Stack architectures use a stack to execute the 
+instruction, and operands are found on the top of 
+the stack (good solution if the memory access is fast).
+Accumulator architecture ( such as in MARIE), with 
+one operand implicitly in the accumulator, minimize 
+the internal complexity of the machine.
+Internal Storage in the CPU
+Stacks VS Registers
+General Purpose Register architectures use sets of 
+general purpose registers, this is the most acceptable 
+model for machines architecture today.
+Stack’s examples
+infix: A / B + 4 postfix: (A B /) (4) +
+* infix: (A B) + (C / D) postfix: (A B * ) (C D / ) +
+push
+pop
+push
+push
+pop
+push
+pop
+push
+Number of operands and instruction length.
+Instructions can be formatted in two ways:
+1 - Fixed length: wastes space, but is fast and results in better  
+performance.
+2 – Variable length: More complex but saves storage space.
+MARIE uses a fixed length instruction with a 4-bit OPcode and 
+a 12-bit operand.
+Number of operands and instruction length.
+Some common instructions format
+MARIE is limited on the maximum number of operands allowed 
+per instruction to one operand only.
+Some instructions have no operands ( as Halt instruction).
+Number of operands and instruction length.
+All architectures have a limit number of operands / instruction.
+In MARIE, the maximum is one operand.
+Some instructions have no operands (Halt ).
+Number of operands and instruction length.
+In Stack
+One operand:
+Last Input-First Output  ( LIFO ) ordering is used.
+First operand is normally the destination.
+Typically when three operands are allowed, at least one operand 
+must be a register.
+1 register + 2 memory addresses
+2 registers + 1 memory addresses
+Three address instructions
+Two address instructions
+One address specify the register and the other operand could be 
+either a register or a memory address.
+Using two instructions , the code will be:
+In accumulator
+In accumulator
+Using one address instructions (as in MARIE), we must assume a 
+register ( normally the accumulator) is implied as the destination for 
+the result of the instruction.
+One address instruction
+In memory
+The program with a stack-based machine with zero address 
+instructions.(no operands)
+No operands
+also Subt, Divide
+Stack
+Instruction Types
+The instructions are grouped into the following categories:
