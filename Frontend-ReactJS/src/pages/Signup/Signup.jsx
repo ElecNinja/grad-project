@@ -9,22 +9,18 @@ import { setLoader } from '../../redux/loaderSlice.js';
 function Signup() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // Step 1: email/password, Step 2: details
+  const [step, setStep] = useState(1); 
   const [role, setRole] = useState('student');
   const [formData, setFormData] = useState({
-    // Step 1 data
     email: '',
     password: '',
     confirmPassword: '',
-    // Step 2 data (common)
     photo: null,
     name: '',
     phone: '',
     about: '',
-    // Teacher specific
     education: '',
     experience: '',
-    // Payment details
     cardNumber: '',
     cardName: '',
     bankName: '',

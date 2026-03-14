@@ -1,4 +1,3 @@
-// Backend-ExpressJS/src/routes/auth.js
 const express = require('express');
 const bcrypt = require('bcrypt');
 const passport = require('passport');
@@ -67,7 +66,7 @@ router.post('/signup', async (req, res) => {
       return res.status(500).json({ error: 'Could not create account.' });
     }
 
-    // ✅ حفظ في login-users بردو
+    
     const { error: loginUserError } = await supabase
       .from('login-users')
       .insert([{
@@ -153,7 +152,7 @@ router.delete('/deleteMe', async (req, res) => {
 
     if (error) return res.status(500).json({ error: 'Could not delete account.' });
 
-    // ✅ حذف من login-users بردو
+    
     await supabase
       .from('login-users')
       .delete()

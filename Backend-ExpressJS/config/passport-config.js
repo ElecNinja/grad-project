@@ -1,14 +1,13 @@
-// Backend-ExpressJS/src/config/passport-config.js
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt');
 const supabase = require('./supabase');
 
 function initializePassport(passport) {
   passport.use(new LocalStrategy(
-    { usernameField: 'email', passReqToCallback: true }, // ✅ بنمرر req عشان نقرأ الـ role
+    { usernameField: 'email', passReqToCallback: true }, 
     async (req, email, password, done) => {
       try {
-        const role = req.body.role; // "student" أو "teacher"
+        const role = req.body.role; 
 
         const tableMap = {
           student: 'signup-students',
@@ -21,7 +20,7 @@ function initializePassport(passport) {
           return done(null, false, { message: 'Invalid role.' });
         }
 
-        // نجيب المستخدم من الجدول الصح
+    
         const { data: users, error } = await supabase
           .from(table)
           .select('*')
@@ -47,7 +46,7 @@ function initializePassport(passport) {
     }
   ));
 
-  // نحفظ id + role عشان نعرف نرجعله من الجدول الصح
+  
   passport.serializeUser((user, done) => {
     done(null, { id: user.id, role: user.role });
   });

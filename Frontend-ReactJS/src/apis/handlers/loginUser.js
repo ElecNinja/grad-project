@@ -1,4 +1,3 @@
-// Frontend-ReactJS/src/apis/handlers/loginUser.js
 import { api } from "../axios"
 import { apiEndpoints } from "../apiEndpoints"
 import { emailValidation, passwordValidation } from "../../utils/authUtils"
@@ -8,7 +7,7 @@ export function loginUser(data) {
     const email = data.email ? data.email : false;
     const password = data.password ? data.password : false;
     const remember = !!data.remember;
-    const role = data.role || 'student'; // ✅
+    const role = data.role || 'student'; 
 
     const errorResponse = {
         response: false,
