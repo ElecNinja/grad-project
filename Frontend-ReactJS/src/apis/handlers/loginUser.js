@@ -1,53 +1,14 @@
+// Frontend-ReactJS/src/apis/handlers/loginUser.js
 import { api } from "../axios"
 import { apiEndpoints } from "../apiEndpoints"
 import { emailValidation, passwordValidation } from "../../utils/authUtils"
 import { setReduxLogInUser } from "../../redux/reduxUtils";
 
-/**
- * Asynchronously makes an API call to request login authorization.
- * 
- * - On success:
- *    - Logs user information into the appropriate Redux store.
- *    - Returns `response: true`, `status: 200` for standard login 
- * - On failure:
- *   - Returns `response: false` with an appropriate error `status` and a `message` describing the failure.
- * 
- * @param {object} data # object containing the login data
- * @param {string} data.email # the user's email address.
- * @param {string} data.password # the user's password .
- * @param {boolean} data.remember # whether to save the cookie for 30 days .
- * @returns {Promise<object>} # with boolean "response", int "status", and string "message"
- * 
- * @example
- * //Input example:
- * const data = {
- *     email: "josy@example.com",
- *     password: "108854cd4b588sszb64010",
- * }
- * 
- * // Response from loginUser:
- * loginUser(requestData)
- *      .then(response => {
- *          console.log (response)
- * })
- * // a successfull response will yield:
- * {
-        response: true,
-        status: 200,
-        message: ""
-    }
-    // an error response might yield:
-    {
-        response: false,
-        status: 400,
-        message: "Error: Failed to log in."
-    }
- */
 export function loginUser(data) {
-    // checking if data was received correctly
     const email = data.email ? data.email : false;
     const password = data.password ? data.password : false;
-    const remember = !!data.remember; //making sure a boolean is passed here
+    const remember = !!data.remember;
+    const role = data.role || 'student'; // ✅
 
     const errorResponse = {
         response: false,
@@ -58,7 +19,7 @@ export function loginUser(data) {
     if (!email || !password) {
         return Promise.resolve(errorResponse)
     };
-    // double-checking the data
+
     const passwordIsValid = passwordValidation(password);
     const emailIsValid = emailValidation(email);
     const dataIsValid = emailIsValid.response && passwordIsValid.response;
@@ -70,21 +31,20 @@ export function loginUser(data) {
     let requestData = {
         "email": email,
         "password": password,
-        "remember": remember
+        "remember": remember,
+        "role": role  // ✅
     }
 
-    // preparing the returned response
     let res = {
         response: false,
         status: 400,
         message: ""
     }
 
-    // making the request
     const logInRequest = async () => {
         try {
             const response = await api.post(apiEndpoints.login, requestData, {
-                validateStatus: () => true //prevents Axios from throwing error is response status not 2XX
+                validateStatus: () => true
             });
 
             let responseStatus = response.request.status;

@@ -7,18 +7,24 @@ const supabase = require('../config/supabase');
 const router = express.Router();
 
 // ============================
-// POST /api/signup-student
+// POST /api/signup
 // ============================
-router.post('/signup-student', async (req, res) => {
+router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password, phone, about, photo, role } = req.body;
+    const { name, email, password, phone, about, photo, role, education, experience } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required.' });
     }
 
+    if (!role || (role !== 'student' && role !== 'teacher')) {
+      return res.status(400).json({ error: 'Role must be student or teacher.' });
+    }
+
+    const table = role === 'teacher' ? 'signup-teachers' : 'signup-students';
+
     const { data: existing } = await supabase
-      .from('signup-students')
+      .from(table)
       .select('id')
       .eq('email', email)
       .limit(1);
@@ -28,87 +34,59 @@ router.post('/signup-student', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    const record = role === 'teacher'
+      ? {
+          name,
+          email,
+          password: hashedPassword,
+          phone: phone || null,
+          education: education || null,
+          experience: experience || null,
+          photo: photo || null,
+          role: 'teacher',
+        }
+      : {
+          name,
+          email,
+          password: hashedPassword,
+          phone: phone || null,
+          about: about || null,
+          photo: photo || null,
+          role: 'student',
+        };
 
     const { data: newUser, error } = await supabase
-      .from('signup-students')
-      .insert([{
-        name,
-        email,
-        password: hashedPassword,
-        phone: phone || null,
-        about: about || null,
-        photo: photo || null,
-        role: role || 'student',
-      }])
+      .from(table)
+      .insert([record])
       .select('id, name, email, role')
       .single();
 
     if (error) {
       console.error('Supabase insert error:', error);
-      return res.status(500).json({ error: 'Could not create student account.' });
+      return res.status(500).json({ error: 'Could not create account.' });
     }
 
-    return res.status(201).json({
-      message: 'Student account created successfully.',
-      user: { name: newUser.name, email: newUser.email }
-    });
-
-  } catch (err) {
-    console.error('Signup-student error:', err);
-    return res.status(500).json({ error: 'Server error.' });
-  }
-});
-
-// ============================
-// POST /api/signup-teacher
-// ============================
-router.post('/signup-teacher', async (req, res) => {
-  try {
-    const { name, email, password, phone, education, experience, photo, role } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required.' });
-    }
-
-    const { data: existing } = await supabase
-      .from('signup-teachers')
-      .select('id')
-      .eq('email', email)
-      .limit(1);
-
-    if (existing && existing.length > 0) {
-      return res.status(409).json({ error: 'Email already in use.' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const { data: newTeacher, error } = await supabase
-      .from('signup-teachers')
+    // ✅ حفظ في login-users بردو
+    const { error: loginUserError } = await supabase
+      .from('login-users')
       .insert([{
-        name,
-        email,
+        email: newUser.email,
         password: hashedPassword,
-        phone: phone || null,
-        education: education || null,
-        experience: experience || null,
-        photo: photo || null,
-        role: role || 'teacher',
-      }])
-      .select('id, name, email, role')
-      .single();
+        role: newUser.role,
+      }]);
 
-    if (error) {
-      console.error('Supabase insert error:', error);
-      return res.status(500).json({ error: 'Could not create teacher account.' });
+    if (loginUserError) {
+      console.error('login-users insert error:', loginUserError);
     }
 
     return res.status(201).json({
-      message: 'Teacher account created successfully.',
-      user: { name: newTeacher.name, email: newTeacher.email }
+      message: `${role === 'teacher' ? 'Teacher' : 'Student'} account created successfully.`,
+      user: { name: newUser.name, email: newUser.email, role: newUser.role }
     });
 
   } catch (err) {
-    console.error('Signup-teacher error:', err);
+    console.error('Signup error:', err);
     return res.status(500).json({ error: 'Server error.' });
   }
 });
@@ -123,9 +101,12 @@ router.post('/login', (req, res, next) => {
 
     req.logIn(user, (err) => {
       if (err) return res.status(500).json({ error: 'Login session error.' });
+
+      const { password: _, ...safeUser } = user;
+
       return res.status(200).json({
         message: 'Logged in successfully.',
-        user: { name: user.name, email: user.email }
+        user: safeUser
       });
     });
   })(req, res, next);
@@ -139,7 +120,7 @@ router.post('/me', (req, res) => {
     return res.status(401).json({ error: 'Not authenticated.' });
   }
   return res.status(200).json({
-    user: { name: req.user.name, email: req.user.email }
+    user: { name: req.user.name, email: req.user.email, role: req.user.role }
   });
 });
 
@@ -163,12 +144,20 @@ router.delete('/deleteMe', async (req, res) => {
   }
 
   try {
+    const table = req.user.role === 'teacher' ? 'signup-teachers' : 'signup-students';
+
     const { error } = await supabase
-      .from('users')
+      .from(table)
       .delete()
       .eq('id', req.user.id);
 
     if (error) return res.status(500).json({ error: 'Could not delete account.' });
+
+    // ✅ حذف من login-users بردو
+    await supabase
+      .from('login-users')
+      .delete()
+      .eq('email', req.user.email);
 
     req.logout((err) => {
       if (err) console.error(err);

@@ -4,14 +4,26 @@ const bcrypt = require('bcrypt');
 const supabase = require('./supabase');
 
 function initializePassport(passport) {
-  // Strategy login
   passport.use(new LocalStrategy(
-    { usernameField: 'email' },
-    async (email, password, done) => {
+    { usernameField: 'email', passReqToCallback: true }, // ✅ بنمرر req عشان نقرأ الـ role
+    async (req, email, password, done) => {
       try {
-        // جيب المستخدم من Supabase
+        const role = req.body.role; // "student" أو "teacher"
+
+        const tableMap = {
+          student: 'signup-students',
+          teacher: 'signup-teachers',
+        };
+
+        const table = tableMap[role];
+
+        if (!table) {
+          return done(null, false, { message: 'Invalid role.' });
+        }
+
+        // نجيب المستخدم من الجدول الصح
         const { data: users, error } = await supabase
-          .from('users')
+          .from(table)
           .select('*')
           .eq('email', email)
           .limit(1);
@@ -22,7 +34,7 @@ function initializePassport(passport) {
 
         const user = users[0];
 
-        
+        // نقارن الباسورد
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
           return done(null, false, { message: 'Incorrect password.' });
@@ -35,14 +47,23 @@ function initializePassport(passport) {
     }
   ));
 
+  // نحفظ id + role عشان نعرف نرجعله من الجدول الصح
   passport.serializeUser((user, done) => {
-    done(null, user.id);
+    done(null, { id: user.id, role: user.role });
   });
 
-  passport.deserializeUser(async (id, done) => {
+  passport.deserializeUser(async ({ id, role }, done) => {
     try {
+      const tableMap = {
+        student: 'signup-students',
+        teacher: 'signup-teachers',
+      };
+
+      const table = tableMap[role];
+      if (!table) return done(null, false);
+
       const { data: users, error } = await supabase
-        .from('users')
+        .from(table)
         .select('id, name, email, role')
         .eq('id', id)
         .limit(1);
@@ -50,6 +71,7 @@ function initializePassport(passport) {
       if (error || !users || users.length === 0) {
         return done(null, false);
       }
+
       done(null, users[0]);
     } catch (err) {
       done(err);
