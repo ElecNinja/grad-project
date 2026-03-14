@@ -7,20 +7,18 @@ const supabase = require('../config/supabase');
 const router = express.Router();
 
 // ============================
-// POST /api/signup
+// POST /api/signup-student
 // ============================
-router.post('/signup', async (req, res) => {
+router.post('/signup-student', async (req, res) => {
   try {
-    const { name, email, password, phone, about, photo, role, education, experience } = req.body;
+    const { name, email, password, phone, about, photo, role } = req.body;
 
-    // Validation
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required.' });
     }
 
-    // شوف لو الإيميل موجود
     const { data: existing } = await supabase
-      .from('users')
+      .from('signup-students')
       .select('id')
       .eq('email', email)
       .limit(1);
@@ -29,12 +27,10 @@ router.post('/signup', async (req, res) => {
       return res.status(409).json({ error: 'Email already in use.' });
     }
 
-    // Hash 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Supabase
     const { data: newUser, error } = await supabase
-      .from('users')
+      .from('signup-students')
       .insert([{
         name,
         email,
@@ -43,22 +39,76 @@ router.post('/signup', async (req, res) => {
         about: about || null,
         photo: photo || null,
         role: role || 'student',
-        }])
+      }])
       .select('id, name, email, role')
       .single();
 
     if (error) {
       console.error('Supabase insert error:', error);
-      return res.status(500).json({ error: 'Could not create account.' });
+      return res.status(500).json({ error: 'Could not create student account.' });
     }
 
     return res.status(201).json({
-      message: 'Account created successfully.',
+      message: 'Student account created successfully.',
       user: { name: newUser.name, email: newUser.email }
     });
 
   } catch (err) {
-    console.error('Signup error:', err);
+    console.error('Signup-student error:', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// ============================
+// POST /api/signup-teacher
+// ============================
+router.post('/signup-teacher', async (req, res) => {
+  try {
+    const { name, email, password, phone, education, experience, photo, role } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email, and password are required.' });
+    }
+
+    const { data: existing } = await supabase
+      .from('signup-teachers')
+      .select('id')
+      .eq('email', email)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      return res.status(409).json({ error: 'Email already in use.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const { data: newTeacher, error } = await supabase
+      .from('signup-teachers')
+      .insert([{
+        name,
+        email,
+        password: hashedPassword,
+        phone: phone || null,
+        education: education || null,
+        experience: experience || null,
+        photo: photo || null,
+        role: role || 'teacher',
+      }])
+      .select('id, name, email, role')
+      .single();
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return res.status(500).json({ error: 'Could not create teacher account.' });
+    }
+
+    return res.status(201).json({
+      message: 'Teacher account created successfully.',
+      user: { name: newTeacher.name, email: newTeacher.email }
+    });
+
+  } catch (err) {
+    console.error('Signup-teacher error:', err);
     return res.status(500).json({ error: 'Server error.' });
   }
 });

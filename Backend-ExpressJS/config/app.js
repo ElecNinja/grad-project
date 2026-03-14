@@ -6,10 +6,11 @@ const passport = require('passport');
 const cors = require('cors');
 const initializePassport = require('./passport-config');
 const authRoutes = require('../routes/auth');
+const loginRoute = require("../routes/login");
+
 
 const app = express();
 
-// ✅ CORS - لازم يسمح للـ Frontend يتكلم مع الـ Backend
 app.use(cors({
   origin: 'http://localhost:5173', // Vite default port
   credentials: true,
@@ -27,7 +28,7 @@ app.use(session({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 1000 * 60 * 60 * 24, // 24 ساعة
+    maxAge: 1000 * 60 * 60 * 24, 
   }
 }));
 
@@ -39,4 +40,6 @@ app.use(passport.session());
 // Routes
 app.use('/api', authRoutes);
 
+
+app.use("/api", loginRoute);
 module.exports = app;
