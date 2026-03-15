@@ -5,6 +5,7 @@ const passport = require('passport');
 const cors = require('cors');
 const initializePassport = require('./passport-config');
 const authRoutes = require('../routes/auth');
+import aiRoutes from "../routes/ai.js";
 
 
 const app = express();
@@ -37,5 +38,6 @@ app.use(passport.session());
 
 // Routes
 app.use('/api', authRoutes);
+app.use("/api/ai", aiRoutes);
 
 module.exports = app;

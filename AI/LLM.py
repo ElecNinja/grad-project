@@ -1,6 +1,6 @@
 import requests
 
-API_KEY = "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"
+API_KEY = "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"
 
 def analyze_with_llm(text):
     prompt = f"""
@@ -32,4 +32,6 @@ def analyze_with_llm(text):
     )
 
     result = response.json()
+    print("FULL RESPONSE:", result)
+
     return result["choices"][0]["message"]["content"]

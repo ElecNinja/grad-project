@@ -1,4 +1,3 @@
-// Frontend-ReactJS/src/apis/handlers/signupUser.js
 import { api } from "../axios";
 import { apiEndpoints } from "../apiEndpoints";
 
