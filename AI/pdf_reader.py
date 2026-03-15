@@ -1,6 +1,7 @@
 from pdf_extractor import extract_text_from_pdf
 from LLM import analyze_with_llm
 import json
+import re
 text = extract_text_from_pdf("sample.pdf")
 
 with open("output.txt", "w", encoding="utf-8") as f:
@@ -24,7 +25,7 @@ json_text = cleaned[start:end]
 
 
 try:
-    data = json.loads(result)
+    data = json.loads(json_text)
     print("\nField:", data["field"])
     print("Sub Field:", data["sub_field"])
     print("Summary:", data["summary"])

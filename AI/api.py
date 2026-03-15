@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
-from pdf_extractor import extract_text_from_pdf
-from LLM import analyze_with_llm
+from AI.pdf_extractor import extract_text_from_pdf
+from AI.LLM import analyze_with_llm
 import json
 import re
 import tempfile
