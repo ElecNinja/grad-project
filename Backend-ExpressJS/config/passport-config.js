@@ -7,7 +7,7 @@ function initializePassport(passport) {
     { usernameField: 'email', passReqToCallback: true }, 
     async (req, email, password, done) => {
       try {
-        const role = req.body.role; 
+        const role = req.body.role;
 
         const tableMap = {
           student: 'signup-students',
@@ -20,33 +20,42 @@ function initializePassport(passport) {
           return done(null, false, { message: 'Invalid role.' });
         }
 
-    
-        const { data: users, error } = await supabase
-          .from(table)
-          .select('*')
+        // login-users
+        const { data: loginData, error: loginError } = await supabase
+          .from('login-users')
+          .select('id, password')
           .eq('email', email)
           .limit(1);
 
-        if (error || !users || users.length === 0) {
+        if (loginError || !loginData || loginData.length === 0) {
           return done(null, false, { message: 'No user found with that email.' });
         }
 
-        const user = users[0];
-
-        // نقارن الباسورد
-        const passwordMatch = await bcrypt.compare(password, user.password);
+      
+        const passwordMatch = await bcrypt.compare(password, loginData[0].password);
         if (!passwordMatch) {
           return done(null, false, { message: 'Incorrect password.' });
         }
 
-        return done(null, user);
+        
+        const { data: users, error } = await supabase
+          .from(table)
+          .select('*')
+          .eq('id', loginData[0].id)
+          .limit(1);
+
+        if (error || !users || users.length === 0) {
+          return done(null, false, { message: 'Profile not found.' });
+        }
+
+        return done(null, users[0]);
+
       } catch (err) {
         return done(err);
       }
     }
   ));
 
-  
   passport.serializeUser((user, done) => {
     done(null, { id: user.id, role: user.role });
   });
