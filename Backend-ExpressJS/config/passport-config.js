@@ -1,7 +1,7 @@
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt');
 const supabase = require('./supabase');
-print()
+
 function initializePassport(passport) {
   passport.use(new LocalStrategy(
     { usernameField: 'email', passReqToCallback: true }, 

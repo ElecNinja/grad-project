@@ -6,7 +6,6 @@ const cors = require('cors');
 const initializePassport = require('./passport-config');
 const authRoutes = require('../routes/auth');
 //const aiRoutes = require('../routes/ai')
-print()
 
 const app = express();
 

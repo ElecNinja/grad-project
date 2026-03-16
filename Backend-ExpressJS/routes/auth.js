@@ -5,7 +5,6 @@ const supabase = require("../config/supabase");
 
 const router = express.Router();
 
-print()
 
 // ============================
 // POST /api/signup
