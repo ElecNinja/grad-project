@@ -1,10 +1,18 @@
 import requests
+import os
+from dotenv import load_dotenv
+from pathlib import Path
 
-API_KEY = "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"
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
+
+API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 def analyze_with_llm(text):
+    if not API_KEY:
+        raise Exception("API key not found. Check your .env file.")
+
     prompt = f"""
-    Analyze the document and Return ONLY raw JSON. Do NOT use markdown formatting like
+    Analyze the document and Return ONLY raw JSON. Do NOT use markdown formatting.
     
     Required format:
     {{
@@ -14,8 +22,6 @@ def analyze_with_llm(text):
     }}
     Document:
     {text[:4000]}
-    
-
     """
 
     response = requests.post(
@@ -32,6 +38,8 @@ def analyze_with_llm(text):
     )
 
     result = response.json()
-    print("FULL RESPONSE:", result)
+
+    if "choices" not in result:
+        raise Exception(f"API Error: {result}")
 
     return result["choices"][0]["message"]["content"]
