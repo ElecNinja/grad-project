@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useSelector } from "react-redux";
-import { ChevronDown, Menu, X } from 'lucide-react';
+import { ChevronDown, Menu, X,Bell } from 'lucide-react';
 import logo from '../../assets/images/logo.png';
 import "./header.css"
 
@@ -107,17 +107,29 @@ function Header() {
             </>
           )}
 
-          {user?.loggedIn && (
-            <>
-              <NavLink to="/dashboard" className="nav-link">
-                Dashboard
-              </NavLink>
+{user?.loggedIn && (
+  <>
+    {/* Bell Icon */}
+    <button className="bell-btn" aria-label="Notifications">
+      <Bell size={20} />
+      <span className="bell-dot" />
+    </button>
 
-              <button className="btn-outline">
-                Logout
-              </button>
-            </>
-          )}
+    {/* User Info */}
+    <div className="user-info">
+      <span className="user-name">{user?.name || 'Alex Johnson'}</span>
+      <span className="user-role">{user?.role || 'STUDENT'}</span>
+    </div>
+
+    {/* Avatar */}
+    <div className="user-avatar">
+      {user?.avatar
+        ? <img src={user.avatar} alt={user.name} className="avatar-img" />
+        : <span className="avatar-letter">{(user?.name || 'A').charAt(0).toUpperCase()}</span>
+      }
+    </div>
+  </>
+)}
 
           {/* Mobile Menu Button */}
           <button 
