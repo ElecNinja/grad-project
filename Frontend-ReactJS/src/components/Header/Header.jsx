@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useSelector } from "react-redux";
-import { ChevronDown, Menu, X,Bell } from 'lucide-react';
+import { ChevronDown, Menu, X, Bell } from 'lucide-react';
 import logo from '../../assets/images/logo.png';
 import "./header.css"
 
@@ -17,7 +17,6 @@ function Header() {
     { name: 'Contact Us', path: '/contact' },
   ];
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -31,7 +30,7 @@ function Header() {
   return (
     <nav className="navbar">
       <div className="nav-container">
-        
+
         {/* Left Side */}
         <div className="nav-left">
           <NavLink to="/" className="logo">
@@ -56,31 +55,52 @@ function Header() {
                 Boot Camp
               </NavLink>
             </li>
-            <li>
-              <NavLink to="/Work" className="nav-link">
-                Work
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/Offers" className="nav-link">
-                Offer
-              </NavLink>
-            </li>
+
+           
+            {!user?.loggedIn && (
+              <>
+                <li>
+                  <NavLink to="/Work" className="nav-link">
+                    Work
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/Offers" className="nav-link">
+                    Offers
+                  </NavLink>
+                </li>
+              </>
+            )}
+
+        
+            {user?.loggedIn && (
+              <>
+                <li>
+                  <NavLink to="/requests" className="nav-link">
+                    Requests
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/videos" className="nav-link">
+                    Videos
+                  </NavLink>
+                </li>
+              </>
+            )}
+
             <li className="more-dropdown" ref={dropdownRef}>
-              <button 
-                className="more-button" 
+              <button
+                className="more-button"
                 onClick={() => setIsMoreOpen(!isMoreOpen)}
               >
                 More <ChevronDown size={16} className={`chevron ${isMoreOpen ? 'rotated' : ''}`} />
               </button>
-              
-              {/* Dropdown Menu */}
               {isMoreOpen && (
                 <div className="dropdown-menu">
                   {moreLinks.map((link, index) => (
-                    <NavLink 
+                    <NavLink
                       key={index}
-                      to={link.path} 
+                      to={link.path}
                       className="dropdown-item"
                       onClick={() => setIsMoreOpen(false)}
                     >
@@ -100,39 +120,32 @@ function Header() {
               <NavLink to="/login" className="nav-link">
                 Login
               </NavLink>
-
               <NavLink to="/signup" className="btn-primary">
                 JOIN US
               </NavLink>
             </>
           )}
 
-{user?.loggedIn && (
-  <>
-    {/* Bell Icon */}
-    <button className="bell-btn" aria-label="Notifications">
-      <Bell size={20} />
-      <span className="bell-dot" />
-    </button>
+          {user?.loggedIn && (
+            <>
+              <button className="bell-btn" aria-label="Notifications">
+                <Bell size={20} />
+                <span className="bell-dot" />
+              </button>
+              <div className="user-info">
+                <span className="user-name">{user?.name || 'Alex Johnson'}</span>
+                <span className="user-role">{user?.role || 'STUDENT'}</span>
+              </div>
+              <div className="user-avatar">
+                {user?.avatar
+                  ? <img src={user.avatar} alt={user.name} className="avatar-img" />
+                  : <span className="avatar-letter">{(user?.name || 'A').charAt(0).toUpperCase()}</span>
+                }
+              </div>
+            </>
+          )}
 
-    {/* User Info */}
-    <div className="user-info">
-      <span className="user-name">{user?.name || 'Alex Johnson'}</span>
-      <span className="user-role">{user?.role || 'STUDENT'}</span>
-    </div>
-
-    {/* Avatar */}
-    <div className="user-avatar">
-      {user?.avatar
-        ? <img src={user.avatar} alt={user.name} className="avatar-img" />
-        : <span className="avatar-letter">{(user?.name || 'A').charAt(0).toUpperCase()}</span>
-      }
-    </div>
-  </>
-)}
-
-          {/* Mobile Menu Button */}
-          <button 
+          <button
             className="mobile-menu-btn"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
@@ -153,12 +166,31 @@ function Header() {
           <NavLink to="/Bootcamp" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
             Boot Camp
           </NavLink>
-          <NavLink to="/Work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
-            Work
-          </NavLink>
-          <NavLink to="/Offer" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
-            Offer
-          </NavLink>
+
+          
+          {!user?.loggedIn && (
+            <>
+              <NavLink to="/Work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                Work
+              </NavLink>
+              <NavLink to="/Offers" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                Offers
+              </NavLink>
+            </>
+          )}
+
+          
+          {user?.loggedIn && (
+            <>
+              <NavLink to="/requests" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                Requests
+              </NavLink>
+              <NavLink to="/videos" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                Videos
+              </NavLink>
+            </>
+          )}
+
           <div className="mobile-divider"></div>
           <NavLink to="/about" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
             About Us
@@ -170,12 +202,16 @@ function Header() {
             Contact Us
           </NavLink>
           <div className="mobile-divider"></div>
-          <NavLink to="/login" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
-            Login
-          </NavLink>
-          <NavLink to="/signup" className="mobile-nav-link highlight" onClick={() => setIsMobileMenuOpen(false)}>
-            JOIN US
-          </NavLink>
+          {!user?.loggedIn && (
+            <>
+              <NavLink to="/login" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                Login
+              </NavLink>
+              <NavLink to="/signup" className="mobile-nav-link highlight" onClick={() => setIsMobileMenuOpen(false)}>
+                JOIN US
+              </NavLink>
+            </>
+          )}
         </div>
       </div>
     </nav>
