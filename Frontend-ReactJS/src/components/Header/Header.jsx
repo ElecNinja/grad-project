@@ -16,7 +16,7 @@ function Header() {
     { name: 'Help Center', path: '/help' },
     { name: 'Contact Us', path: '/contact' },
   ];
-
+  console.log('redux user:', user);
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -56,7 +56,7 @@ function Header() {
               </NavLink>
             </li>
 
-           
+            {/* Logged OUT: Work & Offers */}
             {!user?.loggedIn && (
               <>
                 <li>
@@ -72,8 +72,8 @@ function Header() {
               </>
             )}
 
-        
-            {user?.loggedIn && (
+            {/* Logged in as STUDENT: Requests & Videos */}
+            {user?.loggedIn && user?.role === 'student' && (
               <>
                 <li>
                   <NavLink to="/requests" className="nav-link">
@@ -83,6 +83,22 @@ function Header() {
                 <li>
                   <NavLink to="/videos" className="nav-link">
                     Videos
+                  </NavLink>
+                </li>
+              </>
+            )}
+
+            {/* Logged in as TEACHER: Work & Offers */}
+            {user?.loggedIn && user?.role === 'teacher' && (
+              <>
+                <li>
+                  <NavLink to="/Work" className="nav-link">
+                    Work
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/Offers" className="nav-link">
+                    Offers
                   </NavLink>
                 </li>
               </>
@@ -167,7 +183,7 @@ function Header() {
             Boot Camp
           </NavLink>
 
-          
+          {/* Logged OUT: Work & Offers */}
           {!user?.loggedIn && (
             <>
               <NavLink to="/Work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
@@ -179,14 +195,26 @@ function Header() {
             </>
           )}
 
-          
-          {user?.loggedIn && (
+          {/* Logged in as STUDENT: Requests & Videos */}
+          {user?.loggedIn && user?.role === 'student' && (
             <>
               <NavLink to="/requests" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 Requests
               </NavLink>
               <NavLink to="/videos" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 Videos
+              </NavLink>
+            </>
+          )}
+
+          {/* Logged in as TEACHER: Work & Offers */}
+          {user?.loggedIn && user?.role === 'teacher' && (
+            <>
+              <NavLink to="/Work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                Work
+              </NavLink>
+              <NavLink to="/Offers" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                Offers
               </NavLink>
             </>
           )}

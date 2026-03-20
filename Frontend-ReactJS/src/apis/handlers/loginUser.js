@@ -39,24 +39,25 @@ export function loginUser(data) {
         status: 400,
         message: ""
     }
-
+    
     const logInRequest = async () => {
         try {
             const response = await api.post(apiEndpoints.login, requestData, {
                 validateStatus: () => true
             });
-
+            // console.log('response.data:', response.data);
             let responseStatus = response.request.status;
 
             switch (responseStatus) {
-                case 200:
+                case 200:{
                     let userIsLoggedIn = setReduxLogInUser(
                         response.data.user.name,
-                        response.data.user.email
+                        response.data.user.email,
+                        response.data.user.role
                     )
                     res.response = userIsLoggedIn;
                     res.message = userIsLoggedIn ? "" : "Error: Registration failed."
-                    break;
+                    break;}
                 case 400:
                 case 401:
                 case 403:

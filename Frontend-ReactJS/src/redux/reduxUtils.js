@@ -18,7 +18,7 @@ import { setUser, setUserLogout } from "./userSlice";
  * @param {string} email //"john@fakemail.com"
  * @returns {boolean}
  */
-export function setReduxLogInUser(name, email) {
+export function setReduxLogInUser(name, email,role) {
 
  let dataIsValid = (name !== "") && (email !== "");
 
@@ -26,6 +26,7 @@ export function setReduxLogInUser(name, email) {
   const userData = {
    name: name,
    email: email,
+   role : role,
    loggedIn: true
   };
   store.dispatch(setUser(userData));
