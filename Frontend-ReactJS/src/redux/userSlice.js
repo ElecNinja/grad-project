@@ -12,7 +12,8 @@ const initialState = {
  loggedIn: false,
  email: "",
  name: "",
- role:""
+ role: "",
+ profile: null,
 }
 
 export const userSlice = createSlice({
@@ -24,12 +25,14 @@ export const userSlice = createSlice({
    state.email = action.payload.email;
    state.name = action.payload.name;
    state.role = action.payload.role;
+   state.profile = action.payload.profile;
   },
   setUserLogout: (state) => {
    state.loggedIn = false;
    state.email = "";
    state.name = "";
-   state.role="";
+   state.role = "";
+   state.profile = null;
   },
  }
 });

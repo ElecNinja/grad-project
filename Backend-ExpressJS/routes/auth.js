@@ -5,7 +5,6 @@ const supabase = require("../config/supabase");
 
 const router = express.Router();
 
-
 // ============================
 // POST /api/signup
 // ============================
@@ -23,7 +22,6 @@ router.post("/signup", async (req, res) => {
 
     const table = role === "teacher" ? "signup-teachers" : "signup-students";
 
-    // check if email already exists
     const { data: existing } = await supabase
       .from("login-users")
       .select("id")
@@ -37,17 +35,11 @@ router.post("/signup", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // ==========================
-    // 1 create login user first
+    // 1 create login user
     // ==========================
     const { data: loginUser, error: loginError } = await supabase
       .from("login-users")
-      .insert([
-        {
-          email,
-          password: hashedPassword,
-          role,
-        },
-      ])
+      .insert([{ email, password: hashedPassword, role }])
       .select("id")
       .single();
 
@@ -57,7 +49,7 @@ router.post("/signup", async (req, res) => {
     }
 
     // ==========================
-    // 2 create profile
+    // 2 create signup record
     // ==========================
     const record =
       role === "teacher"
@@ -81,54 +73,102 @@ router.post("/signup", async (req, res) => {
             role: "student",
           };
 
-    const { data: newUser, error } = await supabase
+    const { data: newUser, error: signupError } = await supabase
       .from(table)
       .insert([record])
       .select("id, name, email, role")
       .single();
 
-    if (error) {
-      console.error("profile insert error:", error);
+    if (signupError) {
+      console.error("profile insert error:", signupError);
       return res.status(500).json({ error: "Could not create profile." });
+    }
+
+    // ==========================
+    // 3 create profile record
+    // ==========================
+    if (role === "teacher") {
+      const { error: profileError } = await supabase
+        .from("profile-teacher")
+        .insert([{
+          teacher_id: loginUser.id,
+          bio: "",
+          education: education || null,
+          specialties: null,
+        }]);
+
+      if (profileError) {
+        console.error("profile-teacher insert error:", profileError);
+        return res.status(500).json({ error: "Could not create teacher profile." });
+      }
+    } else {
+      const { error: profileError } = await supabase
+        .from("profile-student")
+        .insert([{
+          "id-student": loginUser.id,
+          name: name,
+          education: null,
+        }]);
+
+      if (profileError) {
+        console.error("profile-student insert error:", profileError);
+        return res.status(500).json({ error: "Could not create student profile." });
+      }
     }
 
     return res.status(201).json({
       message: `${role} account created successfully`,
       user: newUser,
     });
+
   } catch (err) {
     console.error("Signup error:", err);
     return res.status(500).json({ error: "Server error." });
   }
 });
 
-
 // ============================
 // POST /api/login
 // ============================
 router.post("/login", (req, res, next) => {
-  passport.authenticate("local", (err, user, info) => {
+  passport.authenticate("local", async (err, user, info) => {
     if (err) return res.status(500).json({ error: "Server error." });
 
     if (!user) {
-      return res.status(401).json({
-        error: info?.message || "Login failed",
-      });
+      return res.status(401).json({ error: info?.message || "Login failed" });
     }
 
-    req.logIn(user, (err) => {
+    req.logIn(user, async (err) => {
       if (err) return res.status(500).json({ error: "Session error." });
 
       const { password, ...safeUser } = user;
 
+      // fetch profile after login
+      let profile = null;
+      if (user.role === "teacher") {
+        const { data } = await supabase
+          .from("profile-teacher")
+          .select("*")
+          .eq("teacher_id", user.id)
+          .single();
+        profile = data;
+      } else {
+        const { data } = await supabase
+          .from("profile-student")
+          .select("*")
+          .eq("id-student", user.id)
+          .single();
+        profile = data;
+      }
+
       return res.json({
         message: "Logged in successfully",
         user: safeUser,
+        profile,
       });
     });
   })(req, res, next);
 });
-
 
 // ============================
 // GET /api/me
@@ -148,20 +188,16 @@ router.get("/me", (req, res) => {
   });
 });
 
-
 // ============================
 // POST /api/logout
 // ============================
 router.post("/logout", (req, res) => {
   req.logout((err) => {
     if (err) return res.status(500).json({ error: "Logout failed" });
-
     req.session.destroy();
-
     return res.json({ message: "Logged out" });
   });
 });
-
 
 // ============================
 // DELETE /api/deleteMe
@@ -172,11 +208,12 @@ router.delete("/deleteMe", async (req, res) => {
   }
 
   try {
-    const table =
-      req.user.role === "teacher" ? "signup-teachers" : "signup-students";
+    const table = req.user.role === "teacher" ? "signup-teachers" : "signup-students";
+    const profileTable = req.user.role === "teacher" ? "profile-teacher" : "profile-student";
+    const profileKey = req.user.role === "teacher" ? "teacher_id" : "id-student";
 
+    await supabase.from(profileTable).delete().eq(profileKey, req.user.id);
     await supabase.from(table).delete().eq("id", req.user.id);
-
     await supabase.from("login-users").delete().eq("id", req.user.id);
 
     req.logout(() => {});

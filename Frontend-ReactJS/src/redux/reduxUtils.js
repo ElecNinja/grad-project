@@ -16,9 +16,11 @@ import { setUser, setUserLogout } from "./userSlice";
  * 
  * @param {string} name //"John"
  * @param {string} email //"john@fakemail.com"
+ * @param {string} role //"student" or "teacher"
+ * @param {object} profile //profile data from db
  * @returns {boolean}
  */
-export function setReduxLogInUser(name, email,role) {
+export function setReduxLogInUser(name, email, role, profile) {
 
  let dataIsValid = (name !== "") && (email !== "");
 
@@ -26,7 +28,8 @@ export function setReduxLogInUser(name, email,role) {
   const userData = {
    name: name,
    email: email,
-   role : role,
+   role: role,
+   profile: profile || null,
    loggedIn: true
   };
   store.dispatch(setUser(userData));

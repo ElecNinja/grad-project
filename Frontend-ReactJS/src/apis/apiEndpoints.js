@@ -5,5 +5,7 @@ export const apiEndpoints = {
  login: `${baseUrl}/api/login`,
  getUser: `${baseUrl}/api/me`,
  logout: `${baseUrl}/api/logout`,
- deleteAcct: `${baseUrl}/api/deleteMe`
+ deleteAcct: `${baseUrl}/api/deleteMe`,
+ getOffers: `${baseUrl}/api/teacher/offers`,        
+ acceptOffer: `${baseUrl}/api/teacher/accept-offer`, 
 }

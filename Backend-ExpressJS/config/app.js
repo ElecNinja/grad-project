@@ -5,7 +5,7 @@ const passport = require('passport');
 const cors = require('cors');
 const initializePassport = require('./passport-config');
 const authRoutes = require('../routes/auth');
-//const aiRoutes = require('../routes/ai')
+const teacherRouter =require('../routes/teacher') ;
 
 const app = express();
 
@@ -37,6 +37,6 @@ app.use(passport.session());
 
 // Routes
 app.use('/api', authRoutes);
-//app.use("/api", aiRoutes);
+app.use("/api/teacher", teacherRouter);
 
 module.exports = app;

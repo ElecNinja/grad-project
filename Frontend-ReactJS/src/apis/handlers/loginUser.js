@@ -31,7 +31,7 @@ export function loginUser(data) {
         "email": email,
         "password": password,
         "remember": remember,
-        "role": role  // ✅
+        "role": role
     }
 
     let res = {
@@ -53,7 +53,8 @@ export function loginUser(data) {
                     let userIsLoggedIn = setReduxLogInUser(
                         response.data.user.name,
                         response.data.user.email,
-                        response.data.user.role
+                        response.data.user.role,
+                        response.data.profile,
                     )
                     res.response = userIsLoggedIn;
                     res.message = userIsLoggedIn ? "" : "Error: Registration failed."

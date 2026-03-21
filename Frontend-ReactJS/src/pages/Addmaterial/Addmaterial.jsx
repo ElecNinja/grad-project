@@ -1,15 +1,19 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, ChevronRight } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { uploadTeacherMaterial } from '../../apis/axios';
 import './Addmaterial.css';
 
 function Addmaterial() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-
+  const studentId = useSelector((state) => state.user.profile?.["id-student"]);
+  
   const [description, setDescription] = useState('');
   const [materialType, setMaterialType] = useState('bootCamp');
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -42,9 +46,20 @@ function Addmaterial() {
     e.preventDefault();
   };
 
-  const handleNext = () => {
-    // TODO: Handle form submission/navigation
-    navigate('/dashboard');
+  const handleNext = async () => {
+    if (!uploadedFile) {
+      alert('Please upload a file first');
+      return;
+    }
+    setLoading(true);
+    try {
+      await uploadTeacherMaterial(studentId, uploadedFile, description, materialType);
+      navigate('/dashboard');
+    } catch {
+      alert('Upload failed, please try again');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -130,9 +145,9 @@ function Addmaterial() {
 
         {/* Next Button */}
         <div className="form-actions">
-          <button type="button" className="next-button" onClick={handleNext}>
-            Next
-            <ChevronRight size={20} strokeWidth={2} />
+          <button type="button" className="next-button" onClick={handleNext} disabled={loading}>
+            {loading ? 'Uploading...' : 'Next'}
+            {!loading && <ChevronRight size={20} strokeWidth={2} />}
           </button>
         </div>
       </div>
