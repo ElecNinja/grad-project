@@ -44,7 +44,6 @@ async def analyze_pdf(file: UploadFile = File(...)):
     except:
         return {"error": "Model did not return valid JSON"}
 
-# endpoint جديد للـ summarize من URL
 @app.post("/summarize-from-url")
 async def summarize_from_url(body: dict):
     try:
