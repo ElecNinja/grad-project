@@ -20,7 +20,7 @@ import { setUser, setUserLogout } from "./userSlice";
  * @param {object} profile //profile data from db
  * @returns {boolean}
  */
-export function setReduxLogInUser(name, email, role, profile) {
+export function setReduxLogInUser(name, email, role, profile, photo) {
 
  let dataIsValid = (name !== "") && (email !== "");
 
@@ -30,8 +30,10 @@ export function setReduxLogInUser(name, email, role, profile) {
    email: email,
    role: role,
    profile: profile || null,
+   avatar: photo,
    loggedIn: true
   };
+  console.log('dispatching to redux:', userData);
   store.dispatch(setUser(userData));
   return true;
  } else {

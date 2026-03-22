@@ -46,7 +46,7 @@ export function getUser() {
     // making the request
     const reqUserData = async () => {
         try {
-            const response = await api.post(apiEndpoints.getUser, {
+            const response = await api.get(apiEndpoints.getUser, {
                 validateStatus: () => true //prevents Axios from throwing error is response status not 2XX
             });
 
@@ -56,7 +56,10 @@ export function getUser() {
                 case 200:{
                     let userIsLoggedIn = setReduxLogInUser(
                         response.data.user.name,
-                        response.data.user.email
+                        response.data.user.email,
+                        response.data.user.role,
+                        null,
+                        response.data.user.photo
                     )
                     res.status = 200;
                     res.response = userIsLoggedIn;

@@ -14,6 +14,7 @@ const initialState = {
  name: "",
  role: "",
  profile: null,
+ avatar: "",
 }
 
 export const userSlice = createSlice({
@@ -26,6 +27,7 @@ export const userSlice = createSlice({
    state.name = action.payload.name;
    state.role = action.payload.role;
    state.profile = action.payload.profile;
+   state.avatar = action.payload.avatar;
   },
   setUserLogout: (state) => {
    state.loggedIn = false;
@@ -33,6 +35,7 @@ export const userSlice = createSlice({
    state.name = "";
    state.role = "";
    state.profile = null;
+   state.avatar = "";
   },
  }
 });

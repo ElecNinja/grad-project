@@ -46,15 +46,25 @@ export function loginUser(data) {
                 validateStatus: () => true
             });
             // console.log('response.data:', response.data);
+            // console.log('full login response:', response.data);
             let responseStatus = response.request.status;
 
             switch (responseStatus) {
                 case 200:{
+                    console.log('photo being passed:', response.data.user.photo);
+                    console.log('all args:', 
+                        response.data.user.name,
+                        response.data.user.email,
+                        response.data.user.role,
+                        response.data.profile,
+                        response.data.user.photo
+                    );
                     let userIsLoggedIn = setReduxLogInUser(
                         response.data.user.name,
                         response.data.user.email,
                         response.data.user.role,
                         response.data.profile,
+                        response.data.user.photo
                     )
                     res.response = userIsLoggedIn;
                     res.message = userIsLoggedIn ? "" : "Error: Registration failed."

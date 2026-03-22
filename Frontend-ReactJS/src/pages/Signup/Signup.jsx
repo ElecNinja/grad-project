@@ -5,17 +5,19 @@ import "./Signup.css";
 import { signupUser } from '../../apis/handlers/signupUser';
 import { useDispatch } from 'react-redux';
 import { setLoader } from '../../redux/loaderSlice.js';
+import { supabase } from '../../config/supabaseClient'; // 👈 import supabase client
 
 function Signup() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); 
+  const [step, setStep] = useState(1);
   const [role, setRole] = useState('student');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
-    photo: null,
+    photo: null,        // will store the File object
+    photoPreview: null, // will store the blob URL for preview only
     name: '',
     phone: '',
     about: '',
@@ -40,11 +42,40 @@ function Signup() {
     if (error) setError('');
   };
 
+  // ✅ Save the File object + a preview URL separately
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData(prev => ({ ...prev, photo: URL.createObjectURL(file) }));
+      setFormData(prev => ({
+        ...prev,
+        photo: file,                          // real File object for upload
+        photoPreview: URL.createObjectURL(file) // blob URL for preview only
+      }));
     }
+  };
+
+  // ✅ Upload photo to Supabase Storage, return public URL
+  const uploadPhotoToSupabase = async (file) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `profiles/${fileName}`;
+
+    const { error: uploadError } = await supabase
+      .storage
+      .from('avatar') // 👈 your bucket name
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      console.error('Photo upload error:', uploadError);
+      return null;
+    }
+
+    const { data } = supabase
+      .storage
+      .from('avatar')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
   };
 
   const validateStep1 = () => {
@@ -93,30 +124,43 @@ function Signup() {
     setStep(2);
   };
 
+  // ✅ Upload photo first, then signup
   const handleStudentSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateStudentStep2()) return;
+    e.preventDefault();
+    if (!validateStudentStep2()) return;
 
-  dispatch(setLoader(true));
+    dispatch(setLoader(true));
 
-  const result = await signupUser({
-    name: formData.name,
-    email: formData.email,
-    password: formData.password,
-    phone: formData.phone,
-    about: formData.about,
-    photo: formData.photo,
-    role: 'student',
-  });
+    // 1. Upload photo if selected
+    let photoUrl = null;
+    if (formData.photo) {
+      photoUrl = await uploadPhotoToSupabase(formData.photo);
+      if (!photoUrl) {
+        setError('Failed to upload photo. Please try again.');
+        dispatch(setLoader(false));
+        return;
+      }
+    }
 
-  dispatch(setLoader(false));
+    // 2. Signup with real photo URL
+    const result = await signupUser({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      phone: formData.phone,
+      about: formData.about,
+      photo: photoUrl, // ✅ real Supabase URL
+      role: 'student',
+    });
 
-  if (result.response) {
-    navigate('/login'); // أو navigate('/') حسب التصميم
-  } else {
-    setError(result.message);
-  }
-};
+    dispatch(setLoader(false));
+
+    if (result.response) {
+      navigate('/login');
+    } else {
+      setError(result.message);
+    }
+  };
 
   const handleTeacherStep2Submit = (e) => {
     e.preventDefault();
@@ -124,39 +168,51 @@ function Signup() {
     setStep(3);
   };
 
- const handlePaymentSubmit = async (e) => {
-  e.preventDefault();
-  if (!validatePaymentStep()) return;
+  // ✅ Upload photo first, then signup
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (!validatePaymentStep()) return;
 
-  dispatch(setLoader(true));
+    dispatch(setLoader(true));
 
-  const result = await signupUser({
-    name: formData.name,
-    email: formData.email,
-    password: formData.password,
-    phone: formData.phone,
-    about: formData.about,
-    photo: formData.photo,
-    role: 'teacher',
-    education: formData.education,
-    experience: formData.experience,
-  });
+    // 1. Upload photo if selected
+    let photoUrl = null;
+    if (formData.photo) {
+      photoUrl = await uploadPhotoToSupabase(formData.photo);
+      if (!photoUrl) {
+        setError('Failed to upload photo. Please try again.');
+        dispatch(setLoader(false));
+        return;
+      }
+    }
 
-  dispatch(setLoader(false));
+    // 2. Signup with real photo URL
+    const result = await signupUser({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      phone: formData.phone,
+      about: formData.about,
+      photo: photoUrl, // ✅ real Supabase URL
+      role: 'teacher',
+      education: formData.education,
+      experience: formData.experience,
+    });
 
-  if (result.response) {
-    navigate('/login');
-  } else {
-    setError(result.message);
-  }
-};
+    dispatch(setLoader(false));
+
+    if (result.response) {
+      navigate('/login');
+    } else {
+      setError(result.message);
+    }
+  };
 
   // Step 1: Email and Password
   if (step === 1) {
     return (
       <div className="signup-container">
         <div className="signup-card">
-          {/* Role Toggle Buttons */}
           <div className="role-toggle">
             <button
               type="button"
@@ -173,7 +229,7 @@ function Signup() {
               Teacher
             </button>
           </div>
-          
+
           <h1 className="signup-title">Create an account</h1>
 
           {error && <div className="error-message">{error}</div>}
@@ -258,194 +314,195 @@ function Signup() {
     );
   }
 
- // Step 2: Student Details
-if (step === 2 && role === 'student') {
-  return (
-    <div className="signup-container">
-      <div className="signup-card">
-        <h1 className="signup-title">Create an account</h1>
+  // Step 2: Student Details
+  if (step === 2 && role === 'student') {
+    return (
+      <div className="signup-container">
+        <div className="signup-card">
+          <h1 className="signup-title">Create an account</h1>
 
-        {error && <div className="error-message">{error}</div>}
+          {error && <div className="error-message">{error}</div>}
 
-        <form onSubmit={handleStudentSubmit} className="signup-form">
-          <div className="form-group">
-            <label>Add Photo</label>
-            <div className="photo-upload-wrapper">
-              <div className="photo-upload-circle" onClick={() => document.getElementById('student-photo-input').click()}>
-                {formData.photo ? (
-                  <img src={formData.photo} alt="Profile" className="photo-preview" />
-                ) : (
-                  <span className="photo-plus-icon">+</span>
-                )}
+          <form onSubmit={handleStudentSubmit} className="signup-form">
+            <div className="form-group">
+              <label>Add Photo</label>
+              <div className="photo-upload-wrapper">
+                <div className="photo-upload-circle" onClick={() => document.getElementById('student-photo-input').click()}>
+                  {/* ✅ Use photoPreview for display */}
+                  {formData.photoPreview ? (
+                    <img src={formData.photoPreview} alt="Profile" className="photo-preview" />
+                  ) : (
+                    <span className="photo-plus-icon">+</span>
+                  )}
+                </div>
+                <span className="photo-upload-text" onClick={() => document.getElementById('student-photo-input').click()}>
+                  Add photo
+                </span>
+                <input
+                  id="student-photo-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="photo-input-hidden"
+                />
               </div>
-              <span className="photo-upload-text" onClick={() => document.getElementById('student-photo-input').click()}>
-                Add photo
-              </span>
+            </div>
+
+            <div className="form-group">
+              <label>Name</label>
               <input
-                id="student-photo-input"
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="photo-input-hidden"
+                type="text"
+                name="name"
+                placeholder="Enter your Name"
+                value={formData.name}
+                onChange={handleChange}
+                required
               />
             </div>
-          </div>
 
-          <div className="form-group">
-            <label>Name</label>
-            <input
-              type="text"
-              name="name"
-              placeholder="Enter your Name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            <div className="form-group">
+              <label>Phone</label>
+              <input
+                type="tel"
+                name="phone"
+                placeholder="Enter your phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div className="form-group">
-            <label>Phone</label>
-            <input
-              type="tel"
-              name="phone"
-              placeholder="Enter your phone"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            <div className="form-group">
+              <label>About</label>
+              <textarea
+                name="about"
+                placeholder="Enter your About"
+                value={formData.about}
+                onChange={handleChange}
+                rows="4"
+                required
+              />
+            </div>
 
-          <div className="form-group">
-            <label>About</label>
-            <textarea
-              name="about"
-              placeholder="Enter your About"
-              value={formData.about}
-              onChange={handleChange}
-              rows="4"
-              required
-            />
-          </div>
-
-          <button type="submit" className="create-account-btn">
-            Finish
-          </button>
-        </form>
+            <button type="submit" className="create-account-btn">
+              Finish
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   // Step 2: Teacher Details
-if (step === 2 && role === 'teacher') {
-  return (
-    <div className="signup-container">
-      <div className="signup-card">
-        <h1 className="signup-title">Create an account</h1>
+  if (step === 2 && role === 'teacher') {
+    return (
+      <div className="signup-container">
+        <div className="signup-card">
+          <h1 className="signup-title">Create an account</h1>
 
-        {error && <div className="error-message">{error}</div>}
+          {error && <div className="error-message">{error}</div>}
 
-        <form onSubmit={handleTeacherStep2Submit} className="signup-form">
-          <div className="form-group">
-            <label>Add Photo</label>
-            <div className="photo-upload-wrapper">
-              <div className="photo-upload-circle" onClick={() => document.getElementById('teacher-photo-input').click()}>
-                {formData.photo ? (
-                  <img src={formData.photo} alt="Profile" className="photo-preview" />
-                ) : (
-                  <span className="photo-plus-icon">+</span>
-                )}
+          <form onSubmit={handleTeacherStep2Submit} className="signup-form">
+            <div className="form-group">
+              <label>Add Photo</label>
+              <div className="photo-upload-wrapper">
+                <div className="photo-upload-circle" onClick={() => document.getElementById('teacher-photo-input').click()}>
+                  {/* ✅ Use photoPreview for display */}
+                  {formData.photoPreview ? (
+                    <img src={formData.photoPreview} alt="Profile" className="photo-preview" />
+                  ) : (
+                    <span className="photo-plus-icon">+</span>
+                  )}
+                </div>
+                <span className="photo-upload-text" onClick={() => document.getElementById('teacher-photo-input').click()}>
+                  Add photo
+                </span>
+                <input
+                  id="teacher-photo-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="photo-input-hidden"
+                />
               </div>
-              <span className="photo-upload-text" onClick={() => document.getElementById('teacher-photo-input').click()}>
-                Add photo
-              </span>
+            </div>
+
+            <div className="form-group">
+              <label>Name</label>
               <input
-                id="teacher-photo-input"
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="photo-input-hidden"
+                type="text"
+                name="name"
+                placeholder="Enter your Name"
+                value={formData.name}
+                onChange={handleChange}
+                required
               />
             </div>
-          </div>
 
-          <div className="form-group">
-            <label>Name</label>
-            <input
-              type="text"
-              name="name"
-              placeholder="Enter your Name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            <div className="form-group">
+              <label>Phone</label>
+              <input
+                type="tel"
+                name="phone"
+                placeholder="Enter your phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div className="form-group">
-            <label>Phone</label>
-            <input
-              type="tel"
-              name="phone"
-              placeholder="Enter your phone"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            <div className="form-group">
+              <label>About</label>
+              <textarea
+                name="about"
+                placeholder="Enter your About"
+                value={formData.about}
+                onChange={handleChange}
+                rows="4"
+                required
+              />
+            </div>
 
-          <div className="form-group">
-            <label>About</label>
-            <textarea
-              name="about"
-              placeholder="Enter your About"
-              value={formData.about}
-              onChange={handleChange}
-              rows="4"
-              required
-            />
-          </div>
+            <div className="form-group">
+              <label>Education</label>
+              <textarea
+                name="education"
+                placeholder="Add your Credentials here"
+                value={formData.education}
+                onChange={handleChange}
+                rows="3"
+                required
+              />
+              <button
+                type="button"
+                className="add-certificate-btn"
+                onClick={() => {}}
+              >
+                <span className="plus-icon">+</span>
+                Add your certificates
+              </button>
+            </div>
 
-          <div className="form-group">
-            <label>Education</label>
-            <textarea
-              name="education"
-              placeholder="Add your Credentials here"
-              value={formData.education}
-              onChange={handleChange}
-              rows="3"
-              required
-            />
-            <button 
-              type="button" 
-              className="add-certificate-btn"
-              onClick={() => {/* Add certificate functionality */}}
-            >
-              <span className="plus-icon">+</span>
-              Add your certificates
+            <div className="form-group">
+              <label>Experience</label>
+              <textarea
+                name="experience"
+                placeholder="Add your Credentials here"
+                value={formData.experience}
+                onChange={handleChange}
+                rows="3"
+                required
+              />
+            </div>
+
+            <button type="submit" className="create-account-btn">
+              Next
             </button>
-          </div>
-
-          <div className="form-group">
-            <label>Experience</label>
-            <textarea
-              name="experience"
-              placeholder="Add your Credentials here"
-              value={formData.experience}
-              onChange={handleChange}
-              rows="3"
-              required
-            />
-           
-          </div>
-
-          <button type="submit" className="create-account-btn">
-            Next
-          </button>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   // Step 3: Teacher Payment Details
   if (step === 3 && role === 'teacher') {

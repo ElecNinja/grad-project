@@ -154,7 +154,7 @@ function Header() {
               </div>
               <div className="user-avatar">
                 {user?.avatar
-                  ? <img src={user.avatar} alt={user.name} className="avatar-img" />
+                  ? <img src={user.avatar} alt={user.name} className="avatar-img"/>
                   : <span className="avatar-letter">{(user?.name || 'A').charAt(0).toUpperCase()}</span>
                 }
               </div>

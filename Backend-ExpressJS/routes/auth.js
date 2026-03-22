@@ -172,10 +172,17 @@ router.post("/login", (req, res, next) => {
 // ============================
 // GET /api/me
 // ============================
-router.get("/me", (req, res) => {
+router.get("/me", async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated" });
   }
+
+  const table = req.user.role === "teacher" ? "signup-teachers" : "signup-students";
+  const { data: profile } = await supabase
+    .from(table)
+    .select("photo")
+    .eq("id", req.user.id)
+    .single();
 
   return res.json({
     user: {
@@ -183,7 +190,8 @@ router.get("/me", (req, res) => {
       name: req.user.name,
       email: req.user.email,
       role: req.user.role,
-    },
+      photo: profile?.photo || null, 
+    }
   });
 });
 
