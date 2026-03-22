@@ -107,7 +107,6 @@ router.post("/signup", async (req, res) => {
         .insert([{
           "id-student": loginUser.id,
           name: name,
-          education: null,
         }]);
 
       if (profileError) {
