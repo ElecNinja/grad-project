@@ -1,5 +1,4 @@
 import axios from "axios";
-import { redirect } from "react-router-dom";
 import { baseUrl } from "./apiEndpoints";
 
 // Axios instance:
