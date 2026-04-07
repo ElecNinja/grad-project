@@ -4,10 +4,11 @@ const supabase = require('./supabase');
 
 function initializePassport(passport) {
   passport.use(new LocalStrategy(
-    { usernameField: 'email', passReqToCallback: true }, 
+    { usernameField: 'email', passReqToCallback: true },
     async (req, email, password, done) => {
       try {
         const role = req.body.role;
+        console.log('🔍 Login attempt:', { email, role });
 
         const tableMap = {
           student: 'signup-students',
@@ -15,34 +16,38 @@ function initializePassport(passport) {
         };
 
         const table = tableMap[role];
+        console.log('📋 Table:', table);
 
         if (!table) {
           return done(null, false, { message: 'Invalid role.' });
         }
 
-        // login-users
         const { data: loginData, error: loginError } = await supabase
           .from('login-users')
           .select('id, password')
           .eq('email', email)
           .limit(1);
 
+        console.log('👤 loginData:', loginData, 'error:', loginError);
+
         if (loginError || !loginData || loginData.length === 0) {
           return done(null, false, { message: 'No user found with that email.' });
         }
 
-      
         const passwordMatch = await bcrypt.compare(password, loginData[0].password);
+        console.log('🔐 passwordMatch:', passwordMatch);
+
         if (!passwordMatch) {
           return done(null, false, { message: 'Incorrect password.' });
         }
 
-        
         const { data: users, error } = await supabase
           .from(table)
           .select('*')
           .eq('id', loginData[0].id)
           .limit(1);
+
+        console.log('👥 profile:', users, 'error:', error);
 
         if (error || !users || users.length === 0) {
           return done(null, false, { message: 'Profile not found.' });
@@ -51,12 +56,14 @@ function initializePassport(passport) {
         return done(null, users[0]);
 
       } catch (err) {
+        console.error('❌ Passport error:', err);
         return done(err);
       }
     }
   ));
 
   passport.serializeUser((user, done) => {
+    console.log('📦 serializeUser:', { id: user.id, role: user.role });
     done(null, { id: user.id, role: user.role });
   });
 

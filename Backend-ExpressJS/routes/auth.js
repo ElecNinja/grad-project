@@ -5,9 +5,7 @@ const supabase = require("../config/supabase");
 
 const router = express.Router();
 
-// ============================
 // POST /api/signup
-// ============================
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password, phone, about, photo, role, education, experience } = req.body;
@@ -34,9 +32,6 @@ router.post("/signup", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ==========================
-    // 1 create login user
-    // ==========================
     const { data: loginUser, error: loginError } = await supabase
       .from("login-users")
       .insert([{ email, password: hashedPassword, role }])
@@ -48,30 +43,9 @@ router.post("/signup", async (req, res) => {
       return res.status(500).json({ error: "Could not create login account." });
     }
 
-    // ==========================
-    // 2 create signup record
-    // ==========================
-    const record =
-      role === "teacher"
-        ? {
-            id: loginUser.id,
-            name,
-            email,
-            phone: phone || null,
-            education: education || null,
-            experience: experience || null,
-            photo: photo || null,
-            role: "teacher",
-          }
-        : {
-            id: loginUser.id,
-            name,
-            email,
-            phone: phone || null,
-            about: about || null,
-            photo: photo || null,
-            role: "student",
-          };
+    const record = role === "teacher"
+      ? { id: loginUser.id, name, email, phone: phone || null, education: education || null, experience: experience || null, photo: photo || null, role: "teacher" }
+      : { id: loginUser.id, name, email, phone: phone || null, about: about || null, photo: photo || null, role: "student" };
 
     const { data: newUser, error: signupError } = await supabase
       .from(table)
@@ -84,18 +58,10 @@ router.post("/signup", async (req, res) => {
       return res.status(500).json({ error: "Could not create profile." });
     }
 
-    // ==========================
-    // 3 create profile record
-    // ==========================
     if (role === "teacher") {
       const { error: profileError } = await supabase
         .from("profile-teacher")
-        .insert([{
-          teacher_id: loginUser.id,
-          bio: "",
-          education: education || null,
-          specialties: null,
-        }]);
+        .insert([{ teacher_id: loginUser.id, bio: "", education: education || null, specialties: null }]);
 
       if (profileError) {
         console.error("profile-teacher insert error:", profileError);
@@ -104,10 +70,7 @@ router.post("/signup", async (req, res) => {
     } else {
       const { error: profileError } = await supabase
         .from("profile-student")
-        .insert([{
-          "id-student": loginUser.id,
-          name: name,
-        }]);
+        .insert([{ "id-student": loginUser.id, name }]);
 
       if (profileError) {
         console.error("profile-student insert error:", profileError);
@@ -126,9 +89,7 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// ============================
 // POST /api/login
-// ============================
 router.post("/login", (req, res, next) => {
   passport.authenticate("local", async (err, user, info) => {
     if (err) return res.status(500).json({ error: "Server error." });
@@ -142,7 +103,6 @@ router.post("/login", (req, res, next) => {
 
       const { password, ...safeUser } = user;
 
-      // fetch profile after login
       let profile = null;
       if (user.role === "teacher") {
         const { data } = await supabase
@@ -169,9 +129,7 @@ router.post("/login", (req, res, next) => {
   })(req, res, next);
 });
 
-// ============================
 // GET /api/me
-// ============================
 router.get("/me", async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated" });
@@ -190,14 +148,12 @@ router.get("/me", async (req, res) => {
       name: req.user.name,
       email: req.user.email,
       role: req.user.role,
-      photo: profile?.photo || null, 
+      photo: profile?.photo || null,
     }
   });
 });
 
-// ============================
 // POST /api/logout
-// ============================
 router.post("/logout", (req, res) => {
   req.logout((err) => {
     if (err) return res.status(500).json({ error: "Logout failed" });
@@ -206,9 +162,7 @@ router.post("/logout", (req, res) => {
   });
 });
 
-// ============================
 // DELETE /api/deleteMe
-// ============================
 router.delete("/deleteMe", async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated." });
