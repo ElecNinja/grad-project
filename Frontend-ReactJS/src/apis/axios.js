@@ -1,26 +1,14 @@
 import axios from "axios";
 import { baseUrl } from "./apiEndpoints";
 
-// Axios instance:
-
-/**
- * ----------------------------------------------------
- * API calls in this application use the Axios library.
- * @see {@link https://axios-http.com}
- * -----------------------------------------------------
- * @example
- * 
- * Usage:
- * const response = await api.post(apiEndpoints.login, dataToPost)
- */
 export const api = axios.create({
- baseURL: baseUrl,
- timeout: 5000,
- withCredentials: true,
- headers: {
-  'Accept': 'application/json',
-  'Content-Type': 'application/json',
- }
+  baseURL: baseUrl,
+  timeout: 60000,
+  withCredentials: true,
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  }
 });
 
 export const uploadPdfForAnalysis = (file) => {
@@ -37,16 +25,17 @@ export const uploadTeacherMaterial = (studentId, file, description, materialType
   formData.append("studentId", studentId);
   formData.append("description", description);
   formData.append("materialType", materialType);
-  return axios.post(`${baseUrl}/api/teacher/upload-material`, formData, {
+  // Use api instance to send session cookie
+  return api.post(`/api/teacher/upload-material`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   }).then((r) => r.data);
 };
 
 export const getTeacherOffers = (teacherId) =>
-  api.get(`${baseUrl}/api/teacher/offers/${teacherId}`).then((r) => r.data);
+  api.get(`/api/teacher/offers/${teacherId}`).then((r) => r.data);
 
 export const acceptOffer = (offerId, price) =>
-  api.post(`${baseUrl}/api/teacher/accept-offer`, { offerId, price }).then((r) => r.data);
+  api.post(`/api/teacher/accept-offer`, { offerId, price }).then((r) => r.data);
 
 export const summarizePdf = (pdfUrl) =>
-  axios.post(`${baseUrl}/api/teacher/summarize-pdf`, { pdfUrl }).then((r) => r.data);
+  api.post(`/api/teacher/summarize-pdf`, { pdfUrl }).then((r) => r.data);

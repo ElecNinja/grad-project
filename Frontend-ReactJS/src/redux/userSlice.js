@@ -1,56 +1,40 @@
-/**
- * ABOUT
- * User redux slice: controls whether user is logged into the app.
- * 
- * Important: 
- * Use the functions in reduxUtils.js to set the user state.
- * Do not set the userSlice directly: doing it using util functions will make debugging easier.
- */
 import { createSlice } from "@reduxjs/toolkit"
 
 const initialState = {
- loggedIn: false,
- email: "",
- name: "",
- role: "",
- profile: null,
- avatar: "",
+  loggedIn: false,
+  id: null,
+  email: "",
+  name: "",
+  role: "",
+  profile: null,
+  avatar: "",
 }
 
 export const userSlice = createSlice({
- name: "user",
- initialState,
- reducers: {
-  setUser: (state, action) => {
-   state.loggedIn = action.payload.loggedIn;
-   state.email = action.payload.email;
-   state.name = action.payload.name;
-   state.role = action.payload.role;
-   state.profile = action.payload.profile;
-   state.avatar = action.payload.avatar;
-  },
-  setUserLogout: (state) => {
-   state.loggedIn = false;
-   state.email = "";
-   state.name = "";
-   state.role = "";
-   state.profile = null;
-   state.avatar = "";
-  },
- }
+  name: "user",
+  initialState,
+  reducers: {
+    setUser: (state, action) => {
+      state.loggedIn = action.payload.loggedIn;
+      state.id = action.payload.id || null;
+      state.email = action.payload.email;
+      state.name = action.payload.name;
+      state.role = action.payload.role;
+      state.profile = action.payload.profile;
+      state.avatar = action.payload.avatar;
+    },
+    setUserLogout: (state) => {
+      state.loggedIn = false;
+      state.id = null;
+      state.email = "";
+      state.name = "";
+      state.role = "";
+      state.profile = null;
+      state.avatar = "";
+    },
+  }
 });
 
 const userReducer = userSlice.reducer;
-
 export const { setUser, setUserLogout } = userSlice.actions;
 export default userReducer;
-
-/**
- * Example usage:
- * const userData = {
- *  email: "tom@email.com",
- *  name: "Tom",
- *  logedIn: true
- * }
- * dispatch(setUser(userData))
- */

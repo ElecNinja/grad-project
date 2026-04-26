@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
 import { getTeacherOffers, summarizePdf } from "../../apis/axios";
+import { acceptOffer } from "../../apis/handlers/acceptOffer";
 import "./offers.css";
 
 function Offers() {
@@ -10,8 +10,8 @@ function Offers() {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [summarizing, setSummarizing] = useState(false);
-
-  const teacherId = useSelector((state) => state.user.profile?.teacher_id);
+  const [acceptedOffers, setAcceptedOffers] = useState({});
+  const [acceptError, setAcceptError] = useState("");
 
   useEffect(() => {
     getTeacherOffers("all")
@@ -41,6 +41,25 @@ function Offers() {
     }
   };
 
+  const handleAccept = async (offer) => {
+    const offerId = offer["id-pdf"];
+    const price = prices[offerId];
+
+    if (!price) {
+      setAcceptError("Please set a price first.");
+      return;
+    }
+
+    const res = await acceptOffer(offerId, price);
+
+    if (res.response) {
+      setAcceptedOffers((prev) => ({ ...prev, [offerId]: true }));
+      setAcceptError("");
+    } else {
+      setAcceptError(res.message);
+    }
+  };
+
   const handleCloseModal = () => {
     setSelectedOffer(null);
     setSummary(null);
@@ -53,6 +72,10 @@ function Offers() {
       <h1 className="offers-title">Offers</h1>
       <p className="offers-subtitle">Manage incoming learning requests and review student materials.</p>
 
+      {acceptError && (
+        <p style={{ color: "red", textAlign: "center" }}>{acceptError}</p>
+      )}
+
       <div className="offers-list">
         {offers.length === 0 && <p>No offers yet.</p>}
         {offers.map((offer) => (
@@ -60,14 +83,15 @@ function Offers() {
 
             <div className="offer-left">
               <div className="avatar-circle">
-                {/* TODO: add student photo later */}
-                <img src="https://i.pravatar.cc/150?img=12" alt="student" />
+                <img
+                  src={offer.studentPhoto || "https://i.pravatar.cc/150?img=12"}
+                  alt="student"
+                />
               </div>
               <div className="offer-content">
-                {/* TODO: join with profile-student to get name later */}
-                <h3>Student</h3>
-                <p className="material">Material Requested: {offer.specialties}</p>
-                <p className="description"></p>
+                <h3>{offer.studentName || "Student"}</h3>
+                <p className="material">Material: {offer.specialties || "Not specified"}</p>
+                <p className="material">Type: {offer.Type || "Not specified"}</p>
                 <div className="buttons">
                   <div className="price-input-wrapper">
                     <span className="dollar-sign">$</span>
@@ -77,12 +101,24 @@ function Offers() {
                       className="price-input"
                       placeholder="Set price"
                       value={prices[offer["id-pdf"]] || ""}
-                      onChange={(e) => setPrices({ ...prices, [offer["id-pdf"]]: e.target.value.replace(/[^0-9]/g, "") })}
+                      onChange={(e) =>
+                        setPrices({
+                          ...prices,
+                          [offer["id-pdf"]]: e.target.value.replace(/[^0-9]/g, "")
+                        })
+                      }
                     />
                   </div>
-                  {/* TODO: wire accept button to acceptOffer API later */}
-                  <button className="accept-btn">Accept</button>
-                  {/* TODO: wire message button to chat system later */}
+
+                  <button
+                    className="accept-btn"
+                    onClick={() => handleAccept(offer)}
+                    disabled={acceptedOffers[offer["id-pdf"]]}
+                    style={acceptedOffers[offer["id-pdf"]] ? { background: "green" } : {}}
+                  >
+                    {acceptedOffers[offer["id-pdf"]] ? "Accepted ✓" : "Accept"}
+                  </button>
+
                   <button className="message-btn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />

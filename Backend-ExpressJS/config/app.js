@@ -1,3 +1,5 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+
 const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
@@ -5,6 +7,8 @@ const cors = require('cors');
 const initializePassport = require('./passport-config');
 const authRoutes = require('../routes/auth');
 const teacherRouter = require('../routes/teacher');
+const { sanitizeInput, rateLimiter } = require("../middleware/securityMiddleware");
+const { errorHandler, notFound } = require("../utils/errorHandler");
 
 const app = express();
 
@@ -15,6 +19,10 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Security middleware
+app.use(rateLimiter);
+app.use(sanitizeInput);
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -33,5 +41,11 @@ app.use(passport.session());
 
 app.use('/api', authRoutes);
 app.use('/api/teacher', teacherRouter);
+
+// Handle unknown routes
+app.use(notFound);
+
+// Global error handler
+app.use(errorHandler);
 
 module.exports = app;

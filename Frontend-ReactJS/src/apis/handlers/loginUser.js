@@ -4,84 +4,78 @@ import { emailValidation, passwordValidation } from "../../utils/authUtils"
 import { setReduxLogInUser } from "../../redux/reduxUtils";
 
 export function loginUser(data) {
-    const email = data.email ? data.email : false;
-    const password = data.password ? data.password : false;
-    const remember = !!data.remember;
-    const role = data.role || 'student'; 
+  const email = data.email ? data.email : false;
+  const password = data.password ? data.password : false;
+  const remember = !!data.remember;
+  const role = data.role || 'student';
 
-    const errorResponse = {
-        response: false,
-        status: 400,
-        message: "Error: Invalid input."
-    };
+  const errorResponse = {
+    response: false,
+    status: 400,
+    message: "Error: Invalid input."
+  };
 
-    if (!email || !password) {
-        return Promise.resolve(errorResponse)
-    };
+  if (!email || !password) {
+    return Promise.resolve(errorResponse)
+  };
 
-    const passwordIsValid = passwordValidation(password);
-    const emailIsValid = emailValidation(email);
-    const dataIsValid = emailIsValid.response && passwordIsValid.response;
+  const passwordIsValid = passwordValidation(password);
+  const emailIsValid = emailValidation(email);
+  const dataIsValid = emailIsValid.response && passwordIsValid.response;
 
-    if (!dataIsValid) {
-        return Promise.resolve(errorResponse)
-    }
+  if (!dataIsValid) {
+    return Promise.resolve(errorResponse)
+  }
 
-    let requestData = {
-        "email": email,
-        "password": password,
-        "remember": remember,
-        "role": role
-    }
+  let requestData = {
+    "email": email,
+    "password": password,
+    "remember": remember,
+    "role": role
+  }
 
-    let res = {
-        response: false,
-        status: 400,
-        message: ""
-    }
-    
-    const logInRequest = async () => {
-        try {
-            const response = await api.post(apiEndpoints.login, requestData, {
-                validateStatus: () => true
-            });
-            // console.log('response.data:', response.data);
-            // console.log('full login response:', response.data);
-            let responseStatus = response.request.status;
+  let res = {
+    response: false,
+    status: 400,
+    message: ""
+  }
 
-            switch (responseStatus) {
-                case 200:{
-                    console.log('photo being passed:', response.data.user.photo);
-                    console.log('all args:', 
-                        response.data.user.name,
-                        response.data.user.email,
-                        response.data.user.role,
-                        response.data.profile,
-                        response.data.user.photo
-                    );
-                    let userIsLoggedIn = setReduxLogInUser(
-                        response.data.user.name,
-                        response.data.user.email,
-                        response.data.user.role,
-                        response.data.profile,
-                        response.data.user.photo
-                    )
-                    res.response = userIsLoggedIn;
-                    res.message = userIsLoggedIn ? "" : "Error: Registration failed."
-                    break;}
-                case 400:
-                case 401:
-                case 403:
-                    res.message = response.data?.error || "Error: Credentials invalid."
-                    break;
-                default:
-                    res.message = "Error: Please refresh the page and try again."
-                    break;
-            }
-        } catch {
-            res.message = "Error: Please refresh the page and try again."
+  const logInRequest = async () => {
+    try {
+      const response = await api.post(apiEndpoints.login, requestData, {
+        validateStatus: () => true
+      });
+
+      let responseStatus = response.request.status;
+
+      switch (responseStatus) {
+        case 200: {
+          // Save user data including id to Redux
+          let userIsLoggedIn = setReduxLogInUser(
+            response.data.user.name,
+            response.data.user.email,
+            response.data.user.role,
+            response.data.profile,
+            response.data.user.photo,
+            response.data.user.id
+          )
+          res.response = userIsLoggedIn;
+          res.message = userIsLoggedIn ? "" : "Error: Login failed."
+          break;
         }
-        return res;
+        case 400:
+        case 401:
+        case 403:
+          res.message = response.data?.error || "Error: Credentials invalid."
+          break;
+        default:
+          res.message = "Error: Please refresh the page and try again."
+          break;
+      }
+    } catch {
+      res.message = "Error: Please refresh the page and try again."
     }
-    return logInRequest()
+    return res;
+  }
+  return logInRequest()
 }

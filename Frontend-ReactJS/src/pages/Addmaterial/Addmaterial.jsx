@@ -8,7 +8,7 @@ import './Addmaterial.css';
 function Addmaterial() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  const studentId = useSelector((state) => state.user.profile?.["id-student"]);
+  const studentId = useSelector((state) => state.user.id);
   
   const [description, setDescription] = useState('');
   const [materialType, setMaterialType] = useState('bootCamp');
