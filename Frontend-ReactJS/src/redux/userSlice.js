@@ -8,6 +8,7 @@ const initialState = {
   role: "",
   profile: null,
   avatar: "",
+  token: null, // ✅ added
 }
 
 export const userSlice = createSlice({
@@ -22,6 +23,7 @@ export const userSlice = createSlice({
       state.role = action.payload.role;
       state.profile = action.payload.profile;
       state.avatar = action.payload.avatar;
+      state.token = action.payload.token || null; // ✅ added
     },
     setUserLogout: (state) => {
       state.loggedIn = false;
@@ -31,6 +33,7 @@ export const userSlice = createSlice({
       state.role = "";
       state.profile = null;
       state.avatar = "";
+      state.token = null; // ✅ added
     },
   }
 });

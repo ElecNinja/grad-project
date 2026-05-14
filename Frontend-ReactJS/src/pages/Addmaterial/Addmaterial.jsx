@@ -1,23 +1,19 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, ChevronRight } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { uploadTeacherMaterial } from '../../apis/axios';
+import { createStudentRequest } from '../../apis/axios'; // ✅ changed
 import './Addmaterial.css';
 
 function Addmaterial() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  const studentId = useSelector((state) => state.user.id);
-  
+
   const [description, setDescription] = useState('');
   const [materialType, setMaterialType] = useState('bootCamp');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleUploadClick = () => fileInputRef.current?.click();
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -42,21 +38,20 @@ function Addmaterial() {
     }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
+  const handleDragOver = (e) => e.preventDefault();
 
   const handleNext = async () => {
-    if (!uploadedFile) {
-      alert('Please upload a file first');
+    if (!description) {
+      alert('Please add a description');
       return;
     }
     setLoading(true);
     try {
-      await uploadTeacherMaterial(studentId, uploadedFile, description, materialType);
+      // File is optional — description and materialType are required
+      await createStudentRequest(uploadedFile, description, materialType);
       navigate('/dashboard');
     } catch {
-      alert('Upload failed, please try again');
+      alert('Failed to submit request, please try again');
     } finally {
       setLoading(false);
     }
@@ -65,12 +60,8 @@ function Addmaterial() {
   return (
     <div className="addmaterial-container">
       <div className="addmaterial-card">
-        {/* Upload Section */}
-        <div
-          className="upload-zone"
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-        >
+        {/* Upload Section - optional */}
+        <div className="upload-zone" onDrop={handleDrop} onDragOver={handleDragOver}>
           <input
             ref={fileInputRef}
             type="file"
@@ -79,16 +70,12 @@ function Addmaterial() {
             className="upload-input"
             hidden
           />
-          <button
-            type="button"
-            className="upload-button"
-            onClick={handleUploadClick}
-          >
+          <button type="button" className="upload-button" onClick={handleUploadClick}>
             <Upload size={20} strokeWidth={2} />
             Upload Material
           </button>
           <p className="upload-hint">
-            {uploadedFile ? uploadedFile.name : 'PDF, DOCX, or Media files (Max 50MB)'}
+            {uploadedFile ? uploadedFile.name : 'PDF, DOCX, or Media files (Max 50MB) - Optional'}
           </p>
         </div>
 
@@ -138,7 +125,7 @@ function Addmaterial() {
                 checked={materialType === 'meeting'}
                 onChange={() => setMaterialType('meeting')}
               />
-              <span className="radio-label">meeting (live)</span>
+              <span className="radio-label">Meeting (live)</span>
             </label>
           </div>
         </div>
@@ -146,7 +133,7 @@ function Addmaterial() {
         {/* Next Button */}
         <div className="form-actions">
           <button type="button" className="next-button" onClick={handleNext} disabled={loading}>
-            {loading ? 'Uploading...' : 'Next'}
+            {loading ? 'Submitting...' : 'Next'}
             {!loading && <ChevronRight size={20} strokeWidth={2} />}
           </button>
         </div>

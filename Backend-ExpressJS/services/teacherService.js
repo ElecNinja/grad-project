@@ -5,32 +5,53 @@ const axios = require("axios");
 // Upload material to storage + DB
 // ===============================
 const uploadMaterial = async (studentId, description, materialType, file) => {
-  const fileName = `${studentId}_${Date.now()}.pdf`;
+  // Generate unique file name
+  const fileExt = file.originalname?.split('.').pop() || 'pdf';
+  const fileName = `${studentId}_${Date.now()}.${fileExt}`;
 
+  // Upload file to Supabase Storage
   const { error: storageError } = await supabase.storage
     .from("teacher-materials")
-    .upload(fileName, file.buffer, { contentType: "application/pdf" });
+    .upload(fileName, file.buffer, { contentType: file.mimetype });
 
-  if (storageError) throw storageError;
+  if (storageError) {
+    console.error("Storage error:", storageError);
+    throw storageError;
+  }
 
+  // Get public URL of uploaded file
   const { data: publicUrlData } = supabase.storage
     .from("teacher-materials")
     .getPublicUrl(fileName);
 
   const pdfUrl = publicUrlData.publicUrl;
-  const idPdf = Date.now();
 
-  const { error: uploadError } = await supabase
-    .from("upload-pdf")
+  // Map materialType to resource_type allowed values
+  const resourceTypeMap = {
+    bootCamp: 'bootCamp',
+    recordVideo: 'recordVideo',
+    meeting: 'meeting',
+    pdf: 'pdf',
+    note: 'note',
+  };
+
+  // Save to community_resources table
+  const { error: dbError } = await supabase
+    .from("community_resources")
     .insert([{
-      "id-student": studentId,
-      "pdf-url": pdfUrl,
-      specialties: description || null,
-      "id-pdf": idPdf,
-      "Type": materialType || null,
+      uploader_id: studentId,
+      title: file.originalname || 'Uploaded Material',
+      description: description || null,
+      resource_type: resourceTypeMap[materialType] || 'other',
+      file_url: pdfUrl,
+      file_size_bytes: file.size || null,
+      is_public: true,
     }]);
 
-  if (uploadError) throw uploadError;
+  if (dbError) {
+    console.error("DB error:", dbError);
+    throw dbError;
+  }
 
   return { pdfUrl };
 };
@@ -39,29 +60,24 @@ const uploadMaterial = async (studentId, description, materialType, file) => {
 // Get all offers from DB + student info
 // ===============================
 const getOffers = async (teacherId) => {
-  const { data: pdfs, error } = await supabase
-    .from("upload-pdf")
-    .select("*");
+  const { data: resources, error } = await supabase
+    .from("community_resources")
+    .select(`
+      *,
+      profiles (
+        full_name,
+        avatar_url
+      )
+    `)
+    .eq("is_public", true);
 
   if (error) throw error;
 
-  const offersWithStudentInfo = await Promise.all(
-    pdfs.map(async (pdf) => {
-      const { data: student } = await supabase
-        .from("signup-students")
-        .select("name, photo")
-        .eq("id", pdf["id-student"])
-        .single();
-
-      return {
-        ...pdf,
-        studentName: student?.name || "Student",
-        studentPhoto: student?.photo || null,
-      };
-    })
-  );
-
-  return offersWithStudentInfo;
+  return resources.map((r) => ({
+    ...r,
+    studentName: r.profiles?.full_name || "Student",
+    studentPhoto: r.profiles?.avatar_url || null,
+  }));
 };
 
 // ===============================
@@ -69,9 +85,9 @@ const getOffers = async (teacherId) => {
 // ===============================
 const acceptOffer = async (offerId, price) => {
   const { error } = await supabase
-    .from("offer-teacher")
-    .update({ "accept or not": "accepted" })
-    .eq("id-pdf", offerId);
+    .from("community_resources")
+    .update({ is_public: true })
+    .eq("id", offerId);
 
   if (error) throw error;
 };

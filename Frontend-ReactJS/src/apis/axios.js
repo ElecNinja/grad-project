@@ -1,5 +1,6 @@
 import axios from "axios";
 import { baseUrl } from "./apiEndpoints";
+import { store } from "../redux/store";
 
 export const api = axios.create({
   baseURL: baseUrl,
@@ -9,6 +10,15 @@ export const api = axios.create({
     'Accept': 'application/json',
     'Content-Type': 'application/json',
   }
+});
+
+// Automatically send token with every request
+api.interceptors.request.use((config) => {
+  const token = store.getState().user?.token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export const uploadPdfForAnalysis = (file) => {
@@ -25,11 +35,26 @@ export const uploadTeacherMaterial = (studentId, file, description, materialType
   formData.append("studentId", studentId);
   formData.append("description", description);
   formData.append("materialType", materialType);
-  // Use api instance to send session cookie
   return api.post(`/api/teacher/upload-material`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   }).then((r) => r.data);
 };
+
+// ✅ Student creates a request
+export const createStudentRequest = (file, description, materialType, title) => {
+  const formData = new FormData();
+  if (file) formData.append("file", file);
+  formData.append("description", description || "");
+  formData.append("materialType", materialType);
+  formData.append("title", title || description || "New Request");
+  return api.post(`/api/student/request`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }).then((r) => r.data);
+};
+
+// ✅ Student gets their requests
+export const getMyRequests = () =>
+  api.get(`/api/student/requests`).then((r) => r.data);
 
 export const getTeacherOffers = (teacherId) =>
   api.get(`/api/teacher/offers/${teacherId}`).then((r) => r.data);

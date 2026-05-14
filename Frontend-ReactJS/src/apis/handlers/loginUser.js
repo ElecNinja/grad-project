@@ -15,30 +15,16 @@ export function loginUser(data) {
     message: "Error: Invalid input."
   };
 
-  if (!email || !password) {
-    return Promise.resolve(errorResponse)
-  };
+  if (!email || !password) return Promise.resolve(errorResponse);
 
   const passwordIsValid = passwordValidation(password);
   const emailIsValid = emailValidation(email);
   const dataIsValid = emailIsValid.response && passwordIsValid.response;
 
-  if (!dataIsValid) {
-    return Promise.resolve(errorResponse)
-  }
+  if (!dataIsValid) return Promise.resolve(errorResponse);
 
-  let requestData = {
-    "email": email,
-    "password": password,
-    "remember": remember,
-    "role": role
-  }
-
-  let res = {
-    response: false,
-    status: 400,
-    message: ""
-  }
+  let requestData = { email, password, remember, role };
+  let res = { response: false, status: 400, message: "" };
 
   const logInRequest = async () => {
     try {
@@ -46,37 +32,36 @@ export function loginUser(data) {
         validateStatus: () => true
       });
 
-      let responseStatus = response.status;
-
-      switch (responseStatus) {
+      switch (response.status) {
         case 200: {
-          // Save user data — backend returns full_name and avatar_url
+          // Save user data and token in Redux
           let userIsLoggedIn = setReduxLogInUser(
-            response.data.user.full_name,  
+            response.data.user.full_name,
             response.data.user.email,
             response.data.user.role,
             response.data.profile,
-            response.data.user.avatar_url, 
-            response.data.user.id
-          )
+            response.data.user.avatar_url,
+            response.data.user.id,
+            response.data.token // ✅ pass token to Redux
+          );
           res.response = userIsLoggedIn;
-          res.message = userIsLoggedIn ? "" : "Error: Login failed."
+          res.message = userIsLoggedIn ? "" : "Error: Login failed.";
           break;
         }
         case 400:
         case 401:
         case 403:
-          res.message = response.data?.error || "Error: Credentials invalid."
+          res.message = response.data?.error || "Error: Credentials invalid.";
           break;
         default:
-          res.message = "Error: Please refresh the page and try again."
+          res.message = "Error: Please refresh the page and try again.";
           break;
       }
     } catch {
-      res.message = "Error: Please refresh the page and try again."
+      res.message = "Error: Please refresh the page and try again.";
     }
     return res;
-  }
+  };
 
-  return logInRequest()
+  return logInRequest();
 }

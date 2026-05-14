@@ -1,7 +1,7 @@
 import { store } from "./store"
 import { setUser, setUserLogout } from "./userSlice";
 
-export function setReduxLogInUser(name, email, role, profile, photo, id) {
+export function setReduxLogInUser(name, email, role, profile, photo, id, token) {
   // Validate that name and email are not empty
   let dataIsValid = (name !== "") && (email !== "");
 
@@ -9,11 +9,12 @@ export function setReduxLogInUser(name, email, role, profile, photo, id) {
     // Build user object with all data from backend
     const userData = {
       id: id || null,
-      name: name,         // full_name from backend
+      name: name,
       email: email,
       role: role,
       profile: profile || null,
-      avatar: photo,      // avatar_url from backend
+      avatar: photo,
+      token: token || null, // ✅ save token for API requests
       loggedIn: true
     };
 

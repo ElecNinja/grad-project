@@ -1,6 +1,21 @@
+const supabase = require("../config/supabase");
+
+// ✅ helper to verify token
+const verifyToken = async (req) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return null;
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return null;
+  return user;
+};
+
 const uploadMaterialController = async (req, res) => {
   const { uploadMaterial } = require("../services/teacherService");
   try {
+    // Verify user is authenticated
+    const authUser = await verifyToken(req);
+    if (!authUser) return res.status(401).json({ error: "Unauthorized" });
+
     const { studentId, description, materialType } = req.body;
     const file = req.file;
 
@@ -20,6 +35,10 @@ const uploadMaterialController = async (req, res) => {
 const getOffersController = async (req, res) => {
   const { getOffers } = require("../services/teacherService");
   try {
+    // Verify user is authenticated
+    const authUser = await verifyToken(req);
+    if (!authUser) return res.status(401).json({ error: "Unauthorized" });
+
     const { teacherId } = req.params;
     const offers = await getOffers(teacherId);
     return res.json(offers);
@@ -33,11 +52,12 @@ const getOffersController = async (req, res) => {
 const acceptOfferController = async (req, res) => {
   const { acceptOffer } = require("../services/teacherService");
   try {
-    const { offerId, price } = req.body;
+    // Verify user is authenticated
+    const authUser = await verifyToken(req);
+    if (!authUser) return res.status(401).json({ error: "Unauthorized" });
 
-    if (!offerId) {
-      return res.status(400).json({ error: "offerId is required." });
-    }
+    const { offerId, price } = req.body;
+    if (!offerId) return res.status(400).json({ error: "offerId is required." });
 
     await acceptOffer(offerId, price);
     return res.json({ success: true });
@@ -51,11 +71,12 @@ const acceptOfferController = async (req, res) => {
 const summarizePdfController = async (req, res) => {
   const { summarizePdf } = require("../services/teacherService");
   try {
-    const { pdfUrl } = req.body;
+    // Verify user is authenticated
+    const authUser = await verifyToken(req);
+    if (!authUser) return res.status(401).json({ error: "Unauthorized" });
 
-    if (!pdfUrl) {
-      return res.status(400).json({ error: "pdfUrl is required." });
-    }
+    const { pdfUrl } = req.body;
+    if (!pdfUrl) return res.status(400).json({ error: "pdfUrl is required." });
 
     const result = await summarizePdf(pdfUrl);
     return res.json(result);
