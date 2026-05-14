@@ -50,13 +50,13 @@ export function loginUser(data) {
 
       switch (responseStatus) {
         case 200: {
-          // Save user data including id to Redux
+          // Save user data — backend returns full_name and avatar_url
           let userIsLoggedIn = setReduxLogInUser(
-            response.data.user.name,
+            response.data.user.full_name,  
             response.data.user.email,
             response.data.user.role,
             response.data.profile,
-            response.data.user.photo,
+            response.data.user.avatar_url, 
             response.data.user.id
           )
           res.response = userIsLoggedIn;
@@ -77,5 +77,6 @@ export function loginUser(data) {
     }
     return res;
   }
+
   return logInRequest()
 }

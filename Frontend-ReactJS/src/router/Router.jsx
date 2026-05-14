@@ -1,6 +1,5 @@
 import { BrowserRouter, Navigate, Routes, Route, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useEffect } from "react";
 // Components
 import Header from "../components/Header/Header";
 import Footer from "../components/Footer/Footer";
@@ -21,8 +20,6 @@ import CourseDetails from "../pages/CourseDetails/CourseDetails";
 import Work from "../pages/work/Work";
 import Videos from "../pages/Videos/Videos";
 
-import { getUser } from "../apis/handlers/getUser";
-
 // Pages where the Header (navbar) should NOT be shown
 const NO_HEADER_PAGES = ['/login', '/signup', '/deletedAccount'];
 
@@ -41,9 +38,7 @@ const AppLayout = ({ children }) => {
 const Router = () => {
   const loaderDisplay = useSelector((state) => state.loader.display);
 
-  useEffect(() => {
-    getUser();
-  }, []);
+  // Removed getUser() — user data is saved in Redux after login directly
 
   return (
     <BrowserRouter>
