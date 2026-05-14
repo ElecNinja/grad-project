@@ -38,7 +38,7 @@ export function deleteOwnAccount() {
                 validateStatus: () => true //prevents Axios from throwing error is response status not 2XX
             })
 
-            let responseStatus = response.request.status;
+            let responseStatus = response.status;
 
             switch (responseStatus) {
                 case 200:

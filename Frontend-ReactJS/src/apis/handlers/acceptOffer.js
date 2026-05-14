@@ -8,7 +8,7 @@ export async function acceptOffer(offerId, price) {
       price
     }, { validateStatus: () => true });
 
-    const status = response.request.status;
+    const status = response.status;
 
     if (status === 200) {
       return { response: true, message: "" };

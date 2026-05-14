@@ -15,7 +15,7 @@ function Signup() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    confirmPassword: '',
+  confirmPassword: '',
     photo: null,
     photoPreview: null,
     name: '',
@@ -74,7 +74,7 @@ function Signup() {
 
     const { data } = supabase
       .storage
-      .from('avatars')
+      .from('avatar')
       .getPublicUrl(filePath);
 
     return data.publicUrl;
@@ -131,88 +131,95 @@ function Signup() {
   // when storage RLS checks it
   // ==============================
   const handleFinalSubmit = async (e, submitRole) => {
-    e.preventDefault();
-    dispatch(setLoader(true));
-    setError('');
+  e.preventDefault();
 
-    try {
-      // Step 1: create the account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.name,
-            role: submitRole,
-          },
-        },
-      });
+  dispatch(setLoader(true));
+  setError('');
 
-      if (authError) {
-        setError(authError.message || 'Could not create account.');
-        dispatch(setLoader(false));
-        return;
-      }
+  try {
 
-      const userId = authData.user?.id;
-      if (!userId) {
-        setError('Signup failed. Please try again.');
-        dispatch(setLoader(false));
-        return;
-      }
+    // =========================
+    // 1. Create Supabase auth user
+    // =========================
+    const {
+      data: signUpData,
+      error: signUpError
+    } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+    });
 
-      // Step 2: sign in immediately to get an active session
-      // Without this step auth.uid() is null and storage RLS blocks the upload
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (signInError) {
-        setError('Account created but could not log in. Please go to login page.');
-        dispatch(setLoader(false));
-        return;
-      }
-
-      // Step 3: upload photo — user is now authenticated so RLS allows it
-      let photoUrl = null;
-      if (formData.photo) {
-        photoUrl = await uploadPhotoToSupabase(formData.photo, userId);
-        if (!photoUrl) {
-          setError('Photo upload failed. Please try again.');
-          dispatch(setLoader(false));
-          return;
-        }
-      }
-
-      // Step 4: send to backend to update profile
-      const result = await signupUser({
-        userId,
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone,
-        about: formData.about,
-        photo: photoUrl,
-        role: submitRole,
-        education: formData.education || null,
-        experience: formData.experience || null,
-      });
-
+    if (signUpError) {
+      setError(signUpError.message);
       dispatch(setLoader(false));
-
-      if (result.response) {
-        navigate('/login');
-      } else {
-        setError(result.message || 'Signup failed. Please try again.');
-      }
-
-    } catch (err) {
-      console.error('Signup error:', err);
-      setError('Something went wrong. Please try again.');
-      dispatch(setLoader(false));
+      return;
     }
-  };
+
+    const userId = signUpData.user?.id;
+
+    if (!userId) {
+      setError('Could not create account.');
+      dispatch(setLoader(false));
+      return;
+    }
+
+    // =========================
+    // 2. Sign in immediately
+    // =========================
+    await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
+
+    // =========================
+    // 3. Upload photo
+    // =========================
+    let photoUrl = null;
+
+    if (formData.photo) {
+      photoUrl = await uploadPhotoToSupabase(
+        formData.photo,
+        userId
+      );
+
+      if (!photoUrl) {
+        setError('Photo upload failed.');
+        dispatch(setLoader(false));
+        return;
+      }
+    }
+
+    // =========================
+    // 4. Save profile via backend
+    // =========================
+    const result = await signupUser({
+      userId,
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      about: formData.about,
+      photo: photoUrl,
+      role: submitRole,
+      education: formData.education || null,
+      experience: formData.experience || null,
+    });
+
+    dispatch(setLoader(false));
+
+    if (result.response) {
+      navigate('/login');
+    } else {
+      setError(result.message);
+    }
+
+  } catch (err) {
+    console.error(err);
+
+    setError('Something went wrong.');
+
+    dispatch(setLoader(false));
+  }
+};
 
   // ==============================
   // STEP 1 — Email & Password

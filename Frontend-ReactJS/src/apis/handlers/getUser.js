@@ -15,7 +15,7 @@ export function getUser() {
         validateStatus: () => true
       });
 
-      let responseStatus = response.request.status;
+      let responseStatus = response.status;
 
       switch (responseStatus) {
         case 200: {

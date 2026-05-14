@@ -1,14 +1,9 @@
-// ===============================
-// authService.js
-// Uses Supabase Auth — no custom
-// login-users table needed anymore
-// ===============================
+// services/authService.js
+
 const supabase = require("../config/supabase");
 
 // ===============================
 // Check if email already exists
-// Supabase Auth handles this but
-// we keep it for a clean error msg
 // ===============================
 const checkExistingEmail = async (email) => {
   const { data, error } = await supabase
@@ -17,56 +12,47 @@ const checkExistingEmail = async (email) => {
     .eq("email", email)
     .limit(1);
 
-  if (error) return [];
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
   return data;
 };
 
 // ===============================
-// Create auth account via
-// Supabase Auth (handles password
-// hashing internally — no bcrypt)
-// ===============================
-const createLoginAccount = async (email, password, name, role) => {
-  const { data, error } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,       // skip email confirmation for now
-    user_metadata: {
-      full_name: name,
-      role,
-    },
-  });
-
-  return { data, error };
-};
-
-// ===============================
-// Update the profile row that the
-// DB trigger already created.
-// We never INSERT here — the trigger
-// trg_on_auth_user_created handles
-// that automatically on auth signup.
+// Update profile created by trigger
 // ===============================
 const updateProfile = async (userId, fields) => {
   const { data, error } = await supabase
     .from("profiles")
-    .update(fields)
-    .eq("id", userId)
-    .select("id, full_name, email, role, avatar_url")
+    .upsert({
+      id: userId,
+      email: fields.email,
+      full_name: fields.full_name,
+      role: fields.role,
+      bio: fields.bio,
+      avatar_url: fields.avatar_url,
+    })
+    .select()
     .single();
 
   return { data, error };
 };
 
 // ===============================
-// Create teacher_profiles row
-// Only called when role = teacher
+// Create teacher profile
 // ===============================
 const createTeacherProfile = async (profileId, fields) => {
   const { data, error } = await supabase
     .from("teacher_profiles")
-    .insert([{ profile_id: profileId, ...fields }])
-    .select("id")
+    .insert([
+      {
+        profile_id: profileId,
+        ...fields,
+      },
+    ])
+    .select()
     .single();
 
   return { data, error };
@@ -74,7 +60,6 @@ const createTeacherProfile = async (profileId, fields) => {
 
 module.exports = {
   checkExistingEmail,
-  createLoginAccount,
   updateProfile,
   createTeacherProfile,
 };

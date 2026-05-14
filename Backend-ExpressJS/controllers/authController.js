@@ -7,7 +7,6 @@ const log = require("../utils/logger");
 
 const {
   checkExistingEmail,
-  createLoginAccount,
   updateProfile,
   createTeacherProfile,
 } = require("../services/authService");
@@ -20,78 +19,87 @@ const supabase = require("../config/supabase");
 const signup = async (req, res) => {
   try {
     const {
-      name, email, password, phone,
-      about, photo, role,
-      education, experience,
+      userId,
+      name,
+      email,
+      phone,
+      about,
+      photo,
+      role,
+      education,
+      experience,
     } = req.body;
 
-    // ---- 1. Validate inputs ----
-    const check = validateSignup(name, email, password, role);
+    // Validate
+    const check = validateSignup(
+      name,
+      email,
+      "temporaryPassword",
+      role
+    );
+
     if (!check.valid) {
-      log.warn(`Signup failed - validation: ${check.error}`);
-      return res.status(400).json({ error: check.error });
+      return res.status(400).json({
+        error: check.error,
+      });
     }
 
-    // ---- 2. Check email not taken ----
-    const existing = await checkExistingEmail(email);
-    if (existing && existing.length > 0) {
-      log.warn(`Signup failed - email exists: ${email}`);
-      return res.status(409).json({ error: "Email already exists." });
+    // Must have Supabase auth user already
+    if (!userId) {
+      return res.status(400).json({
+        error: "Missing userId.",
+      });
     }
 
-    // ---- 3. Create Supabase Auth user ----
-    // This also fires the DB trigger that creates the profiles row
-    const { data: authData, error: authError } =
-      await createLoginAccount(email, password, name, role);
-
-    if (authError) {
-      log.error(`Signup failed - auth error: ${authError.message}`);
-      return res.status(500).json({ error: "Could not create account." });
-    }
-
-    const userId = authData.user.id;
-
-    // ---- 4. Update the profile the trigger already created ----
-    // Trigger sets: id, email, full_name, avatar_url
-    // We add: role, phone (bio), avatar_url (photo URL from frontend)
-    const { data: profile, error: profileError } = await updateProfile(userId, {
-      role,
-      bio: about || null,
-      avatar_url: photo || null,
-    });
-
-    if (profileError) {
-      log.error(`Signup failed - profile update: ${profileError.message}`);
-      // Auth user was created — don't leave orphan, attempt cleanup
-      await supabase.auth.admin.deleteUser(userId);
-      return res.status(500).json({ error: "Could not save profile." });
-    }
-
-    // ---- 5. If teacher, create teacher_profiles row ----
-    if (role === "teacher") {
-      const { error: teacherError } = await createTeacherProfile(userId, {
-        headline: about || null,
-        years_experience: experience ? parseInt(experience) || null : null,
-        teaching_languages: ["English"],
+    // Update profile row created automatically by Supabase trigger
+    const { data: profile, error: profileError } =
+      await updateProfile(userId, {
+        full_name: name,
+        email,
+        role,
+        bio: about || null,
+        avatar_url: photo || null,
       });
 
+    if (profileError) {
+  console.error("PROFILE ERROR:", profileError);
+
+  return res.status(500).json({
+    error: "Could not update profile.",
+    details: profileError.message,
+  });
+}
+
+    // Teacher extra table
+    if (role === "teacher") {
+      const { error: teacherError } =
+        await createTeacherProfile(userId, {
+          headline: about || null,
+          years_experience: experience
+            ? parseInt(experience)
+            : null,
+          teaching_languages: ["English"],
+        });
+
       if (teacherError) {
-        log.error(`Signup failed - teacher profile: ${teacherError.message}`);
-        // Profile exists, just teacher_profiles failed — still return success
-        // but log it so you can fix manually or retry
-        log.warn(`Teacher profile not created for ${userId} — needs manual fix`);
+        console.error(teacherError);
       }
     }
 
-    log.success(`New ${role} signed up: ${email}`);
+    console.log(`New ${role} signed up: ${email}`);
+
     return res.status(201).json({
-      message: `${role} account created successfully`,
+      message: "Signup successful",
       user: profile,
     });
 
   } catch (err) {
-    log.error(`Signup error: ${err.message}`);
-    return res.status(500).json({ error: "Server error." });
+    console.error(err);
+
+    return res.status(500).json({
+      error: "Server error.",
+      details: err.message,
+    });
   }
 };
 
@@ -107,7 +115,7 @@ const login = async (req, res) => {
     // ---- 1. Validate inputs ----
     const check = validateLogin(email, password);
     if (!check.valid) {
-      log.warn(`Login failed - validation: ${check.error}`);
+      console.warn(`Login failed - validation: ${check.error}`);
       return res.status(400).json({ error: check.error });
     }
 
@@ -118,7 +126,7 @@ const login = async (req, res) => {
     });
 
     if (error) {
-      log.warn(`Login failed - invalid credentials: ${email}`);
+      console.warn(`Login failed - invalid credentials: ${email}`);
       return res.status(401).json({ error: "Invalid email or password." });
     }
 
@@ -130,11 +138,11 @@ const login = async (req, res) => {
       .single();
 
     if (profileError) {
-      log.error(`Login failed - profile fetch: ${profileError.message}`);
+      console.error(`Login failed - profile fetch: ${profileError.message}`);
       return res.status(500).json({ error: "Could not fetch profile." });
     }
 
-    log.success(`User logged in: ${email} (${profile.role})`);
+    console.log(`User logged in: ${email} (${profile.role})`);
 
     // Return token + profile
     // Frontend stores the access_token in memory or httpOnly cookie
@@ -145,7 +153,7 @@ const login = async (req, res) => {
     });
 
   } catch (err) {
-    log.error(`Login error: ${err.message}`);
+    console.error(`Login error: ${err.message}`);
     return res.status(500).json({ error: "Server error." });
   }
 };
@@ -167,7 +175,7 @@ const logout = async (req, res) => {
     return res.json({ message: "Logged out" });
 
   } catch (err) {
-    log.error(`Logout error: ${err.message}`);
+    console.error(`Logout error: ${err.message}`);
     return res.status(500).json({ error: "Logout failed" });
   }
 };
