@@ -15,7 +15,7 @@ function Signup() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-  confirmPassword: '',
+    confirmPassword: '',
     photo: null,
     photoPreview: null,
     name: '',
@@ -23,6 +23,13 @@ function Signup() {
     about: '',
     education: '',
     experience: '',
+  });
+  const [cardData, setCardData] = useState({
+    paymentMethod: 'card',
+    cardNumber: '',
+    nameOnCard: '',
+    bankName: '',
+    saveCard: true,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -56,28 +63,23 @@ function Signup() {
   };
 
   const uploadPhotoToSupabase = async (file, userId) => {
-    const fileExt = file.name.split('.').pop().toLowerCase();
-    const filePath = `profiles/${userId}.${fileExt}`;
-
-    const { error: uploadError } = await supabase
-      .storage
-      .from('avatar')
-      .upload(filePath, file, {
-        upsert: true,
-        contentType: file.type,
-      });
-
-    if (uploadError) {
-      console.error('Photo upload error:', uploadError);
+    try {
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      const filePath = `profiles/${userId}.${fileExt}`;
+      const { error: uploadError } = await supabase
+        .storage
+        .from('avatar')
+        .upload(filePath, file, { upsert: true, contentType: file.type });
+      if (uploadError) {
+        console.warn('Photo upload failed:', uploadError.message);
+        return null;
+      }
+      const { data } = supabase.storage.from('avatar').getPublicUrl(filePath);
+      return data.publicUrl;
+    } catch (err) {
+      console.warn('Photo upload error:', err);
       return null;
     }
-
-    const { data } = supabase
-      .storage
-      .from('avatar')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
   };
 
   const validateStep1 = () => {
@@ -91,14 +93,6 @@ function Signup() {
     }
     if (formData.password.length < 8) {
       setError('Password must be at least 8 characters.');
-      return false;
-    }
-    return true;
-  };
-
-  const validateStudentStep2 = () => {
-    if (!formData.name || !formData.phone || !formData.about) {
-      setError('Please fill in all fields.');
       return false;
     }
     return true;
@@ -122,104 +116,73 @@ function Signup() {
   const handleTeacherStep2Submit = (e) => {
     e.preventDefault();
     if (!validateTeacherStep2()) return;
-    setStep(3);
+    setStep(3); // ✅ goes to VISA step (step 3 now)
   };
 
-  // ==============================
-  // FIXED: sign in before upload
-  // so auth.uid() is not null
-  // when storage RLS checks it
-  // ==============================
   const handleFinalSubmit = async (e, submitRole) => {
-  e.preventDefault();
+    e.preventDefault();
+    dispatch(setLoader(true));
+    setError('');
 
-  dispatch(setLoader(true));
-  setError('');
+    try {
+      // 1. Create Supabase auth user
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      });
 
-  try {
-
-    // =========================
-    // 1. Create Supabase auth user
-    // =========================
-    const {
-      data: signUpData,
-      error: signUpError
-    } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-    });
-
-    if (signUpError) {
-      setError(signUpError.message);
-      dispatch(setLoader(false));
-      return;
-    }
-
-    const userId = signUpData.user?.id;
-
-    if (!userId) {
-      setError('Could not create account.');
-      dispatch(setLoader(false));
-      return;
-    }
-
-    // =========================
-    // 2. Sign in immediately
-    // =========================
-    await supabase.auth.signInWithPassword({
-      email: formData.email,
-      password: formData.password,
-    });
-
-    // =========================
-    // 3. Upload photo
-    // =========================
-    let photoUrl = null;
-
-    if (formData.photo) {
-      photoUrl = await uploadPhotoToSupabase(
-        formData.photo,
-        userId
-      );
-
-      if (!photoUrl) {
-        setError('Photo upload failed.');
+      if (signUpError) {
+        setError(signUpError.message);
         dispatch(setLoader(false));
         return;
       }
+
+      const userId = signUpData.user?.id;
+      if (!userId) {
+        setError('Could not create account.');
+        dispatch(setLoader(false));
+        return;
+      }
+
+      // 2. Sign in immediately
+      await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // 3. Upload photo — optional
+      let photoUrl = null;
+      if (formData.photo) {
+        photoUrl = await uploadPhotoToSupabase(formData.photo, userId);
+      }
+
+      // 4. Save profile via backend
+      const result = await signupUser({
+        userId,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        about: formData.about,
+        photo: photoUrl,
+        role: submitRole,
+        education: formData.education || null,
+        experience: formData.experience || null,
+      });
+
+      dispatch(setLoader(false));
+
+      if (result.response) {
+        navigate('/login');
+      } else {
+        setError(result.message);
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError('Something went wrong.');
+      dispatch(setLoader(false));
     }
-
-    // =========================
-    // 4. Save profile via backend
-    // =========================
-    const result = await signupUser({
-      userId,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      about: formData.about,
-      photo: photoUrl,
-      role: submitRole,
-      education: formData.education || null,
-      experience: formData.experience || null,
-    });
-
-    dispatch(setLoader(false));
-
-    if (result.response) {
-      navigate('/login');
-    } else {
-      setError(result.message);
-    }
-
-  } catch (err) {
-    console.error(err);
-
-    setError('Something went wrong.');
-
-    dispatch(setLoader(false));
-  }
-};
+  };
 
   // ==============================
   // STEP 1 — Email & Password
@@ -246,7 +209,6 @@ function Signup() {
           </div>
 
           <h1 className="signup-title">Create an account</h1>
-
           {error && <div className="error-message">{error}</div>}
 
           <form onSubmit={handleStep1Submit} className="signup-form">
@@ -337,7 +299,6 @@ function Signup() {
       <div className="signup-container">
         <div className="signup-card">
           <h1 className="signup-title">Create an account</h1>
-
           {error && <div className="error-message">{error}</div>}
 
           <form onSubmit={(e) => handleFinalSubmit(e, 'student')} className="signup-form">
@@ -423,7 +384,6 @@ function Signup() {
       <div className="signup-container">
         <div className="signup-card">
           <h1 className="signup-title">Create an account</h1>
-
           {error && <div className="error-message">{error}</div>}
 
           <form onSubmit={handleTeacherStep2Submit} className="signup-form">
@@ -526,24 +486,116 @@ function Signup() {
   }
 
   // ==============================
-  // STEP 3 — Teacher Final Submit
+  // STEP 3 — Teacher VISA
   // ==============================
   if (step === 3 && role === 'teacher') {
     return (
       <div className="signup-container">
         <div className="signup-card">
-          <h1 className="signup-title">Almost done!</h1>
-          <p style={{ color: 'var(--color-text-secondary)', marginBottom: '24px', textAlign: 'center' }}>
-            Review your details and finish creating your account.
-            You can connect your bank account from your dashboard after signup.
-          </p>
-
+          <h1 className="signup-title">Add VISA</h1>
           {error && <div className="error-message">{error}</div>}
 
-          <div className="review-details" style={{ marginBottom: '24px' }}>
-            <p><strong>Name:</strong> {formData.name}</p>
-            <p><strong>Email:</strong> {formData.email}</p>
-            <p><strong>Phone:</strong> {formData.phone}</p>
+          <div className="payment-options">
+            {/* Card Option */}
+            <label className={`payment-option ${cardData.paymentMethod === 'card' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="card"
+                checked={cardData.paymentMethod === 'card'}
+                onChange={() => setCardData(prev => ({ ...prev, paymentMethod: 'card' }))}
+              />
+              <span className="payment-option-label">🪪 cards</span>
+              <div className="payment-logos">
+                <span className="visa-logo">VISA</span>
+                <svg width="36" height="22" viewBox="0 0 36 22">
+                  <circle cx="13" cy="11" r="11" fill="#EB001B" opacity="0.9"/>
+                  <circle cx="23" cy="11" r="11" fill="#F79E1B" opacity="0.9"/>
+                  <path d="M18 3.5a11 11 0 0 1 0 15A11 11 0 0 1 18 3.5z" fill="#FF5F00"/>
+                </svg>
+              </div>
+            </label>
+
+            {/* Card Details */}
+            {cardData.paymentMethod === 'card' && (
+              <div className="card-details">
+                <div className="form-group">
+                  <label>Card Number</label>
+                  <input
+                    type="text"
+                    placeholder="1234 5678 9012 3456"
+                    maxLength={19}
+                    value={cardData.cardNumber}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 16);
+                      const formatted = val.replace(/(.{4})/g, '$1 ').trim();
+                      setCardData(prev => ({ ...prev, cardNumber: formatted }));
+                    }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Name on card</label>
+                  <input
+                    type="text"
+                    placeholder="John Doe"
+                    value={cardData.nameOnCard}
+                    onChange={(e) => setCardData(prev => ({ ...prev, nameOnCard: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Bank Name</label>
+                  <select
+                    value={cardData.bankName}
+                    onChange={(e) => setCardData(prev => ({ ...prev, bankName: e.target.value }))}
+                  >
+                    <option value="">Select bank</option>
+                    <option value="CIB">CIB</option>
+                    <option value="NBE">NBE - National Bank of Egypt</option>
+                    <option value="QNB">QNB</option>
+                    <option value="HSBC">HSBC</option>
+                    <option value="Banque Misr">Banque Misr</option>
+                    <option value="Alex Bank">Alex Bank</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <label className="save-card-label">
+                  <input
+                    type="checkbox"
+                    checked={cardData.saveCard}
+                    onChange={(e) => setCardData(prev => ({ ...prev, saveCard: e.target.checked }))}
+                  />
+                  Securely save this card
+                </label>
+              </div>
+            )}
+
+            {/* PayPal Option 1 */}
+            <label className={`payment-option ${cardData.paymentMethod === 'paypal1' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="paypal1"
+                checked={cardData.paymentMethod === 'paypal1'}
+                onChange={() => setCardData(prev => ({ ...prev, paymentMethod: 'paypal1' }))}
+              />
+              <span className="payment-option-label">
+                <span className="paypal-logo">Pay<span>Pal</span></span>
+              </span>
+            </label>
+
+            {/* PayPal Option 2 */}
+            <label className={`payment-option ${cardData.paymentMethod === 'paypal2' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="paypal2"
+                checked={cardData.paymentMethod === 'paypal2'}
+                onChange={() => setCardData(prev => ({ ...prev, paymentMethod: 'paypal2' }))}
+              />
+              <span className="payment-option-label">
+                <span className="paypal-logo">Pay<span>Pal</span></span>
+              </span>
+            </label>
           </div>
 
           <button
@@ -552,6 +604,14 @@ function Signup() {
             onClick={(e) => handleFinalSubmit(e, 'teacher')}
           >
             Finish
+          </button>
+
+          <button
+            type="button"
+            className="skip-btn"
+            onClick={(e) => handleFinalSubmit(e, 'teacher')}
+          >
+            Skip for now
           </button>
         </div>
       </div>
