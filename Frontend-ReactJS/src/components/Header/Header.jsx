@@ -45,11 +45,13 @@ function Header() {
                 Find Expert
               </NavLink>
             </li>
-            <li>
-              <NavLink to="/add-material" className="nav-link">
-                Add Material
-              </NavLink>
-            </li>
+            {user?.loggedIn && user?.role === 'student' && (
+              <li>
+                <NavLink to="/add-material" className="nav-link">
+                  Add Material
+                </NavLink>
+              </li>
+            )}
             <li>
               <NavLink to="/Bootcamp" className="nav-link">
                 Boot Camp
