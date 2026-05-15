@@ -104,10 +104,39 @@ const summarizePdf = async (pdfUrl) => {
 
   return response.data;
 };
+const getStudentRequests = async () => {
+  const { data: requests, error } = await supabase
+    .from("student_requests")
+    .select(`
+      *,
+      profiles!student_requests_student_id_fkey (
+        full_name,
+        avatar_url
+      ),
+      request_files (
+        file_name,
+        file_url,
+        mime_type
+      )
+    `)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return requests.map((r) => ({
+    ...r,
+    studentName: r.profiles?.full_name || "Student",
+    studentPhoto: r.profiles?.avatar_url || null,
+    fileUrl: r.request_files?.[0]?.file_url || null,
+    fileName: r.request_files?.[0]?.file_name || null,
+  }));
+};
 
 module.exports = {
   uploadMaterial,
   getOffers,
   acceptOffer,
-  summarizePdf
+  summarizePdf,
+  getStudentRequests,
 };
