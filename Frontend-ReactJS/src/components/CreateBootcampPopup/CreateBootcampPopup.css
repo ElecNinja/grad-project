@@ -95,19 +95,6 @@
   display: block;
 }
 
-.date-row {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 8px;
-}
-
-.date-field {
-  flex: 1;
-}
-
-.date-field input {
-  width: 100%;
-}
 
 .buttons {
   display: flex;

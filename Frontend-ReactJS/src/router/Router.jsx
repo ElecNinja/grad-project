@@ -15,6 +15,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import Addmaterial from "../pages/Addmaterial/Addmaterial";
 import Offers from "../pages/Offers/offer";
+import Requests from "../pages/Requests/Requests";
 import Bootcamp from "../pages/Bootcamp/Bootcamp";
 import CourseDetails from "../pages/CourseDetails/CourseDetails";
 import Work from "../pages/work/Work";
@@ -63,6 +64,7 @@ const Router = () => {
           {/* Students only */}
           <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
             <Route path="add-material" element={<Addmaterial />} />
+            <Route path="requests" element={<Requests />} />
             <Route path="videos" element={<Videos />} />
           </Route>
 

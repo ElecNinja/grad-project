@@ -33,20 +33,6 @@ return(
         <span className="char-count textarea-count">{descCount}/500</span>
       </div>
 
-      <label>Number of Students</label>
-      <input type="number" placeholder="2" className="small-input"/>
-
-      <div className="date-row">
-        <div className="date-field">
-          <label>From</label>
-          <input type="date" defaultValue="2026-11-28"/>
-        </div>
-        <div className="date-field">
-          <label>To</label>
-          <input type="date" defaultValue="2026-11-28"/>
-        </div>
-      </div>
-
       <div className="buttons">
         <button className="undo-btn" onClick={close}>Undo</button>
         <button className="save">Save</button>
