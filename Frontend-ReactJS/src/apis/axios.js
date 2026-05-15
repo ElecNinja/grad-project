@@ -64,3 +64,6 @@ export const acceptOffer = (offerId, price) =>
 
 export const summarizePdf = (pdfUrl) =>
   api.post(`/api/teacher/summarize-pdf`, { pdfUrl }).then((r) => r.data);
+
+export const getStudentRequests = () =>
+  api.get(`/api/teacher/requests`).then((r) => r.data);

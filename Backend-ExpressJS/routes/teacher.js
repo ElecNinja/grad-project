@@ -14,5 +14,5 @@ router.post("/upload-material", isAuthenticated, upload.single("file"), ctrl.upl
 router.get("/offers/:teacherId", isAuthenticated, isTeacher, ctrl.getOffersController);
 router.post("/accept-offer", isAuthenticated, isTeacher, ctrl.acceptOfferController);
 router.post("/summarize-pdf", isAuthenticated, ctrl.summarizePdfController);
-
+router.get("/requests", isAuthenticated, ctrl.getRequestsController);
 module.exports = router;

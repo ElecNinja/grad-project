@@ -485,116 +485,93 @@ function Signup() {
     );
   }
 
-  // ==============================
+ // ==============================
   // STEP 3 — Teacher VISA
   // ==============================
   if (step === 3 && role === 'teacher') {
     return (
       <div className="signup-container">
         <div className="signup-card">
-          <h1 className="signup-title">Add VISA</h1>
+          <h1 className="signup-title">Add Card</h1>
           {error && <div className="error-message">{error}</div>}
 
-          <div className="payment-options">
-            {/* Card Option */}
-            <label className={`payment-option ${cardData.paymentMethod === 'card' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="card"
-                checked={cardData.paymentMethod === 'card'}
-                onChange={() => setCardData(prev => ({ ...prev, paymentMethod: 'card' }))}
-              />
-              <span className="payment-option-label">🪪 cards</span>
-              <div className="payment-logos">
-                <span className="visa-logo">VISA</span>
-                <svg width="36" height="22" viewBox="0 0 36 22">
-                  <circle cx="13" cy="11" r="11" fill="#EB001B" opacity="0.9"/>
-                  <circle cx="23" cy="11" r="11" fill="#F79E1B" opacity="0.9"/>
-                  <path d="M18 3.5a11 11 0 0 1 0 15A11 11 0 0 1 18 3.5z" fill="#FF5F00"/>
-                </svg>
-              </div>
-            </label>
+          <div className="card-details" style={{ marginBottom: '1.5rem' }}>
+            <div className="form-group">
+              <label>Card Type</label>
+              <select
+                value={cardData.cardType || ''}
+                onChange={(e) => setCardData(prev => ({ ...prev, cardType: e.target.value }))}
+              >
+                <option value="">Select card type</option>
+                <option value="VISA">VISA</option>
+                <option value="Mastercard">Mastercard</option>
+                <option value="Meeza">Meeza</option>
+                <option value="American Express">American Express</option>
+              </select>
+            </div>
 
-            {/* Card Details */}
-            {cardData.paymentMethod === 'card' && (
-              <div className="card-details">
-                <div className="form-group">
-                  <label>Card Number</label>
+            <div className="form-group">
+              <label>Card Number</label>
+              <input
+                type="text"
+                placeholder="1234 5678 9012 3456"
+                maxLength={19}
+                value={cardData.cardNumber}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 16);
+                  const formatted = val.replace(/(.{4})/g, '$1 ').trim();
+                  setCardData(prev => ({ ...prev, cardNumber: formatted }));
+                }}
+              />
+            </div>
+            <div className="form-group">
+                  <label>CVV</label>
                   <input
-                    type="text"
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={19}
-                    value={cardData.cardNumber}
+                    type="password"
+                    placeholder="123"
+                    maxLength={4}
+                    value={cardData.cvv || ''}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '').slice(0, 16);
-                      const formatted = val.replace(/(.{4})/g, '$1 ').trim();
-                      setCardData(prev => ({ ...prev, cardNumber: formatted }));
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      setCardData(prev => ({ ...prev, cvv: val }));
                     }}
+                    style={{ maxWidth: '120px' }}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Name on card</label>
-                  <input
-                    type="text"
-                    placeholder="John Doe"
-                    value={cardData.nameOnCard}
-                    onChange={(e) => setCardData(prev => ({ ...prev, nameOnCard: e.target.value }))}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Bank Name</label>
-                  <select
-                    value={cardData.bankName}
-                    onChange={(e) => setCardData(prev => ({ ...prev, bankName: e.target.value }))}
-                  >
-                    <option value="">Select bank</option>
-                    <option value="CIB">CIB</option>
-                    <option value="NBE">NBE - National Bank of Egypt</option>
-                    <option value="QNB">QNB</option>
-                    <option value="HSBC">HSBC</option>
-                    <option value="Banque Misr">Banque Misr</option>
-                    <option value="Alex Bank">Alex Bank</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <label className="save-card-label">
-                  <input
-                    type="checkbox"
-                    checked={cardData.saveCard}
-                    onChange={(e) => setCardData(prev => ({ ...prev, saveCard: e.target.checked }))}
-                  />
-                  Securely save this card
-                </label>
-              </div>
-            )}
-
-            {/* PayPal Option 1 */}
-            <label className={`payment-option ${cardData.paymentMethod === 'paypal1' ? 'selected' : ''}`}>
+            <div className="form-group">
+              <label>Name on card</label>
               <input
-                type="radio"
-                name="paymentMethod"
-                value="paypal1"
-                checked={cardData.paymentMethod === 'paypal1'}
-                onChange={() => setCardData(prev => ({ ...prev, paymentMethod: 'paypal1' }))}
+                type="text"
+                placeholder="John Doe"
+                value={cardData.nameOnCard}
+                onChange={(e) => setCardData(prev => ({ ...prev, nameOnCard: e.target.value }))}
               />
-              <span className="payment-option-label">
-                <span className="paypal-logo">Pay<span>Pal</span></span>
-              </span>
-            </label>
+            </div>
 
-            {/* PayPal Option 2 */}
-            <label className={`payment-option ${cardData.paymentMethod === 'paypal2' ? 'selected' : ''}`}>
+            <div className="form-group">
+              <label>Bank Name</label>
+              <select
+                value={cardData.bankName}
+                onChange={(e) => setCardData(prev => ({ ...prev, bankName: e.target.value }))}
+              >
+                <option value="">Select bank</option>
+                <option value="CIB">CIB</option>
+                <option value="NBE">NBE - National Bank of Egypt</option>
+                <option value="QNB">QNB</option>
+                <option value="HSBC">HSBC</option>
+                <option value="Banque Misr">Banque Misr</option>
+                <option value="Alex Bank">Alex Bank</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <label className="save-card-label">
               <input
-                type="radio"
-                name="paymentMethod"
-                value="paypal2"
-                checked={cardData.paymentMethod === 'paypal2'}
-                onChange={() => setCardData(prev => ({ ...prev, paymentMethod: 'paypal2' }))}
+                type="checkbox"
+                checked={cardData.saveCard}
+                onChange={(e) => setCardData(prev => ({ ...prev, saveCard: e.target.checked }))}
               />
-              <span className="payment-option-label">
-                <span className="paypal-logo">Pay<span>Pal</span></span>
-              </span>
+              Securely save this card
             </label>
           </div>
 
@@ -606,13 +583,7 @@ function Signup() {
             Finish
           </button>
 
-          <button
-            type="button"
-            className="skip-btn"
-            onClick={(e) => handleFinalSubmit(e, 'teacher')}
-          >
-            Skip for now
-          </button>
+        
         </div>
       </div>
     );

@@ -86,10 +86,21 @@ const summarizePdfController = async (req, res) => {
     return res.status(500).json({ error: "Summarization failed" });
   }
 };
+const getRequestsController = async (req, res) => {
+  try {
+    const { getStudentRequests } = require("../services/teacherService");
+    const requests = await getStudentRequests();
+    return res.json(requests);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to get requests" });
+  }
+};
 
 module.exports = {
   uploadMaterialController,
   getOffersController,
+  getRequestsController, 
   acceptOfferController,
   summarizePdfController
 };
