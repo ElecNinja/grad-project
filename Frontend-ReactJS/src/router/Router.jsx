@@ -55,6 +55,7 @@ const Router = () => {
           <Route path="deletedAccount" element={<DeletedAccount />} />
           <Route path="/bootcamp" element={<Bootcamp />} />
           <Route path="/course" element={<CourseDetails />} />
+          <Route path="add-material" element={<Addmaterial />} />
 
           {/* Any logged-in user */}
           <Route element={<ProtectedRoute />}>
@@ -63,7 +64,7 @@ const Router = () => {
 
           {/* Students only */}
           <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-            <Route path="add-material" element={<Addmaterial />} />
+            
             <Route path="requests" element={<Requests />} />
             <Route path="videos" element={<Videos />} />
           </Route>
