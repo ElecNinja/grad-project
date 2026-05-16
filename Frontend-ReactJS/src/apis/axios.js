@@ -40,19 +40,20 @@ export const uploadTeacherMaterial = (studentId, file, description, materialType
   }).then((r) => r.data);
 };
 
-// ✅ Student creates a request
-export const createStudentRequest = (file, description, materialType, title) => {
+//  Student creates a request
+export const createStudentRequest = (file, description, materialType, subject) => {
   const formData = new FormData();
   if (file) formData.append("file", file);
   formData.append("description", description || "");
   formData.append("materialType", materialType);
-  formData.append("title", title || description || "New Request");
+  formData.append("title", description || "New Request");
+  formData.append("subject", subject || "");
   return api.post(`/api/student/request`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   }).then((r) => r.data);
 };
 
-// ✅ Student gets their requests
+// Student gets their requests
 export const getMyRequests = () =>
   api.get(`/api/student/requests`).then((r) => r.data);
 

@@ -7,6 +7,13 @@ import { useDispatch } from 'react-redux';
 import { setLoader } from '../../redux/loaderSlice.js';
 import { supabase } from '../../config/supabaseClient';
 
+const SUBJECTS = [
+  'Mathematics', 'Physics', 'Chemistry', 'Biology',
+  'Computer Science', 'Programming', 'English', 'AI',
+  'Cyber Security', 'Data Analysis', 'Economics', 'Accounting',
+  'Engineering', 'Medicine', 'Law', 'Other'
+];
+
 function Signup() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -23,12 +30,14 @@ function Signup() {
     about: '',
     education: '',
     experience: '',
+    subject: '', // ✅ added
   });
   const [cardData, setCardData] = useState({
-    paymentMethod: 'card',
+    cardType: '',
     cardNumber: '',
     nameOnCard: '',
     bankName: '',
+    cvv: '',
     saveCard: true,
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -104,6 +113,10 @@ function Signup() {
       setError('Please fill in all fields.');
       return false;
     }
+    if (!formData.subject) {
+      setError('Please select your teaching subject.');
+      return false;
+    }
     return true;
   };
 
@@ -116,7 +129,7 @@ function Signup() {
   const handleTeacherStep2Submit = (e) => {
     e.preventDefault();
     if (!validateTeacherStep2()) return;
-    setStep(3); // ✅ goes to VISA step (step 3 now)
+    setStep(3);
   };
 
   const handleFinalSubmit = async (e, submitRole) => {
@@ -167,6 +180,7 @@ function Signup() {
         role: submitRole,
         education: formData.education || null,
         experience: formData.experience || null,
+        subject: formData.subject || null, // ✅ send subject
       });
 
       dispatch(setLoader(false));
@@ -476,6 +490,32 @@ function Signup() {
               />
             </div>
 
+            {/* ✅ Subject dropdown for teacher */}
+            <div className="form-group">
+              <label>Teaching Subject</label>
+              <select
+                name="subject"
+                value={formData.subject}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  padding: '0 1rem',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '12px',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  background: 'white',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="">Select your subject...</option>
+                {SUBJECTS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+
             <button type="submit" className="create-account-btn">
               Next
             </button>
@@ -485,8 +525,8 @@ function Signup() {
     );
   }
 
- // ==============================
-  // STEP 3 — Teacher VISA
+  // ==============================
+  // STEP 3 — Teacher Card
   // ==============================
   if (step === 3 && role === 'teacher') {
     return (
@@ -524,20 +564,22 @@ function Signup() {
                 }}
               />
             </div>
+
             <div className="form-group">
-                  <label>CVV</label>
-                  <input
-                    type="password"
-                    placeholder="123"
-                    maxLength={4}
-                    value={cardData.cvv || ''}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                      setCardData(prev => ({ ...prev, cvv: val }));
-                    }}
-                    style={{ maxWidth: '120px' }}
-                  />
-                </div>
+              <label>CVV</label>
+              <input
+                type="password"
+                placeholder="123"
+                maxLength={4}
+                value={cardData.cvv || ''}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setCardData(prev => ({ ...prev, cvv: val }));
+                }}
+                style={{ maxWidth: '120px' }}
+              />
+            </div>
+
             <div className="form-group">
               <label>Name on card</label>
               <input
@@ -583,7 +625,13 @@ function Signup() {
             Finish
           </button>
 
-        
+          <button
+            type="button"
+            className="skip-btn"
+            onClick={(e) => handleFinalSubmit(e, 'teacher')}
+          >
+            Skip for now
+          </button>
         </div>
       </div>
     );

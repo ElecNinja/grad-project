@@ -95,9 +95,18 @@ function Offers() {
               </div>
               <div className="offer-content">
                 <h3>{offer.studentName || "Student"}</h3>
+
+                {/* Subject */}
+                <p className="material">
+                  Subject: {offer.subject || "Not specified"}
+                </p>
+
+                {/* Description */}
                 <p className="material">
                   Material: {offer.description || "Not specified"}
                 </p>
+
+                {/* Type */}
                 <p className="material">
                   Type: {offer.preferred_mode || "Not specified"}
                 </p>
@@ -159,7 +168,6 @@ function Offers() {
             <div className="offer-right">
               <div className="right-left-col">
                 {offer.fileUrl ? (
-                  // Show PDF button if file exists
                   <button
                     className="pdf-btn"
                     onClick={() => downloadPDF(offer.fileUrl)}
@@ -180,7 +188,6 @@ function Offers() {
                     PDF MATERIAL
                   </button>
                 ) : (
-                  // No file uploaded
                   <p style={{ color: "#9ca3af", fontSize: "0.85rem" }}>
                     No file uploaded
                   </p>
@@ -191,7 +198,6 @@ function Offers() {
 
               <div className="right-right-col">
                 {offer.fileUrl && (
-                  // Show AI summarizer only if file exists
                   <div
                     className="ai-wrapper"
                     onClick={() => handleSummarize(offer)}

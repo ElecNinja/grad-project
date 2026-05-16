@@ -104,6 +104,10 @@ const summarizePdf = async (pdfUrl) => {
 
   return response.data;
 };
+
+// ===============================
+// Get student requests for teacher
+// ===============================
 const getStudentRequests = async () => {
   const { data: requests, error } = await supabase
     .from("student_requests")
@@ -130,6 +134,7 @@ const getStudentRequests = async () => {
     studentPhoto: r.profiles?.avatar_url || null,
     fileUrl: r.request_files?.[0]?.file_url || null,
     fileName: r.request_files?.[0]?.file_name || null,
+    subject: r.preferred_language || "Not specified", 
   }));
 };
 

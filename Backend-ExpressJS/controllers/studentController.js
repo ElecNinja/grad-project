@@ -5,8 +5,8 @@ const supabase = require("../config/supabase");
 // ===============================
 const createRequest = async (req, res) => {
   try {
-    const { description, materialType, title } = req.body;
-    const studentId = req.user.id; // from isAuthenticated middleware
+    const { description, materialType, title, subject } = req.body; 
+    const studentId = req.user.id;
     const file = req.file;
 
     // Map materialType to preferred_mode allowed values
@@ -24,6 +24,7 @@ const createRequest = async (req, res) => {
         title: title || description || "New Request",
         description: description || null,
         preferred_mode: modeMap[materialType] || 'any',
+        preferred_language: subject || null, 
         status: 'pending_analysis',
       }])
       .select()

@@ -11,7 +11,6 @@ body {
   background: #f9fafb;
 }
 
-/* Container with white background */
 .signup-container {
   min-height: 100vh;
   display: flex;
@@ -21,7 +20,6 @@ body {
   background: white;
 }
 
-/* Main card */
 .signup-card {
   width: 100%;
   max-width: 800px;
@@ -38,7 +36,6 @@ body {
   font-family: 'Figtree-Regular', sans-serif !important;
 }
 
-/* Role Toggle Buttons */
 .role-toggle {
   display: flex;
   gap: 1rem;
@@ -75,7 +72,6 @@ body {
   cursor: not-allowed;
 }
 
-/* Form styles */
 .signup-form {
   display: flex;
   flex-direction: column;
@@ -117,7 +113,6 @@ body {
   opacity: 0.6;
 }
 
-/* Password input wrapper */
 .password-input-wrapper {
   position: relative;
   width: 100%;
@@ -152,7 +147,6 @@ body {
   outline: none;
 }
 
-/* Create account button */
 .create-account-btn {
   width: 100%;
   height: 48px;
@@ -177,7 +171,6 @@ body {
   cursor: not-allowed;
 }
 
-/* Google button */
 .google-btn {
   width: 100%;
   height: 48px;
@@ -206,7 +199,6 @@ body {
   height: 20px;
 }
 
-/* Login text */
 .login-text {
   text-align: center;
   margin-top: 2rem;
@@ -225,7 +217,6 @@ body {
   text-decoration: underline;
 }
 
-/* Photo upload styles */
 .photo-upload-wrapper {
   display: flex;
   align-items: center;
@@ -279,7 +270,6 @@ body {
   display: none;
 }
 
-/* Add certificate button */
 .add-certificate-btn {
   display: flex;
   align-items: center;
@@ -306,7 +296,6 @@ body {
   font-weight: 600;
 }
 
-/* Textarea styles */
 .form-group textarea {
   margin-bottom: 0;
 }
@@ -328,7 +317,6 @@ textarea:focus {
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 
-/* Checkbox group */
 .checkbox-group {
   margin-top: 0.5rem;
 }
@@ -348,7 +336,6 @@ textarea:focus {
   accent-color: #2563eb;
 }
 
-/* Error message */
 .error-message {
   background: #fee2e2;
   border: 1px solid #ef4444;
@@ -359,17 +346,12 @@ textarea:focus {
   font-size: 0.9rem;
 }
 
-/* Review details */
 .review-details p {
   padding: 0.5rem 0;
   border-bottom: 1px solid #f3f4f6;
   color: #374151;
   font-size: 0.95rem;
 }
-
-/* ==============================
-   VISA / Payment Step Styles
-   ============================== */
 
 .payment-options {
   display: flex;
@@ -437,7 +419,6 @@ textarea:focus {
   color: #009cde;
 }
 
-/* Card details */
 .card-details {
   display: flex;
   flex-direction: column;
@@ -491,7 +472,6 @@ textarea:focus {
   accent-color: #2563eb;
 }
 
-/* Skip button */
 .skip-btn {
   width: 100%;
   height: 48px;
@@ -511,7 +491,45 @@ textarea:focus {
   color: #374151;
 }
 
-/* Responsive */
+.subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.subject-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.subject-item:hover {
+  border-color: #cbd5e1;
+  background: #f9fafb;
+}
+
+.subject-item.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.subject-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+  margin: 0;
+  flex-shrink: 0;
+}
+
 @media (max-width: 480px) {
   .signup-card {
     padding: 1.5rem;
@@ -549,5 +567,9 @@ textarea:focus {
 
   .payment-option {
     padding: 0.75rem 1rem;
+  }
+
+  .subjects-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
 }

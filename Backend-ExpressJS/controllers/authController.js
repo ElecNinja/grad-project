@@ -14,7 +14,7 @@ const supabase = require("../config/supabase");
 // ===============================
 const signup = async (req, res) => {
   try {
-    const { userId, name, email, phone, about, photo, role, education, experience } = req.body;
+    const { userId, name, email, phone, about, photo, role, education, experience, subject } = req.body;
 
     // Validate input fields
     const check = validateSignup(name, email, "temporaryPassword", role);
@@ -32,7 +32,7 @@ const signup = async (req, res) => {
       full_name: name,
       email,
       role,
-      bio: about || null,
+      bio: subject || about || null, 
       avatar_url: photo || null,
     });
 

@@ -1,8 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, ChevronRight } from 'lucide-react';
-import { createStudentRequest } from '../../apis/axios'; // ✅ changed
+import { createStudentRequest } from '../../apis/axios';
 import './Addmaterial.css';
+
+const SUBJECTS = [
+  'Mathematics', 'Physics', 'Chemistry', 'Biology',
+  'Computer Science', 'Programming', 'English', 'AI',
+  'Cyber Security', 'Data Analysis', 'Economics', 'Accounting',
+  'Engineering', 'Medicine', 'Law', 'Other'
+];
 
 function Addmaterial() {
   const navigate = useNavigate();
@@ -10,6 +17,7 @@ function Addmaterial() {
 
   const [description, setDescription] = useState('');
   const [materialType, setMaterialType] = useState('bootCamp');
+  const [subject, setSubject] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -45,10 +53,13 @@ function Addmaterial() {
       alert('Please add a description');
       return;
     }
+    if (!subject) {
+      alert('Please select a subject');
+      return;
+    }
     setLoading(true);
     try {
-      // File is optional — description and materialType are required
-      await createStudentRequest(uploadedFile, description, materialType);
+      await createStudentRequest(uploadedFile, description, materialType, subject);
       navigate('/dashboard');
     } catch {
       alert('Failed to submit request, please try again');
@@ -60,7 +71,7 @@ function Addmaterial() {
   return (
     <div className="addmaterial-container">
       <div className="addmaterial-card">
-        {/* Upload Section - optional */}
+        {/* Upload Section */}
         <div className="upload-zone" onDrop={handleDrop} onDragOver={handleDragOver}>
           <input
             ref={fileInputRef}
@@ -77,6 +88,21 @@ function Addmaterial() {
           <p className="upload-hint">
             {uploadedFile ? uploadedFile.name : 'PDF, DOCX, or Media files (Max 50MB) - Optional'}
           </p>
+        </div>
+
+        {/* Subject Section */}
+        <div className="form-section">
+          <label className="section-label">Subject / Field</label>
+          <select
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="subject-select"
+          >
+            <option value="">Select a subject...</option>
+            {SUBJECTS.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
 
         {/* Description Section */}
