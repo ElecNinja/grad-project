@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getStudentRequests, summarizePdf } from "../../apis/axios";
+import { getStudentRequests, summarizePdf, acceptRequest } from "../../apis/axios";
 import { acceptOffer } from "../../apis/handlers/acceptOffer";
 import "./offers.css";
 
@@ -43,28 +43,23 @@ function Offers() {
   };
 
   const handleAccept = async (offer) => {
-    const offerId = offer.id;
-    const price = prices[offerId];
+  const offerId = offer.id;
+  const price = prices[offerId];
 
-    if (!price) {
-      setAcceptError("Please set a price first.");
-      return;
-    }
+  if (!price) {
+    setAcceptError("Please set a price first.");
+    return;
+  }
 
-    const res = await acceptOffer(offerId, price);
-
-    if (res.response) {
-      setAcceptedOffers((prev) => ({ ...prev, [offerId]: true }));
-      setAcceptError("");
-    } else {
-      setAcceptError(res.message);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setSelectedOffer(null);
-    setSummary(null);
-  };
+  try {
+    await acceptRequest(offerId, price, offer.preferred_mode);
+    // Remove from list after accept
+    setOffers(prev => prev.filter(o => o.id !== offerId));
+    setAcceptError("");
+  } catch (err) {
+    setAcceptError("Failed to accept offer.");
+  }
+};
 
   if (loading) return <div className="offers-page"><p>Loading...</p></div>;
 

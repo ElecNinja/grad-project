@@ -24,20 +24,36 @@ const PER_PAGE = 3;
 // Returns [] when the API sends nothing — no fake fallback data.
 function normalise(raw) {
   if (!Array.isArray(raw) || raw.length === 0) return [];
-  return raw.map((item, i) => ({
-    id:             item.id             ?? item["id-pdf"]       ?? i,
-    teacherName:    item.teacherName    ?? item.teacher?.name   ?? "Unknown Teacher",
-    teacherBio:     item.teacherBio     ?? item.teacher?.bio    ?? item.description ?? "",
-    teacherAvatar:  item.teacherPhoto   ?? item.teacher?.photo  ?? null,
-    teacherCover:   item.teacherCover   ?? item.teacher?.cover  ?? null,
-    subject:        item.subject        ?? item.specialties     ?? "General",
-    rating:         Number(item.rating  ?? item.teacher?.rating ?? 0),
-    reviews:        item.reviews        ?? item.teacher?.reviews ?? 0,
-    lessons:        item.lessons        ?? item.teacher?.lessons ?? "—",
-    experience:     item.experience     ?? item.teacher?.experience ?? "—",
-    pricePerLesson: Number(item.pricePerLesson ?? item.price ?? item.teacher?.price ?? 0),
-    pdfUrl:         item.pdfUrl         ?? item["pdf-url"]      ?? null,
-  }));
+  
+  const result = [];
+  
+  raw.forEach((request) => {
+    // Only show requests that have bids
+    if (request.bids && request.bids.length > 0) {
+      request.bids.forEach((bid) => {
+        const teacherProfile = bid.teacher_profiles?.profiles;
+        result.push({
+          id: bid.id,
+          requestId: request.id,
+          teacherName: teacherProfile?.full_name || "Unknown Teacher",
+          teacherBio: request.description || "",
+          teacherAvatar: teacherProfile?.avatar_url || null,
+          teacherCover: null,
+          subject: request.preferred_language || "General",
+          rating: 0,
+          reviews: 0,
+          lessons: "—",
+          experience: "—",
+          pricePerLesson: Number(bid.price || 0),
+          pdfUrl: request.request_files?.[0]?.file_url || null,
+          bidStatus: bid.status,
+          teachingMode: bid.teaching_mode,
+        });
+      });
+    }
+  });
+  
+  return result;
 }
 
 // ─── Star row ─────────────────────────────────────────────────────────────────

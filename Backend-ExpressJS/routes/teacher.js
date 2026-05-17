@@ -15,4 +15,5 @@ router.get("/offers/:teacherId", isAuthenticated, isTeacher, ctrl.getOffersContr
 router.post("/accept-offer", isAuthenticated, isTeacher, ctrl.acceptOfferController);
 router.post("/summarize-pdf", isAuthenticated, ctrl.summarizePdfController);
 router.get("/requests", isAuthenticated, ctrl.getRequestsController);
+router.post("/accept-request", isAuthenticated, isTeacher, ctrl.acceptRequestController);
 module.exports = router;

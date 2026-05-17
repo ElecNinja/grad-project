@@ -90,6 +90,22 @@ const getMyRequests = async (req, res) => {
           file_name,
           file_url,
           mime_type
+        ),
+        bids (
+          id,
+          price,
+          currency,
+          teaching_mode,
+          num_sessions,
+          status,
+          teacher_id,
+          teacher_profiles!bids_teacher_id_fkey (
+            profile_id,
+            profiles!teacher_profiles_profile_id_fkey (
+              full_name,
+              avatar_url
+            )
+          )
         )
       `)
       .eq("student_id", studentId)

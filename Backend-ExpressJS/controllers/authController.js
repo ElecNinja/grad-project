@@ -14,8 +14,7 @@ const supabase = require("../config/supabase");
 // ===============================
 const signup = async (req, res) => {
   try {
-    const { userId, name, email, phone, about, photo, role, education, experience, subject } = req.body;
-
+    const { userId, name, email, phone, about, photo, role, education, experience, subject } = req.body;    
     // Validate input fields
     const check = validateSignup(name, email, "temporaryPassword", role);
     if (!check.valid) {

@@ -108,8 +108,10 @@ const summarizePdf = async (pdfUrl) => {
 // ===============================
 // Get student requests for teacher
 // ===============================
-const getStudentRequests = async () => {
-  const { data: requests, error } = await supabase
+const getStudentRequests = async (teacherSubject) => {
+  console.log("Filtering by subject:", teacherSubject);
+
+  let query = supabase                          // ✅ غير const لـ let
     .from("student_requests")
     .select(`
       *,
@@ -126,6 +128,13 @@ const getStudentRequests = async () => {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
+  // ✅ ضيف الفلتر هنا
+  if (teacherSubject) {
+    query = query.eq("preferred_language", teacherSubject);
+  }
+
+  const { data: requests, error } = await query; // ✅ await query مش supabase
+
   if (error) throw error;
 
   return requests.map((r) => ({
@@ -134,7 +143,7 @@ const getStudentRequests = async () => {
     studentPhoto: r.profiles?.avatar_url || null,
     fileUrl: r.request_files?.[0]?.file_url || null,
     fileName: r.request_files?.[0]?.file_name || null,
-    subject: r.preferred_language || "Not specified", 
+    subject: r.preferred_language || "Not specified",
   }));
 };
 
