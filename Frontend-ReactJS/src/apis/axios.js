@@ -64,7 +64,7 @@ export const acceptRequest = (requestId, price, teachingMode) =>
 
 // Student gets their requests
 export const getMyRequests = () =>
-  api.get(`/api/student/requests`).then((r) => r.data);
+  api.get(`/api/student/requests`).then((r) => r.data.requests); // ✅ .requests
 
 export const getTeacherOffers = (teacherId) =>
   api.get(`/api/teacher/offers/${teacherId}`).then((r) => r.data);

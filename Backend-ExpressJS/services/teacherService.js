@@ -109,9 +109,8 @@ const summarizePdf = async (pdfUrl) => {
 // Get student requests for teacher
 // ===============================
 const getStudentRequests = async (teacherSubject) => {
-  console.log("Filtering by subject:", teacherSubject);
 
-  let query = supabase                          // ✅ غير const لـ let
+  let query = supabase                        
     .from("student_requests")
     .select(`
       *,
@@ -126,9 +125,10 @@ const getStudentRequests = async (teacherSubject) => {
       )
     `)
     .is("deleted_at", null)
+    .eq("status", "pending_analysis")
     .order("created_at", { ascending: false });
 
-  // ✅ ضيف الفلتر هنا
+ 
   if (teacherSubject) {
     query = query.eq("preferred_language", teacherSubject);
   }
