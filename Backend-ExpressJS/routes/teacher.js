@@ -1,18 +1,24 @@
 const express = require("express");
-const multer = require("multer");
-const { isAuthenticated, isTeacher } = require("../middleware/authMiddleware");
-
-const ctrl = require("../controllers/teacherController");
-
-console.log("ctrl keys:", Object.keys(ctrl));
-console.log("uploadMaterialController:", ctrl.uploadMaterialController);
-
 const router = express.Router();
+const multer = require("multer");
+const { isAuthenticated } = require("../middleware/authMiddleware");
+const teacherController = require("../controllers/teacherController");
+
+// Multer in memory — file goes to req.file.buffer
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post("/upload-material", isAuthenticated, upload.single("file"), ctrl.uploadMaterialController);
-router.get("/offers/:teacherId", isAuthenticated, isTeacher, ctrl.getOffersController);
-router.post("/accept-offer", isAuthenticated, isTeacher, ctrl.acceptOfferController);
-router.post("/summarize-pdf", isAuthenticated, ctrl.summarizePdfController);
+
+router.post("/upload-material", isAuthenticated, upload.single("file"), teacherController.uploadMaterial);
+router.get("/offers/:teacherId", isAuthenticated, teacherController.getOffers);
+router.post("/accept-offer", isAuthenticated, teacherController.acceptOffer);
+router.post("/summarize-pdf", isAuthenticated, teacherController.summarizePdf);
+router.get("/list", isAuthenticated, teacherController.listTeachers);
+
+
+router.get("/profile/:id", isAuthenticated, teacherController.getTeacherProfile);
+router.put("/profile", isAuthenticated, upload.single("photo"), teacherController.updateTeacherProfile);
+
+router.get("/student/profile/:id", isAuthenticated, teacherController.getStudentProfile);
+router.put("/student/profile", isAuthenticated, upload.single("photo"), teacherController.updateStudentProfile);
 
 module.exports = router;

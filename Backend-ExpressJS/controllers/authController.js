@@ -3,12 +3,11 @@
 // ===============================
 const { validateSignup, validateLogin } = require("../utils/validation");
 const log = require("../utils/logger");
-// Note: passport removed — auth is now handled by Supabase Auth
 
 const {
-  checkExistingEmail,
   updateProfile,
   createTeacherProfile,
+  getProfileById,
 } = require("../services/authService");
 
 const supabase = require("../config/supabase");
@@ -131,11 +130,7 @@ const login = async (req, res) => {
     }
 
     // ---- 3. Fetch profile from your DB ----
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, full_name, email, role, avatar_url, is_verified")
-      .eq("id", data.user.id)
-      .single();
+    const { data: profile, error: profileError } = await getProfileById(data.user.id);
 
     if (profileError) {
       console.error(`Login failed - profile fetch: ${profileError.message}`);
@@ -144,8 +139,7 @@ const login = async (req, res) => {
 
     console.log(`User logged in: ${email} (${profile.role})`);
 
-    // Return token + profile
-    // Frontend stores the access_token in memory or httpOnly cookie
+    // Return token + profile; the frontend stores the token for subsequent API calls.
     return res.json({
       message: "Logged in successfully",
       token: data.session.access_token,
@@ -163,14 +157,6 @@ const login = async (req, res) => {
 // ===============================
 const logout = async (req, res) => {
   try {
-    // Get token from Authorization header
-    const token = req.headers.authorization?.split(" ")[1];
-
-    if (token) {
-      // Tell Supabase to invalidate this session
-      await supabase.auth.admin.signOut(token);
-    }
-
     log.info(`User logged out`);
     return res.json({ message: "Logged out" });
 
@@ -180,4 +166,17 @@ const logout = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, logout };
+const me = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized. Please login first." });
+    }
+
+    return res.json({ user: req.user });
+  } catch (err) {
+    console.error(`Me error: ${err.message}`);
+    return res.status(500).json({ error: "Server error." });
+  }
+};
+
+module.exports = { signup, login, logout, me };

@@ -2,6 +2,24 @@
 
 const supabase = require("../config/supabase");
 
+const mapProfileToUser = (profile) => {
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    id: profile.id,
+    name: profile.full_name || profile.name || "",
+    full_name: profile.full_name || profile.name || "",
+    email: profile.email || "",
+    role: profile.role || "",
+    photo: profile.avatar_url || profile.photo || "",
+    avatar_url: profile.avatar_url || profile.photo || "",
+    bio: profile.bio || null,
+    is_verified: profile.is_verified ?? null,
+  };
+};
+
 // ===============================
 // Check if email already exists
 // ===============================
@@ -41,6 +59,23 @@ const updateProfile = async (userId, fields) => {
 };
 
 // ===============================
+// Get profile by profile id
+// ===============================
+const getProfileById = async (profileId) => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, role, bio, avatar_url, is_verified")
+    .eq("id", profileId)
+    .single();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data: mapProfileToUser(data), error: null };
+};
+
+// ===============================
 // Create teacher profile
 // ===============================
 const createTeacherProfile = async (profileId, fields) => {
@@ -62,4 +97,6 @@ module.exports = {
   checkExistingEmail,
   updateProfile,
   createTeacherProfile,
+  getProfileById,
+  mapProfileToUser,
 };
