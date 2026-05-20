@@ -21,12 +21,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+const AI_BASE_URL = 'http://localhost:8000';
+
 export const uploadPdfForAnalysis = (file) => {
   const formData = new FormData();
-  formData.append("file", file);
-  return axios.post("/api/ai/analyze-pdf", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  }).then((r) => r.data);
+  formData.append('file', file);
+  return axios.post(`${AI_BASE_URL}/analyze-pdf`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 };
 
 export const uploadTeacherMaterial = (studentId, file, description, materialType) => {
@@ -62,9 +64,10 @@ export const acceptRequest = (requestId, price, teachingMode) =>
     numSessions: 1,
   }).then((r) => r.data);
 
+  
 // Student gets their requests
 export const getMyRequests = () =>
-  api.get(`/api/student/requests`).then((r) => r.data.requests); // ✅ .requests
+  api.get(`/api/student/requests`).then((r) => r.data.requests); 
 
 export const getTeacherOffers = (teacherId) =>
   api.get(`/api/teacher/offers/${teacherId}`).then((r) => r.data);
@@ -77,3 +80,5 @@ export const summarizePdf = (pdfUrl) =>
 
 export const getStudentRequests = () =>
   api.get(`/api/teacher/requests`).then((r) => r.data);
+
+

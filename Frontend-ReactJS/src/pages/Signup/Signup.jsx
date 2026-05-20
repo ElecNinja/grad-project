@@ -11,7 +11,7 @@ const SUBJECTS = [
   'Mathematics', 'Physics', 'Chemistry', 'Biology',
   'Computer Science', 'Programming', 'English', 'AI',
   'Cyber Security', 'Data Analysis', 'Economics', 'Accounting',
-  'Engineering', 'Medicine', 'Law', 'Other'
+  'Engineering', 'Medicine', 'Law', 'Other' ,'Malware'
 ];
 
 function Signup() {
@@ -30,7 +30,7 @@ function Signup() {
     about: '',
     education: '',
     experience: '',
-    subject: '', // ✅ added
+    subject: '', 
   });
   const [cardData, setCardData] = useState({
     cardType: '',
@@ -180,7 +180,7 @@ function Signup() {
         role: submitRole,
         education: formData.education || null,
         experience: formData.experience || null,
-        subject: formData.subject || null, // ✅ send subject
+        subject: formData.subject || null, 
       });
 
       dispatch(setLoader(false));
@@ -490,7 +490,7 @@ function Signup() {
               />
             </div>
 
-            {/* ✅ Subject dropdown for teacher */}
+            {/* Subject dropdown for teacher */}
             <div className="form-group">
               <label>Teaching Subject</label>
               <select

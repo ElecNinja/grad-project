@@ -14,45 +14,68 @@ const supabase = require("../config/supabase");
 // ===============================
 const signup = async (req, res) => {
   try {
-    const { userId, name, email, phone, about, photo, role, education, experience, subject } = req.body;    
-    // Validate input fields
+    const { userId, name, email, phone, about, photo, role, education, experience, subject } = req.body;
+
     const check = validateSignup(name, email, "temporaryPassword", role);
     if (!check.valid) {
       return res.status(400).json({ error: check.error });
     }
 
-    // Must have Supabase auth user already
     if (!userId) {
       return res.status(400).json({ error: "Missing userId." });
     }
 
-    // Update profile row created automatically by Supabase trigger
+    // Update profile row
     const { data: profile, error: profileError } = await updateProfile(userId, {
       full_name: name,
       email,
       role,
-      bio: subject || about || null, 
+      bio: about || null,
       avatar_url: photo || null,
     });
 
     if (profileError) {
       console.error("PROFILE ERROR:", profileError);
-      return res.status(500).json({
-        error: "Could not update profile.",
-        details: profileError.message,
-      });
+      return res.status(500).json({ error: "Could not update profile.", details: profileError.message });
     }
 
-    // Create teacher profile if role is teacher
+    // Create teacher profile and link subject
     if (role === "teacher") {
-      const { error: teacherError } = await createTeacherProfile(userId, {
+      const { data: teacherProfile, error: teacherError } = await createTeacherProfile(userId, {
         headline: about || null,
         years_experience: experience ? parseInt(experience) : null,
         teaching_languages: ["English"],
       });
 
       if (teacherError) {
-        console.error(teacherError);
+        console.error("TEACHER PROFILE ERROR:", teacherError);
+      }
+
+      // Save subject in teacher_subjects table
+      if (subject && teacherProfile) {
+        const { data: subjectData } = await supabase
+          .from('subjects')
+          .select('id')
+          .ilike('name', subject.trim())
+          .single();
+
+        if (subjectData) {
+          const { error: subjectError } = await supabase
+            .from('teacher_subjects')
+            .insert([{
+              teacher_id: teacherProfile.id,
+              subject_id: subjectData.id,
+              proficiency: 'intermediate',
+            }]);
+
+          if (subjectError) {
+            console.error("SUBJECT LINK ERROR:", subjectError);
+          } else {
+            console.log(`Teacher linked to subject: ${subject}`);
+          }
+        } else {
+          console.log(`Subject not found in DB: ${subject}`);
+        }
       }
     }
 
@@ -68,6 +91,7 @@ const signup = async (req, res) => {
     return res.status(500).json({ error: "Server error.", details: err.message });
   }
 };
+
 
 // ===============================
 // LOGIN CONTROLLER

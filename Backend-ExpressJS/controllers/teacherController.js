@@ -89,16 +89,18 @@ const summarizePdfController = async (req, res) => {
 const getRequestsController = async (req, res) => {
   const { getStudentRequests } = require("../services/teacherService");
   try {
-    // ✅ Get teacher's subject from their profile
+    // Get teacher_profile id from profiles id
     const { data: teacherProfile } = await supabase
-      .from("profiles")
-      .select("bio")
-      .eq("id", req.user.id)
+      .from("teacher_profiles")
+      .select("id")
+      .eq("profile_id", req.user.id)
       .single();
 
-    const teacherSubject = teacherProfile?.bio || null;
-    
-    const requests = await getStudentRequests(teacherSubject);
+    if (!teacherProfile) {
+      return res.status(404).json({ error: "Teacher profile not found." });
+    }
+
+    const requests = await getStudentRequests(teacherProfile.id);
     return res.json(requests);
   } catch (error) {
     console.error(error);
