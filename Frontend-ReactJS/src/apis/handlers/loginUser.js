@@ -48,17 +48,29 @@ export function loginUser(data) {
 
       switch (response.status) {
         case 200: {
-          saveAuthToken(response.data.token);
+          // Persist token and attach to axios
+          const token = response.data?.token || null;
+          saveAuthToken(token);
 
-          // Save user data and token in Redux
-          let userIsLoggedIn = setReduxLogInUser(
-            response.data.user.name,
-            response.data.user.email,
-            response.data.user.role,
-            response.data.profile,
-            response.data.user.photo,
-            response.data.user.id
-          )
+          // Normalise backend user object and save to Redux (include token)
+          const user = response.data?.user || {};
+          const name = user.full_name || user.name || "";
+          const emailResp = user.email || "";
+          const roleResp = user.role || "";
+          const photo = user.avatar_url || user.photo || "";
+          const id = user.id || null;
+          const profile = user;
+
+          const userIsLoggedIn = setReduxLogInUser(
+            name,
+            emailResp,
+            roleResp,
+            profile,
+            photo,
+            id,
+            token
+          );
+
           res.response = userIsLoggedIn;
           res.message = userIsLoggedIn ? "" : "Error: Login failed.";
           break;

@@ -1,6 +1,35 @@
 const supabase = require("../config/supabase");
 const axios = require("axios");
 
+const baseProfileSelect = "id, full_name, email, role, bio, avatar_url";
+
+const mapProfile = (profile, extras = {}) => ({
+  id: profile.id,
+  name: profile.full_name || profile.name || "",
+  email: profile.email || "",
+  role: profile.role || "",
+  bio: profile.bio || extras.headline || "",
+  photo: profile.avatar_url || profile.photo || "",
+  subject: extras.headline || profile.subject || "",
+  price_per_hour: profile.price_per_hour ?? null,
+  rating: profile.rating ?? null,
+  years_experience: extras.years_experience ?? null,
+  teaching_languages: extras.teaching_languages ?? [],
+});
+
+const loadTeacherExtras = async (profileIds) => {
+  if (!profileIds || profileIds.length === 0) return new Map();
+
+  const { data, error } = await supabase
+    .from("teacher_profiles")
+    .select("profile_id, headline, years_experience, teaching_languages")
+    .in("profile_id", profileIds);
+
+  if (error || !data) return new Map();
+
+  return new Map(data.map((row) => [row.profile_id, row]));
+};
+
 // ===============================
 // Upload material to storage + DB
 // ===============================
@@ -153,4 +182,124 @@ module.exports = {
   acceptOffer,
   summarizePdf,
   getStudentRequests,
+  getTeacherProfile,
+  listTeachers,
+  updateTeacherProfile,
+  getStudentProfile,
+  updateStudentProfile,
 };
+
+// ===============================
+// Get teacher profile by ID
+// ===============================
+async function getTeacherProfile(teacherId) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(baseProfileSelect)
+    .eq("id", teacherId)
+    .eq("role", "teacher")
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") return null;
+    throw error;
+  }
+
+  const extras = await loadTeacherExtras([data.id]);
+  return mapProfile(data, extras.get(data.id));
+}
+
+// ===============================
+// List all teachers
+// ===============================
+async function listTeachers() {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(baseProfileSelect)
+    .eq("role", "teacher")
+    .order("full_name", { ascending: true });
+
+  if (error) throw error;
+
+  const extras = await loadTeacherExtras((data || []).map((t) => t.id));
+  return (data || []).map((t) => mapProfile(t, extras.get(t.id)));
+}
+
+// ===============================
+// Update teacher profile
+// ===============================
+async function updateTeacherProfile(teacherId, updates) {
+  const allowed = ["name", "bio", "subject", "photo"];
+  const safeUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([key]) => allowed.includes(key))
+  );
+
+  if (Object.keys(safeUpdates).length === 0) throw new Error("No valid fields to update.");
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({
+      ...(safeUpdates.name !== undefined ? { full_name: safeUpdates.name } : {}),
+      ...(safeUpdates.bio !== undefined ? { bio: safeUpdates.bio } : {}),
+      ...(safeUpdates.photo !== undefined ? { avatar_url: safeUpdates.photo } : {}),
+    })
+    .eq("id", teacherId)
+    .select(baseProfileSelect)
+    .single();
+
+  if (error) throw error;
+
+  if (safeUpdates.subject) {
+    await supabase
+      .from("teacher_profiles")
+      .upsert({ profile_id: teacherId, headline: safeUpdates.subject }, { onConflict: "profile_id" });
+  }
+
+  const extras = await loadTeacherExtras([data.id]);
+  return mapProfile(data, extras.get(data.id));
+}
+
+// ===============================
+// Get student profile by ID
+// ===============================
+async function getStudentProfile(studentId) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(baseProfileSelect)
+    .eq("id", studentId)
+    .eq("role", "student")
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") return null;
+    throw error;
+  }
+
+  return mapProfile(data);
+}
+
+// ===============================
+// Update student profile
+// ===============================
+async function updateStudentProfile(studentId, updates) {
+  const allowed = ["name", "bio", "photo"];
+  const safeUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([key]) => allowed.includes(key))
+  );
+
+  if (Object.keys(safeUpdates).length === 0) throw new Error("No valid fields to update.");
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({
+      ...(safeUpdates.name !== undefined ? { full_name: safeUpdates.name } : {}),
+      ...(safeUpdates.bio !== undefined ? { bio: safeUpdates.bio } : {}),
+      ...(safeUpdates.photo !== undefined ? { avatar_url: safeUpdates.photo } : {}),
+    })
+    .eq("id", studentId)
+    .select(baseProfileSelect)
+    .single();
+
+  if (error) throw error;
+  return mapProfile(data);
+}

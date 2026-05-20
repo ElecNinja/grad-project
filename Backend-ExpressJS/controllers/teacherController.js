@@ -1,13 +1,8 @@
 const teacherService = require("../services/teacherService");
 
-// ── existing controllers (keep as-is) ────────────────────────────────────────
-
+// Upload material (students)
 const uploadMaterial = async (req, res) => {
   try {
-    // Verify user is authenticated
-    const authUser = await verifyToken(req);
-    if (!authUser) return res.status(401).json({ error: "Unauthorized" });
-
     const { studentId, description, materialType } = req.body;
     const file = req.file;
     if (!file) return res.status(400).json({ error: "No file uploaded." });
@@ -30,10 +25,6 @@ const getOffers = async (req, res) => {
 
 const acceptOffer = async (req, res) => {
   try {
-    // Verify user is authenticated
-    const authUser = await verifyToken(req);
-    if (!authUser) return res.status(401).json({ error: "Unauthorized" });
-
     const { offerId, price } = req.body;
     await teacherService.acceptOffer(offerId, price);
     res.status(200).json({ message: "Offer accepted." });
@@ -44,10 +35,6 @@ const acceptOffer = async (req, res) => {
 
 const summarizePdf = async (req, res) => {
   try {
-    // Verify user is authenticated
-    const authUser = await verifyToken(req);
-    if (!authUser) return res.status(401).json({ error: "Unauthorized" });
-
     const { pdfUrl } = req.body;
     const summary = await teacherService.summarizePdf(pdfUrl);
     res.status(200).json(summary);
@@ -69,12 +56,6 @@ const listTeachers = async (req, res) => {
   }
 };
 
-// ── new profile controllers ───────────────────────────────────────────────────
-
-/**
- * GET /api/teacher/profile/:id
- * Public — any logged-in user can view a teacher's profile.
- */
 const getTeacherProfile = async (req, res) => {
   try {
     const teacherId = req.params.id;
@@ -89,20 +70,13 @@ const getTeacherProfile = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/teacher/profile
- * Protected — teacher can only update their own profile.
- * req.user is set by authMiddleware after Supabase token validation.
- */
 const updateTeacherProfile = async (req, res) => {
   try {
     const teacherId = req.user?.id;
     if (!teacherId) return res.status(401).json({ error: "Unauthorized." });
 
-    // If a photo file was uploaded via multipart, use its URL (or buffer path)
     const updates = { ...req.body };
     if (req.file) {
-      // Upload photo to Supabase storage first
       const fileName = `teacher_${teacherId}_${Date.now()}`;
       const { error: storageError } = await require("../config/supabase").storage
         .from("profile-photos")
@@ -122,10 +96,6 @@ const updateTeacherProfile = async (req, res) => {
   }
 };
 
-/**
- * GET /api/student/profile/:id
- * Can be used by the student themselves or a teacher viewing a student.
- */
 const getStudentProfile = async (req, res) => {
   try {
     const studentId = req.params.id;
@@ -140,10 +110,6 @@ const getStudentProfile = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/student/profile
- * Protected — student can only update their own profile.
- */
 const updateStudentProfile = async (req, res) => {
   try {
     const studentId = req.user?.id;
@@ -169,82 +135,6 @@ const updateStudentProfile = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-const getRequestsController = async (req, res) => {
-  const { getStudentRequests } = require("../services/teacherService");
-  try {
-    // Get teacher_profile id from profiles id
-    const { data: teacherProfile } = await supabase
-      .from("teacher_profiles")
-      .select("id")
-      .eq("profile_id", req.user.id)
-      .single();
-
-    if (!teacherProfile) {
-      return res.status(404).json({ error: "Teacher profile not found." });
-    }
-
-    const requests = await getStudentRequests(teacherProfile.id);
-    return res.json(requests);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Failed to get requests" });
-  }
-};
-const acceptRequestController = async (req, res) => {
-  try {
-    const { requestId, price, sessionDuration, teachingMode, numSessions } = req.body;
-    const teacherId = req.user.id;
-
-    if (!requestId || !price) {
-      return res.status(400).json({ error: "requestId and price are required." });
-    }
-
-    // Get teacher_profile id
-    const { data: teacherProfile, error: tpError } = await supabase
-      .from("teacher_profiles")
-      .select("id")
-      .eq("profile_id", teacherId)
-      .single();
-
-    if (tpError || !teacherProfile) {
-      return res.status(404).json({ error: "Teacher profile not found." });
-    }
-
-    // Insert into bids table
-    const { data: bid, error: bidError } = await supabase
-      .from("bids")
-      .insert([{
-        request_id: requestId,
-        teacher_id: teacherProfile.id,
-        price: parseFloat(price),
-        currency: 'USD',
-        session_duration_hr: sessionDuration || 1,
-        teaching_mode: teachingMode || 'recorded',
-        num_sessions: numSessions || 1,
-        status: 'pending',
-      }])
-      .select()
-      .single();
-
-    if (bidError) {
-      console.error("Bid error:", bidError);
-      return res.status(500).json({ error: "Could not create bid." });
-    }
-
-    // Update request status to matched
-    await supabase
-      .from("student_requests")
-      .update({ status: 'matched' })
-      .eq("id", requestId);
-
-    return res.status(201).json({ message: "Bid created successfully", bid });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Server error." });
-  }
-};
-
 
 module.exports = {
   uploadMaterial,
