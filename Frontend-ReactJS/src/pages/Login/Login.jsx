@@ -13,7 +13,6 @@ function Login() {
   const navigate = useNavigate();
   const isComponentMounted = useIsComponentMounted();
 
-  const [role, setRole] = useState('student');
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -40,17 +39,15 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
 
     setIsLoading(true);
     dispatch(setLoader(true));
 
     try {
-      const res = await loginUser({ 
-        email: formData.email, 
+      const res = await loginUser({
+        email: formData.email,
         password: formData.password,
-        role: role
       });
       if (isComponentMounted) {
         if (res.response) {
@@ -75,27 +72,7 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
-        
-        {/* Role Toggle Buttons */}
-        <div className="role-toggle">
-          <button
-            type="button"
-            className={`role-btn ${role === 'student' ? 'active' : ''}`}
-            onClick={() => setRole('student')}
-            disabled={isLoading}
-          >
-            Student
-          </button>
-          <button
-            type="button"
-            className={`role-btn ${role === 'teacher' ? 'active' : ''}`}
-            onClick={() => setRole('teacher')}
-            disabled={isLoading}
-          >
-            Teacher
-          </button>
-        </div>
-        
+
         <h1 className="login-title">Login to your account</h1>
 
         {error && <ErrorMessage message={error} onClose={() => setError('')} />}
@@ -141,16 +118,16 @@ function Login() {
             <Link to="/forgot-password">Forgot password?</Link>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="login-btn"
             disabled={isLoading}
           >
             {isLoading ? 'Logging in...' : 'Log in'}
           </button>
 
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="google-btn"
             onClick={handleGoogleLogin}
             disabled={isLoading}

@@ -7,6 +7,13 @@ import { useDispatch } from 'react-redux';
 import { setLoader } from '../../redux/loaderSlice.js';
 import { supabase } from '../../config/supabaseClient';
 
+const SUBJECTS = [
+  'Mathematics', 'Physics', 'Chemistry', 'Biology',
+  'Computer Science', 'Programming', 'English', 'AI',
+  'Cyber Security', 'Data Analysis', 'Economics', 'Accounting',
+  'Engineering', 'Medicine', 'Law', 'Other'
+];
+
 function Signup() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -15,7 +22,7 @@ function Signup() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-  confirmPassword: '',
+    confirmPassword: '',
     photo: null,
     photoPreview: null,
     name: '',
@@ -23,6 +30,15 @@ function Signup() {
     about: '',
     education: '',
     experience: '',
+    subject: '', // ✅ added
+  });
+  const [cardData, setCardData] = useState({
+    cardType: '',
+    cardNumber: '',
+    nameOnCard: '',
+    bankName: '',
+    cvv: '',
+    saveCard: true,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -56,28 +72,23 @@ function Signup() {
   };
 
   const uploadPhotoToSupabase = async (file, userId) => {
-    const fileExt = file.name.split('.').pop().toLowerCase();
-    const filePath = `profiles/${userId}.${fileExt}`;
-
-    const { error: uploadError } = await supabase
-      .storage
-      .from('avatar')
-      .upload(filePath, file, {
-        upsert: true,
-        contentType: file.type,
-      });
-
-    if (uploadError) {
-      console.error('Photo upload error:', uploadError);
+    try {
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      const filePath = `profiles/${userId}.${fileExt}`;
+      const { error: uploadError } = await supabase
+        .storage
+        .from('avatar')
+        .upload(filePath, file, { upsert: true, contentType: file.type });
+      if (uploadError) {
+        console.warn('Photo upload failed:', uploadError.message);
+        return null;
+      }
+      const { data } = supabase.storage.from('avatar').getPublicUrl(filePath);
+      return data.publicUrl;
+    } catch (err) {
+      console.warn('Photo upload error:', err);
       return null;
     }
-
-    const { data } = supabase
-      .storage
-      .from('avatar')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
   };
 
   const validateStep1 = () => {
@@ -96,18 +107,14 @@ function Signup() {
     return true;
   };
 
-  const validateStudentStep2 = () => {
-    if (!formData.name || !formData.phone || !formData.about) {
-      setError('Please fill in all fields.');
-      return false;
-    }
-    return true;
-  };
-
   const validateTeacherStep2 = () => {
     if (!formData.name || !formData.phone || !formData.about ||
         !formData.education || !formData.experience) {
       setError('Please fill in all fields.');
+      return false;
+    }
+    if (!formData.subject) {
+      setError('Please select your teaching subject.');
       return false;
     }
     return true;
@@ -125,101 +132,71 @@ function Signup() {
     setStep(3);
   };
 
-  // ==============================
-  // FIXED: sign in before upload
-  // so auth.uid() is not null
-  // when storage RLS checks it
-  // ==============================
   const handleFinalSubmit = async (e, submitRole) => {
-  e.preventDefault();
+    e.preventDefault();
+    dispatch(setLoader(true));
+    setError('');
 
-  dispatch(setLoader(true));
-  setError('');
+    try {
+      // 1. Create Supabase auth user
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      });
 
-  try {
-
-    // =========================
-    // 1. Create Supabase auth user
-    // =========================
-    const {
-      data: signUpData,
-      error: signUpError
-    } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-    });
-
-    if (signUpError) {
-      setError(signUpError.message);
-      dispatch(setLoader(false));
-      return;
-    }
-
-    const userId = signUpData.user?.id;
-
-    if (!userId) {
-      setError('Could not create account.');
-      dispatch(setLoader(false));
-      return;
-    }
-
-    // =========================
-    // 2. Sign in immediately
-    // =========================
-    await supabase.auth.signInWithPassword({
-      email: formData.email,
-      password: formData.password,
-    });
-
-    // =========================
-    // 3. Upload photo
-    // =========================
-    let photoUrl = null;
-
-    if (formData.photo) {
-      photoUrl = await uploadPhotoToSupabase(
-        formData.photo,
-        userId
-      );
-
-      if (!photoUrl) {
-        setError('Photo upload failed.');
+      if (signUpError) {
+        setError(signUpError.message);
         dispatch(setLoader(false));
         return;
       }
+
+      const userId = signUpData.user?.id;
+      if (!userId) {
+        setError('Could not create account.');
+        dispatch(setLoader(false));
+        return;
+      }
+
+      // 2. Sign in immediately
+      await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // 3. Upload photo — optional
+      let photoUrl = null;
+      if (formData.photo) {
+        photoUrl = await uploadPhotoToSupabase(formData.photo, userId);
+      }
+
+      // 4. Save profile via backend
+      const result = await signupUser({
+        userId,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        about: formData.about,
+        photo: photoUrl,
+        role: submitRole,
+        education: formData.education || null,
+        experience: formData.experience || null,
+        subject: formData.subject || null, // ✅ send subject
+      });
+
+      dispatch(setLoader(false));
+
+      if (result.response) {
+        navigate('/login');
+      } else {
+        setError(result.message);
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError('Something went wrong.');
+      dispatch(setLoader(false));
     }
-
-    // =========================
-    // 4. Save profile via backend
-    // =========================
-    const result = await signupUser({
-      userId,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      about: formData.about,
-      photo: photoUrl,
-      role: submitRole,
-      education: formData.education || null,
-      experience: formData.experience || null,
-    });
-
-    dispatch(setLoader(false));
-
-    if (result.response) {
-      navigate('/login');
-    } else {
-      setError(result.message);
-    }
-
-  } catch (err) {
-    console.error(err);
-
-    setError('Something went wrong.');
-
-    dispatch(setLoader(false));
-  }
-};
+  };
 
   // ==============================
   // STEP 1 — Email & Password
@@ -246,7 +223,6 @@ function Signup() {
           </div>
 
           <h1 className="signup-title">Create an account</h1>
-
           {error && <div className="error-message">{error}</div>}
 
           <form onSubmit={handleStep1Submit} className="signup-form">
@@ -337,7 +313,6 @@ function Signup() {
       <div className="signup-container">
         <div className="signup-card">
           <h1 className="signup-title">Create an account</h1>
-
           {error && <div className="error-message">{error}</div>}
 
           <form onSubmit={(e) => handleFinalSubmit(e, 'student')} className="signup-form">
@@ -423,7 +398,6 @@ function Signup() {
       <div className="signup-container">
         <div className="signup-card">
           <h1 className="signup-title">Create an account</h1>
-
           {error && <div className="error-message">{error}</div>}
 
           <form onSubmit={handleTeacherStep2Submit} className="signup-form">
@@ -516,6 +490,32 @@ function Signup() {
               />
             </div>
 
+            {/* ✅ Subject dropdown for teacher */}
+            <div className="form-group">
+              <label>Teaching Subject</label>
+              <select
+                name="subject"
+                value={formData.subject}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  padding: '0 1rem',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '12px',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  background: 'white',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="">Select your subject...</option>
+                {SUBJECTS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+
             <button type="submit" className="create-account-btn">
               Next
             </button>
@@ -526,24 +526,95 @@ function Signup() {
   }
 
   // ==============================
-  // STEP 3 — Teacher Final Submit
+  // STEP 3 — Teacher Card
   // ==============================
   if (step === 3 && role === 'teacher') {
     return (
       <div className="signup-container">
         <div className="signup-card">
-          <h1 className="signup-title">Almost done!</h1>
-          <p style={{ color: 'var(--color-text-secondary)', marginBottom: '24px', textAlign: 'center' }}>
-            Review your details and finish creating your account.
-            You can connect your bank account from your dashboard after signup.
-          </p>
-
+          <h1 className="signup-title">Add Card</h1>
           {error && <div className="error-message">{error}</div>}
 
-          <div className="review-details" style={{ marginBottom: '24px' }}>
-            <p><strong>Name:</strong> {formData.name}</p>
-            <p><strong>Email:</strong> {formData.email}</p>
-            <p><strong>Phone:</strong> {formData.phone}</p>
+          <div className="card-details" style={{ marginBottom: '1.5rem' }}>
+            <div className="form-group">
+              <label>Card Type</label>
+              <select
+                value={cardData.cardType || ''}
+                onChange={(e) => setCardData(prev => ({ ...prev, cardType: e.target.value }))}
+              >
+                <option value="">Select card type</option>
+                <option value="VISA">VISA</option>
+                <option value="Mastercard">Mastercard</option>
+                <option value="Meeza">Meeza</option>
+                <option value="American Express">American Express</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Card Number</label>
+              <input
+                type="text"
+                placeholder="1234 5678 9012 3456"
+                maxLength={19}
+                value={cardData.cardNumber}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 16);
+                  const formatted = val.replace(/(.{4})/g, '$1 ').trim();
+                  setCardData(prev => ({ ...prev, cardNumber: formatted }));
+                }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>CVV</label>
+              <input
+                type="password"
+                placeholder="123"
+                maxLength={4}
+                value={cardData.cvv || ''}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setCardData(prev => ({ ...prev, cvv: val }));
+                }}
+                style={{ maxWidth: '120px' }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Name on card</label>
+              <input
+                type="text"
+                placeholder="John Doe"
+                value={cardData.nameOnCard}
+                onChange={(e) => setCardData(prev => ({ ...prev, nameOnCard: e.target.value }))}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Bank Name</label>
+              <select
+                value={cardData.bankName}
+                onChange={(e) => setCardData(prev => ({ ...prev, bankName: e.target.value }))}
+              >
+                <option value="">Select bank</option>
+                <option value="CIB">CIB</option>
+                <option value="NBE">NBE - National Bank of Egypt</option>
+                <option value="QNB">QNB</option>
+                <option value="HSBC">HSBC</option>
+                <option value="Banque Misr">Banque Misr</option>
+                <option value="Alex Bank">Alex Bank</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <label className="save-card-label">
+              <input
+                type="checkbox"
+                checked={cardData.saveCard}
+                onChange={(e) => setCardData(prev => ({ ...prev, saveCard: e.target.checked }))}
+              />
+              Securely save this card
+            </label>
           </div>
 
           <button
@@ -552,6 +623,14 @@ function Signup() {
             onClick={(e) => handleFinalSubmit(e, 'teacher')}
           >
             Finish
+          </button>
+
+          <button
+            type="button"
+            className="skip-btn"
+            onClick={(e) => handleFinalSubmit(e, 'teacher')}
+          >
+            Skip for now
           </button>
         </div>
       </div>

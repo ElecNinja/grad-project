@@ -16,7 +16,7 @@ const getBearerToken = (req) => {
 };
 
 // ======================================
-// Check if user is logged in
+// Check if user is logged in via JWT token
 // ======================================
 const isAuthenticated = async (req, res, next) => {
   try {

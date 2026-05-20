@@ -51,6 +51,10 @@ const updateProfile = async (userId, fields) => {
       role: fields.role,
       bio: fields.bio,
       avatar_url: fields.avatar_url,
+      updated_at: new Date().toISOString(), // force update timestamp
+    }, {
+      onConflict: 'id',        // if row exists, update it
+      ignoreDuplicates: false  // always update even if same data
     })
     .select()
     .single();

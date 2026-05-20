@@ -44,6 +44,7 @@ const uploadMaterial = async (studentId, description, materialType, file) => {
     .upload(fileName, file.buffer, { contentType: "application/pdf" });
   if (storageError) throw storageError;
 
+  // Get public URL of uploaded file
   const { data: publicUrlData } = supabase.storage
     .from("teacher-materials")
     .getPublicUrl(fileName);
@@ -53,11 +54,13 @@ const uploadMaterial = async (studentId, description, materialType, file) => {
   const { error: uploadError } = await supabase
     .from("upload-pdf")
     .insert([{
-      "id-student": studentId,
-      "pdf-url": pdfUrl,
-      specialties: description || null,
-      "id-pdf": idPdf,
-      "Type": materialType || null,
+      uploader_id: studentId,
+      title: file.originalname || 'Uploaded Material',
+      description: description || null,
+      resource_type: resourceTypeMap[materialType] || 'other',
+      file_url: pdfUrl,
+      file_size_bytes: file.size || null,
+      is_public: true,
     }]);
   if (uploadError) throw uploadError;
   return { pdfUrl };

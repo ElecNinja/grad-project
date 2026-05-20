@@ -1,6 +1,5 @@
 import { BrowserRouter, Navigate, Routes, Route, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useEffect } from "react";
 // Components
 import Header from "../components/Header/Header";
 import Footer from "../components/Footer/Footer";
@@ -16,6 +15,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import Addmaterial from "../pages/Addmaterial/Addmaterial";
 import Offers from "../pages/Offers/offer";
+import Requests from "../pages/Requests/Requests";
 import Bootcamp from "../pages/Bootcamp/Bootcamp";
 import CourseDetails from "../pages/CourseDetails/CourseDetails";
 import Work from "../pages/work/Work";
@@ -24,8 +24,6 @@ import TeacherProfile from "../pages/TeacherProfile/TeacherProfile";
 import StudentProfile from "../pages/StudentProfile/StudentProfile";
 import TeacherProfileView from "../pages/TeacherProfileView/TeacherProfileView";
 import FindExpert from "../pages/FindExpert/FindExpert";
-
-import { getUser } from "../apis/handlers/getUser";
 
 // Pages where the Header (navbar) should NOT be shown
 const NO_HEADER_PAGES = ['/login', '/signup', '/deletedAccount'];
@@ -45,9 +43,7 @@ const AppLayout = ({ children }) => {
 const Router = () => {
   const loaderDisplay = useSelector((state) => state.loader.display);
 
-  useEffect(() => {
-    getUser();
-  }, []);
+  // Removed getUser() — user data is saved in Redux after login directly
 
   return (
     <BrowserRouter>
@@ -63,6 +59,7 @@ const Router = () => {
           <Route path="deletedAccount" element={<DeletedAccount />} />
           <Route path="/bootcamp" element={<Bootcamp />} />
           <Route path="/course" element={<CourseDetails />} />
+          <Route path="add-material" element={<Addmaterial />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="find-expert" element={<FindExpert />} />
@@ -75,7 +72,8 @@ const Router = () => {
 
           {/* Students only */}
           <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-            <Route path="add-material" element={<Addmaterial />} />
+            
+            <Route path="requests" element={<Requests />} />
             <Route path="videos" element={<Videos />} />
             <Route path="student-profile" element={<StudentProfile />} />
           </Route>

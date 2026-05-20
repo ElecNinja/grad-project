@@ -31,9 +31,8 @@ def analyze_with_llm(text):
             "Content-Type": "application/json"
         },
         json={
-            "model": "arcee-ai/trinity-large-preview:free",
-            "messages": [{"role": "user", "content": prompt}],
-            "reasoning": {"enabled": True}
+            "model": "openrouter/owl-alpha",
+            "messages": [{"role": "user", "content": prompt}]
         }
     )
 

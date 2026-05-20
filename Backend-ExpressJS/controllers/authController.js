@@ -1,6 +1,3 @@
-// ===============================
-// authController.js
-// ===============================
 const { validateSignup, validateLogin } = require("../utils/validation");
 const log = require("../utils/logger");
 
@@ -17,68 +14,42 @@ const supabase = require("../config/supabase");
 // ===============================
 const signup = async (req, res) => {
   try {
-    const {
-      userId,
-      name,
-      email,
-      phone,
-      about,
-      photo,
-      role,
-      education,
-      experience,
-    } = req.body;
-
-    // Validate
-    const check = validateSignup(
-      name,
-      email,
-      "temporaryPassword",
-      role
-    );
-
+    const { userId, name, email, phone, about, photo, role, education, experience, subject } = req.body;    
+    // Validate input fields
+    const check = validateSignup(name, email, "temporaryPassword", role);
     if (!check.valid) {
-      return res.status(400).json({
-        error: check.error,
-      });
+      return res.status(400).json({ error: check.error });
     }
 
     // Must have Supabase auth user already
     if (!userId) {
-      return res.status(400).json({
-        error: "Missing userId.",
-      });
+      return res.status(400).json({ error: "Missing userId." });
     }
 
     // Update profile row created automatically by Supabase trigger
-    const { data: profile, error: profileError } =
-      await updateProfile(userId, {
-        full_name: name,
-        email,
-        role,
-        bio: about || null,
-        avatar_url: photo || null,
-      });
+    const { data: profile, error: profileError } = await updateProfile(userId, {
+      full_name: name,
+      email,
+      role,
+      bio: subject || about || null, 
+      avatar_url: photo || null,
+    });
 
     if (profileError) {
-  console.error("PROFILE ERROR:", profileError);
+      console.error("PROFILE ERROR:", profileError);
+      return res.status(500).json({
+        error: "Could not update profile.",
+        details: profileError.message,
+      });
+    }
 
-  return res.status(500).json({
-    error: "Could not update profile.",
-    details: profileError.message,
-  });
-}
-
-    // Teacher extra table
+    // Create teacher profile if role is teacher
     if (role === "teacher") {
-      const { error: teacherError } =
-        await createTeacherProfile(userId, {
-          headline: about || null,
-          years_experience: experience
-            ? parseInt(experience)
-            : null,
-          teaching_languages: ["English"],
-        });
+      const { error: teacherError } = await createTeacherProfile(userId, {
+        headline: about || null,
+        years_experience: experience ? parseInt(experience) : null,
+        teaching_languages: ["English"],
+      });
 
       if (teacherError) {
         console.error(teacherError);
@@ -94,36 +65,26 @@ const signup = async (req, res) => {
 
   } catch (err) {
     console.error(err);
-
-    return res.status(500).json({
-      error: "Server error.",
-      details: err.message,
-    });
+    return res.status(500).json({ error: "Server error.", details: err.message });
   }
 };
 
 // ===============================
 // LOGIN CONTROLLER
-// Uses Supabase Auth — no passport
-// No session — returns JWT token
 // ===============================
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // ---- 1. Validate inputs ----
+    // Validate inputs
     const check = validateLogin(email, password);
     if (!check.valid) {
       console.warn(`Login failed - validation: ${check.error}`);
       return res.status(400).json({ error: check.error });
     }
 
-    // ---- 2. Sign in via Supabase Auth ----
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    // Sign in via Supabase Auth
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       console.warn(`Login failed - invalid credentials: ${email}`);
       return res.status(401).json({ error: "Invalid email or password." });
