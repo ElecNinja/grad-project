@@ -5,12 +5,13 @@ const {
   signup,
   login,
   logout,
-  getMe // ✅ added
+  me
 } = require("../controllers/authController");
+const { isAuthenticated } = require("../middleware/authMiddleware");
 
 router.post("/signup", signup);
 router.post("/login", login);
 router.post("/logout", logout);
-router.get("/me", getMe); // ✅ added
+router.get("/me", isAuthenticated, me);
 
 module.exports = router;

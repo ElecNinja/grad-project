@@ -20,6 +20,10 @@ import Bootcamp from "../pages/Bootcamp/Bootcamp";
 import CourseDetails from "../pages/CourseDetails/CourseDetails";
 import Work from "../pages/work/Work";
 import Videos from "../pages/Videos/Videos";
+import TeacherProfile from "../pages/TeacherProfile/TeacherProfile";
+import StudentProfile from "../pages/StudentProfile/StudentProfile";
+import TeacherProfileView from "../pages/TeacherProfileView/TeacherProfileView";
+import FindExpert from "../pages/FindExpert/FindExpert";
 
 // Pages where the Header (navbar) should NOT be shown
 const NO_HEADER_PAGES = ['/login', '/signup', '/deletedAccount'];
@@ -57,6 +61,10 @@ const Router = () => {
           <Route path="/course" element={<CourseDetails />} />
           <Route path="add-material" element={<Addmaterial />} />
 
+          <Route element={<ProtectedRoute />}>
+            <Route path="find-expert" element={<FindExpert />} />
+          </Route>
+
           {/* Any logged-in user */}
           <Route element={<ProtectedRoute />}>
             <Route path="dashboard" element={<Dashboard />} />
@@ -67,12 +75,19 @@ const Router = () => {
             
             <Route path="requests" element={<Requests />} />
             <Route path="videos" element={<Videos />} />
+            <Route path="student-profile" element={<StudentProfile />} />
           </Route>
 
           {/* Teachers only */}
           <Route element={<ProtectedRoute allowedRoles={["teacher"]} />}>
             <Route path="offers" element={<Offers />} />
             <Route path="Work" element={<Work />} />
+            <Route path="teacher-profile" element={<TeacherProfile />} />
+          </Route>
+
+          {/* Teacher profile view for logged-in users */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="teacher-profile/:id" element={<TeacherProfileView />} />
           </Route>
 
           {/* Fallback */}

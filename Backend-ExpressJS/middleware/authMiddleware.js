@@ -1,37 +1,47 @@
 const supabase = require("../config/supabase");
+const { getProfileById } = require("../services/authService");
+
+const getBearerToken = (req) => {
+  const header = req.headers.authorization || req.headers.Authorization;
+
+  if (!header) {
+    return null;
+  }
+
+  if (header.startsWith("Bearer ")) {
+    return header.slice(7).trim();
+  }
+
+  return header.trim();
+};
 
 // ======================================
 // Check if user is logged in via JWT token
 // ======================================
 const isAuthenticated = async (req, res, next) => {
   try {
-    // Get token from Authorization header
-    const token = req.headers.authorization?.split(" ")[1];
+    const token = getBearerToken(req);
 
     if (!token) {
       return res.status(401).json({ error: "Unauthorized. Please login first." });
     }
 
-    // Verify token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const { data, error } = await supabase.auth.getUser(token);
 
-    if (error || !user) {
-      return res.status(401).json({ error: "Unauthorized. Invalid token." });
+    if (error || !data?.user?.id) {
+      return res.status(401).json({ error: "Unauthorized. Please login first." });
     }
 
-    // Fetch profile to get role
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, full_name, email, role")
-      .eq("id", user.id)
-      .single();
+    const { data: user, error: profileError } = await getProfileById(data.user.id);
 
-    // Attach user to request for use in controllers
-    req.user = profile;
+    if (profileError || !user) {
+      return res.status(401).json({ error: "Unauthorized. Please login first." });
+    }
+
+    req.user = user;
     return next();
-
   } catch (err) {
-    return res.status(401).json({ error: "Unauthorized." });
+    return res.status(500).json({ error: "Failed to validate user session." });
   }
 };
 

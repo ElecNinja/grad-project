@@ -3,6 +3,20 @@ import { apiEndpoints } from "../apiEndpoints"
 import { emailValidation, passwordValidation } from "../../utils/authUtils"
 import { setReduxLogInUser } from "../../redux/reduxUtils";
 
+const saveAuthToken = (token) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (token) {
+    window.localStorage.setItem("supabase_access_token", token);
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
+  } else {
+    window.localStorage.removeItem("supabase_access_token");
+    delete api.defaults.headers.common.Authorization;
+  }
+};
+
 export function loginUser(data) {
   const email = data.email ? data.email : false;
   const password = data.password ? data.password : false;
@@ -34,16 +48,17 @@ export function loginUser(data) {
 
       switch (response.status) {
         case 200: {
+          saveAuthToken(response.data.token);
+
           // Save user data and token in Redux
           let userIsLoggedIn = setReduxLogInUser(
-            response.data.user.full_name,
+            response.data.user.name,
             response.data.user.email,
             response.data.user.role,
             response.data.profile,
-            response.data.user.avatar_url,
-            response.data.user.id,
-            response.data.token // ✅ pass token to Redux
-          );
+            response.data.user.photo,
+            response.data.user.id
+          )
           res.response = userIsLoggedIn;
           res.message = userIsLoggedIn ? "" : "Error: Login failed.";
           break;

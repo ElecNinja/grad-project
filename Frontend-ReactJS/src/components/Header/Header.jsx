@@ -148,8 +148,14 @@ function Header() {
                 <Bell size={20} />
                 <span className="bell-dot" />
               </button>
+              <NavLink
+                to={user?.role === 'teacher' ? '/teacher-profile' : '/student-profile'}
+                className="btn-primary"
+              >
+                My Profile
+              </NavLink>
               <div className="user-info">
-                <span className="user-name">{user?.name || 'Alex Johnson'}</span>
+                <span className="user-name">{user?.name || user?.profile?.full_name || 'Alex Johnson'}</span>
                 <span className="user-role">{user?.role || 'STUDENT'}</span>
               </div>
               <div className="user-avatar">
@@ -216,7 +222,16 @@ function Header() {
               <NavLink to="/Offers" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 Offers
               </NavLink>
+              <NavLink to="/teacher-profile" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                My Profile
+              </NavLink>
             </>
+          )}
+
+          {user?.loggedIn && user?.role === 'student' && (
+            <NavLink to="/student-profile" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+              My Profile
+            </NavLink>
           )}
 
           <div className="mobile-divider"></div>

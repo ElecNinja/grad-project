@@ -156,6 +156,15 @@
   color: #444;
   margin-bottom: 8px;
 }
+.lesson-count {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+}
+.draft-badge {
+  color: #b45309;
+  font-weight: 600;
+}
 .rating-row {
   display: flex;
   align-items: center;
@@ -197,4 +206,15 @@
 .badge-new {
   background: #d1f0f7;
   color: #0c5460;
+}
+
+.bootcamp-status {
+  text-align: center;
+  padding: 48px 16px;
+  color: #555;
+  font-size: 15px;
+}
+
+.bootcamp-status--error {
+  color: #c0392b;
 }

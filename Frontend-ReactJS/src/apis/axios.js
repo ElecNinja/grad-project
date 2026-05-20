@@ -12,6 +12,19 @@ export const api = axios.create({
   }
 });
 
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = window.localStorage.getItem("supabase_access_token");
+
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  return config;
+});
+
 // Automatically send token with every request
 api.interceptors.request.use((config) => {
   const token = store.getState().user?.token;
@@ -37,6 +50,7 @@ export const uploadTeacherMaterial = (studentId, file, description, materialType
   formData.append("studentId", studentId);
   formData.append("description", description);
   formData.append("materialType", materialType);
+  // Use api instance to send session cookie
   return api.post(`/api/teacher/upload-material`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   }).then((r) => r.data);

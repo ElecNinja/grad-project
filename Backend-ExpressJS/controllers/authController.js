@@ -2,9 +2,9 @@ const { validateSignup, validateLogin } = require("../utils/validation");
 const log = require("../utils/logger");
 
 const {
-  checkExistingEmail,
   updateProfile,
   createTeacherProfile,
+  getProfileById,
 } = require("../services/authService");
 
 const supabase = require("../config/supabase");
@@ -114,12 +114,8 @@ const login = async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password." });
     }
 
-    // Fetch profile from database
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, full_name, email, role, avatar_url, is_verified")
-      .eq("id", data.user.id)
-      .single();
+    // ---- 3. Fetch profile from your DB ----
+    const { data: profile, error: profileError } = await getProfileById(data.user.id);
 
     if (profileError) {
       console.error(`Login failed - profile fetch: ${profileError.message}`);
@@ -128,7 +124,7 @@ const login = async (req, res) => {
 
     console.log(`User logged in: ${email} (${profile.role})`);
 
-    // Return token and profile data to frontend
+    // Return token + profile; the frontend stores the token for subsequent API calls.
     return res.json({
       message: "Logged in successfully",
       token: data.session.access_token,
@@ -146,14 +142,6 @@ const login = async (req, res) => {
 // ===============================
 const logout = async (req, res) => {
   try {
-    // Get token from Authorization header
-    const token = req.headers.authorization?.split(" ")[1];
-
-    if (token) {
-      // Invalidate session in Supabase
-      await supabase.auth.admin.signOut(token);
-    }
-
     log.info(`User logged out`);
     return res.json({ message: "Logged out" });
 
@@ -163,36 +151,17 @@ const logout = async (req, res) => {
   }
 };
 
-// ===============================
-// GET CURRENT USER CONTROLLER
-// ===============================
-const getMe = async (req, res) => {
+const me = async (req, res) => {
   try {
-    // Get token from Authorization header
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).json({ error: "Unauthorized" });
-
-    // Verify token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) return res.status(401).json({ error: "Unauthorized" });
-
-    // Fetch profile from database
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, full_name, email, role, avatar_url")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError) {
-      return res.status(500).json({ error: "Could not fetch profile." });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized. Please login first." });
     }
 
-    return res.json({ user: profile });
-
+    return res.json({ user: req.user });
   } catch (err) {
-    console.error(`GetMe error: ${err.message}`);
+    console.error(`Me error: ${err.message}`);
     return res.status(500).json({ error: "Server error." });
   }
 };
 
-module.exports = { signup, login, logout, getMe };
+module.exports = { signup, login, logout, me };

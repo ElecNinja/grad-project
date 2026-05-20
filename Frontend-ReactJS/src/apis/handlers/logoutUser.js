@@ -2,6 +2,15 @@ import { api } from "../axios"
 import { setReduxLogOutUser } from "../../redux/reduxUtils";
 import { apiEndpoints } from "../apiEndpoints";
 
+const clearAuthToken = () => {
+    if (typeof window === "undefined") {
+        return;
+    }
+
+    window.localStorage.removeItem("supabase_access_token");
+    delete api.defaults.headers.common.Authorization;
+};
+
 /**
  * Function makes api call to logout the user, and also logs out user from the redux store.
  * 
@@ -27,6 +36,7 @@ export function logoutUser() {
 
     // log out front end
     setReduxLogOutUser();
+    clearAuthToken();
 
     // making the request (log out backend)
     const logout = async () => {

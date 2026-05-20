@@ -108,53 +108,43 @@ const summarizePdf = async (pdfUrl) => {
 // ===============================
 // Get student requests for teacher
 // ===============================
-const getStudentRequests = async (teacherId) => {
-  
-  // Get requests matched to this specific teacher via request_matches
-  const { data: matches, error: matchError } = await supabase
-    .from("request_matches")
+const getStudentRequests = async (teacherSubject) => {
+
+  let query = supabase                        
+    .from("student_requests")
     .select(`
-      match_score,
-      rank,
-      student_requests!inner (
-        id,
-        title,
-        description,
-        preferred_mode,
-        status,
-        created_at,
-        profiles!student_requests_student_id_fkey (
-          full_name,
-          avatar_url
-        ),
-        request_files (
-          file_name,
-          file_url,
-          mime_type
-        )
+      *,
+      profiles!student_requests_student_id_fkey (
+        full_name,
+        avatar_url
+      ),
+      request_files (
+        file_name,
+        file_url,
+        mime_type
       )
     `)
-    .eq("teacher_id", teacherId)
-    .in("student_requests.status", ["matched", "open", "pending_analysis"])
-    .order("rank", { ascending: true });
+    .is("deleted_at", null)
+    .eq("status", "pending_analysis")
+    .order("created_at", { ascending: false });
 
-  if (matchError) throw matchError;
+ 
+  if (teacherSubject) {
+    query = query.eq("preferred_language", teacherSubject);
+  }
 
-  return (matches || []).map((m) => {
-    const r = m.student_requests;
-    return {
-      id: r.id,
-      title: r.title,
-      description: r.description,
-      preferred_mode: r.preferred_mode,
-      status: r.status,
-      match_score: m.match_score,
-      studentName: r.profiles?.full_name || "Student",
-      studentPhoto: r.profiles?.avatar_url || null,
-      fileUrl: r.request_files?.[0]?.file_url || null,
-      fileName: r.request_files?.[0]?.file_name || null,
-    };
-  });
+  const { data: requests, error } = await query; // ✅ await query مش supabase
+
+  if (error) throw error;
+
+  return requests.map((r) => ({
+    ...r,
+    studentName: r.profiles?.full_name || "Student",
+    studentPhoto: r.profiles?.avatar_url || null,
+    fileUrl: r.request_files?.[0]?.file_url || null,
+    fileName: r.request_files?.[0]?.file_name || null,
+    subject: r.preferred_language || "Not specified",
+  }));
 };
 
 module.exports = {
