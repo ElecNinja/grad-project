@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useSelector } from "react-redux";
 import { ChevronDown, Menu, X, Bell } from 'lucide-react';
+import { logoutUser } from '../../apis/handlers/logoutUser';
 import logo from '../../assets/images/logo.png';
 import "./header.css"
 
 function Header() {
   const user = useSelector((state) => state.user);
+  const navigate = useNavigate();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -26,6 +28,12 @@ function Header() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setIsMobileMenuOpen(false);
+    navigate('/login', { replace: true });
+  };
 
   return (
     <nav className="navbar">
@@ -148,6 +156,9 @@ function Header() {
                 <Bell size={20} />
                 <span className="bell-dot" />
               </button>
+              <button type="button" className="btn-outline" onClick={handleLogout}>
+                Logout
+              </button>
               <NavLink
                 to={user?.role === 'teacher' ? '/teacher-profile' : '/student-profile'}
                 className="btn-primary"
@@ -232,6 +243,12 @@ function Header() {
             <NavLink to="/student-profile" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
               My Profile
             </NavLink>
+          )}
+
+          {user?.loggedIn && (
+            <button type="button" className="mobile-logout-btn" onClick={handleLogout}>
+              Logout
+            </button>
           )}
 
           <div className="mobile-divider"></div>

@@ -34,16 +34,23 @@ export function logoutUser() {
         response: false,
     }
 
-    // log out front end
-    setReduxLogOutUser();
-    clearAuthToken();
+    const token = (typeof window !== "undefined")
+      ? window.localStorage.getItem("supabase_access_token")
+      : null;
 
     // making the request (log out backend)
     const logout = async () => {
         try {
-            const response = await api.post(apiEndpoints.logout)
+            const response = await api.post(
+              apiEndpoints.logout,
+              {},
+              {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                validateStatus: () => true,
+              }
+            )
 
-            let responseStatus = response.request.status;
+            let responseStatus = response.status;
 
             if (responseStatus === 200) {
                 res.response = true;
@@ -52,6 +59,10 @@ export function logoutUser() {
         }
         catch (error) {
             console.warn(`Api handler logout encountered an error: ${error}`)
+        } finally {
+            // Always clear client auth state, even if backend request fails.
+            setReduxLogOutUser();
+            clearAuthToken();
         }
         return res;
     }

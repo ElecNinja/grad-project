@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Routes, Route, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 // Components
@@ -24,6 +25,7 @@ import TeacherProfile from "../pages/TeacherProfile/TeacherProfile";
 import StudentProfile from "../pages/StudentProfile/StudentProfile";
 import TeacherProfileView from "../pages/TeacherProfileView/TeacherProfileView";
 import FindExpert from "../pages/FindExpert/FindExpert";
+import { getUser } from "../apis/handlers/getUser";
 
 // Pages where the Header (navbar) should NOT be shown
 const NO_HEADER_PAGES = ['/login', '/signup', '/deletedAccount'];
@@ -42,8 +44,45 @@ const AppLayout = ({ children }) => {
 
 const Router = () => {
   const loaderDisplay = useSelector((state) => state.loader.display);
+  const user = useSelector((state) => state.user);
+  const [authReady, setAuthReady] = useState(false);
 
-  // Removed getUser() — user data is saved in Redux after login directly
+  useEffect(() => {
+    let isMounted = true;
+
+    const restoreSession = async () => {
+      try {
+        if (user?.loggedIn) {
+          return;
+        }
+
+        if (typeof window === "undefined") {
+          return;
+        }
+
+        const token = window.localStorage.getItem("supabase_access_token");
+        if (!token) {
+          return;
+        }
+
+        await getUser();
+      } finally {
+        if (isMounted) {
+          setAuthReady(true);
+        }
+      }
+    };
+
+    restoreSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.loggedIn]);
+
+  if (!authReady) {
+    return <Loader />;
+  }
 
   return (
     <BrowserRouter>
