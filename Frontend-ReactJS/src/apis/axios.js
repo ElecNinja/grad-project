@@ -34,7 +34,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-const AI_BASE_URL = 'http://localhost:8000';
+const AI_BASE_URL = import.meta.env.VITE_AI_URL;
 
 export const uploadPdfForAnalysis = (file) => {
   const formData = new FormData();
