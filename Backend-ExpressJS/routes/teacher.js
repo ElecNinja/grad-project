@@ -21,4 +21,7 @@ router.put("/profile", isAuthenticated, upload.single("photo"), teacherControlle
 router.get("/student/profile/:id", isAuthenticated, teacherController.getStudentProfile);
 router.put("/student/profile", isAuthenticated, upload.single("photo"), teacherController.updateStudentProfile);
 
+router.get("/requests", isAuthenticated, teacherController.getRequestsController);
+router.post("/accept-request", isAuthenticated, teacherController.acceptRequestController);
+
 module.exports = router;

@@ -13,7 +13,7 @@ function Addmaterial() {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [aiResult, setAiResult] = useState(null); 
+  const [aiResult, setAiResult] = useState(null);
 
   const handleUploadClick = () => fileInputRef.current?.click();
 
@@ -31,10 +31,8 @@ function Addmaterial() {
       setAnalyzing(true);
       try {
         const res = await uploadPdfForAnalysis(file);
-        setAiResult(res.data); 
-        if (!description && res.data.summary) {
-          setDescription(res.data.summary);
-        }
+        setAiResult(res.data);
+        // Don't auto-fill description - let the user write their own
       } catch {
         alert('AI analysis failed, you can continue manually');
       } finally {
@@ -51,7 +49,6 @@ function Addmaterial() {
       alert('File size must be less than 50MB');
       return;
     }
-    // simulate same flow
     const mockEvent = { target: { files: [file] } };
     await handleFileChange(mockEvent);
   };
@@ -59,6 +56,8 @@ function Addmaterial() {
   const handleDragOver = (e) => e.preventDefault();
 
   const handleNext = async () => {
+    console.log("aiResult:", aiResult);
+  console.log("subject being sent:", aiResult?.field || aiResult?.sub_field || '');
     if (!description) {
       alert('Please add a description');
       return;
@@ -97,17 +96,17 @@ function Addmaterial() {
           </p>
         </div>
 
-        {/* AI Status */}
+        {/* AI analyzing indicator */}
         {analyzing && (
           <div className="ai-status analyzing">
              AI is analyzing your PDF...
           </div>
         )}
 
-        {/* AI Result */}
+        {/* AI result */}
         {aiResult && !analyzing && (
           <div className="ai-status success">
-             Detected: <strong>{aiResult.field}</strong>
+            Detected: <strong>{aiResult.field}</strong>
             {aiResult.sub_field && <> → <strong>{aiResult.sub_field}</strong></>}
           </div>
         )}

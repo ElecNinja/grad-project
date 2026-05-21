@@ -35,10 +35,7 @@ const createRequest = async (req, res) => {
 
     if (requestError) {
       console.error("REQUEST ERROR:", requestError);
-
-      return res.status(500).json({
-        error: "Could not create request.",
-      });
+      return res.status(500).json({ error: "Could not create request." });
     }
 
     // =============================================
@@ -49,9 +46,7 @@ const createRequest = async (req, res) => {
 
       const { error: storageError } = await supabase.storage
         .from("request-files")
-        .upload(fileName, file.buffer, {
-          contentType: file.mimetype,
-        });
+        .upload(fileName, file.buffer, { contentType: file.mimetype });
 
       if (storageError) {
         console.error("STORAGE ERROR:", storageError);
@@ -81,17 +76,10 @@ const createRequest = async (req, res) => {
     // =============================================
     // AI MATCHING
     // =============================================
-
-    console.log(
-      "[DEBUG] Raw subject from AI:",
-      JSON.stringify(subject)
-    );
-
     let finalSubject = subject ? subject.trim() : null;
 
     if (!finalSubject) {
       console.log("No subject received");
-
       await supabase
         .from("student_requests")
         .update({ status: "open" })
@@ -106,13 +94,11 @@ const createRequest = async (req, res) => {
 
     // =============================================
     // SUBJECT NORMALIZATION
+    // Map AI output to exact subject names in DB
     // =============================================
-
     const normalized = finalSubject.toLowerCase();
-
     let searchTerm = finalSubject;
 
-    // Cyber Security
     if (
       normalized.includes("cyber") ||
       normalized.includes("security") ||
@@ -121,75 +107,129 @@ const createRequest = async (req, res) => {
       normalized.includes("network security")
     ) {
       searchTerm = "Cyber Security";
-    }
-
-    // Programming
-    else if (
+    } else if (
       normalized.includes("programming") ||
       normalized.includes("coding") ||
       normalized.includes("python") ||
       normalized.includes("javascript") ||
       normalized.includes("java") ||
       normalized.includes("c++") ||
-      normalized.includes("react")
+      normalized.includes("react") ||
+      normalized.includes("language")
     ) {
       searchTerm = "Programming";
-    }
-
-    // Mathematics
-    else if (
-      normalized.includes("Education") ||
+    } else if (
+      normalized.includes("computer science") ||
+      normalized.includes("computer") ||
+      normalized.includes("software") ||
+      normalized.includes("algorithm") ||
+      normalized.includes("operating system")
+    ) {
+      searchTerm = "Computer Science";
+    } else if (
       normalized.includes("math") ||
       normalized.includes("calculus") ||
       normalized.includes("algebra") ||
       normalized.includes("geometry") ||
-      normalized.includes("equation")
+      normalized.includes("equation") ||
+      normalized.includes("education")
     ) {
       searchTerm = "Mathematics";
-    }
-
-    // Data Analysis
-    else if (
+    } else if (
       normalized.includes("data") ||
       normalized.includes("statistics") ||
       normalized.includes("analysis") ||
-      normalized.includes("excel")
+      normalized.includes("excel") ||
+      normalized.includes("pandas") ||
+      normalized.includes("visualization")
     ) {
       searchTerm = "Data Analysis";
-    }
-
-    // AI
-    else if (
-      normalized.includes("ai") ||
+    } else if (
+      normalized.includes("artificial intelligence") ||
       normalized.includes("machine learning") ||
-      normalized.includes("deep learning")
+      normalized.includes("deep learning") ||
+      normalized.includes("neural") ||
+      normalized.includes("nlp")
     ) {
       searchTerm = "AI";
+    } else if (
+      normalized.includes("physics") ||
+      normalized.includes("mechanics") ||
+      normalized.includes("thermodynamics") ||
+      normalized.includes("quantum")
+    ) {
+      searchTerm = "Physics";
+    } else if (
+      normalized.includes("chemistry") ||
+      normalized.includes("organic") ||
+      normalized.includes("chemical")
+    ) {
+      searchTerm = "Chemistry";
+    } else if (
+      normalized.includes("biology") ||
+      normalized.includes("genetics") ||
+      normalized.includes("cell") ||
+      normalized.includes("anatomy")
+    ) {
+      searchTerm = "Biology";
+    } else if (
+      normalized.includes("english") ||
+      normalized.includes("grammar") ||
+      normalized.includes("writing") ||
+      normalized.includes("literature")
+    ) {
+      searchTerm = "English";
+    } else if (
+      normalized.includes("economics") ||
+      normalized.includes("microeconomics") ||
+      normalized.includes("macroeconomics")
+    ) {
+      searchTerm = "Economics";
+    } else if (
+      normalized.includes("accounting") ||
+      normalized.includes("finance") ||
+      normalized.includes("bookkeeping")
+    ) {
+      searchTerm = "Accounting";
+    } else if (
+      normalized.includes("engineering") ||
+      normalized.includes("mechanical") ||
+      normalized.includes("electrical") ||
+      normalized.includes("civil")
+    ) {
+      searchTerm = "Engineering";
+    } else if (
+      normalized.includes("medicine") ||
+      normalized.includes("medical") ||
+      normalized.includes("pharmacy") ||
+      normalized.includes("nursing")
+    ) {
+      searchTerm = "Medicine";
+    } else if (
+      normalized.includes("law") ||
+      normalized.includes("legal") ||
+      normalized.includes("constitution")
+    ) {
+      searchTerm = "Law";
     }
 
     console.log("SEARCH TERM:", searchTerm);
 
     // =============================================
-    // FIND SUBJECT
+    // FIND SUBJECT IN DB
     // =============================================
-
-    let { data: subjectData, error: subjectError } = await supabase
+    const { data: subjectRows } = await supabase
       .from("subjects")
       .select("id, name")
       .ilike("name", `%${searchTerm}%`)
-      .limit(1)
-      .single();
+      .limit(3);
+
+    const subjectData = subjectRows?.[0] || null;
 
     console.log("FOUND SUBJECT:", subjectData);
 
-    if (subjectError) {
-      console.error("SUBJECT ERROR:", subjectError);
-    }
-
-    // If no subject found
     if (!subjectData) {
-      console.log("Subject not found in DB");
-
+      console.log("Subject not found in DB for:", searchTerm);
       await supabase
         .from("student_requests")
         .update({ status: "open" })
@@ -205,7 +245,6 @@ const createRequest = async (req, res) => {
     // =============================================
     // FIND MATCHING TEACHERS
     // =============================================
-
     const { data: teacherSubjects, error: teacherError } = await supabase
       .from("teacher_subjects")
       .select(`
@@ -221,22 +260,14 @@ const createRequest = async (req, res) => {
       .eq("subject_id", subjectData.id)
       .eq("teacher_profiles.is_accepting", true);
 
-    console.log(
-      `MATCHED TEACHERS FOR ${subjectData.name}:`,
-      teacherSubjects
-    );
+    console.log(`MATCHED TEACHERS FOR ${subjectData.name}:`, teacherSubjects);
 
     if (teacherError) {
       console.error("TEACHER QUERY ERROR:", teacherError);
     }
 
-    // =============================================
-    // NO TEACHERS FOUND
-    // =============================================
-
     if (!teacherSubjects || teacherSubjects.length === 0) {
-      console.log("No teachers found");
-
+      console.log("No teachers found for subject:", subjectData.name);
       await supabase
         .from("student_requests")
         .update({ status: "open" })
@@ -250,24 +281,20 @@ const createRequest = async (req, res) => {
     }
 
     // =============================================
-    // SCORE TEACHERS
+    // SCORE AND RANK TEACHERS
     // =============================================
-
     const scoredTeachers = teacherSubjects.map((t) => {
       let score = 0.5;
 
-      // proficiency
-      if (t.proficiency === "expert") {
-        score += 0.3;
-      } else if (t.proficiency === "intermediate") {
-        score += 0.15;
-      }
+      // Proficiency bonus
+      if (t.proficiency === "expert") score += 0.3;
+      else if (t.proficiency === "intermediate") score += 0.15;
 
-      // rating
+      // Rating bonus
       const rating = t.teacher_profiles?.avg_rating || 0;
       score += (rating / 5) * 0.15;
 
-      // sessions
+      // Sessions bonus
       const sessions = t.teacher_profiles?.total_sessions || 0;
       score += Math.min(sessions / 100, 1) * 0.05;
 
@@ -277,7 +304,6 @@ const createRequest = async (req, res) => {
       };
     });
 
-    // sort descending
     const rankedTeachers = scoredTeachers
       .sort((a, b) => b.match_score - a.match_score)
       .slice(0, 10);
@@ -285,7 +311,6 @@ const createRequest = async (req, res) => {
     // =============================================
     // INSERT MATCHES
     // =============================================
-
     const matchRows = rankedTeachers.map((teacher, index) => ({
       request_id: request.id,
       teacher_id: teacher.teacher_id,
@@ -303,7 +328,6 @@ const createRequest = async (req, res) => {
 
     if (matchError) {
       console.error("MATCH INSERT ERROR:", matchError);
-
       await supabase
         .from("student_requests")
         .update({ status: "open" })
@@ -317,14 +341,11 @@ const createRequest = async (req, res) => {
     }
 
     // =============================================
-    // UPDATE REQUEST STATUS
+    // UPDATE REQUEST STATUS TO MATCHED
     // =============================================
-
     await supabase
       .from("student_requests")
-      .update({
-        status: "matched",
-      })
+      .update({ status: "matched" })
       .eq("id", request.id);
 
     console.log("MATCHING COMPLETED SUCCESSFULLY");
@@ -337,10 +358,7 @@ const createRequest = async (req, res) => {
 
   } catch (err) {
     console.error("SERVER ERROR:", err);
-
-    return res.status(500).json({
-      error: "Server error.",
-    });
+    return res.status(500).json({ error: "Server error." });
   }
 };
 
@@ -383,19 +401,14 @@ const getMyRequests = async (req, res) => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      return res.status(500).json({
-        error: "Could not fetch requests.",
-      });
+      return res.status(500).json({ error: "Could not fetch requests." });
     }
 
     return res.json({ requests });
 
   } catch (err) {
     console.error(err);
-
-    return res.status(500).json({
-      error: "Server error.",
-    });
+    return res.status(500).json({ error: "Server error." });
   }
 };
 

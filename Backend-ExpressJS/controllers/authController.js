@@ -53,11 +53,16 @@ const signup = async (req, res) => {
 
       // Save subject in teacher_subjects table
       if (subject && teacherProfile) {
+        console.log("Saving subject for teacher:", subject);
+
+        // Use % for partial match instead of exact match
         const { data: subjectData } = await supabase
           .from('subjects')
           .select('id')
-          .ilike('name', subject.trim())
+          .ilike('name', `%${subject.trim()}%`)
           .single();
+
+        console.log("Subject found:", subjectData);
 
         if (subjectData) {
           const { error: subjectError } = await supabase
@@ -92,7 +97,6 @@ const signup = async (req, res) => {
   }
 };
 
-
 // ===============================
 // LOGIN CONTROLLER
 // ===============================
@@ -100,7 +104,6 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate inputs
     const check = validateLogin(email, password);
     if (!check.valid) {
       console.warn(`Login failed - validation: ${check.error}`);
@@ -114,7 +117,7 @@ const login = async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password." });
     }
 
-    // ---- 3. Fetch profile from your DB ----
+    // Fetch profile from DB
     const { data: profile, error: profileError } = await getProfileById(data.user.id);
 
     if (profileError) {
@@ -124,7 +127,6 @@ const login = async (req, res) => {
 
     console.log(`User logged in: ${email} (${profile.role})`);
 
-    // Return token + profile; the frontend stores the token for subsequent API calls.
     return res.json({
       message: "Logged in successfully",
       token: data.session.access_token,
@@ -144,19 +146,20 @@ const logout = async (req, res) => {
   try {
     log.info(`User logged out`);
     return res.json({ message: "Logged out" });
-
   } catch (err) {
     console.error(`Logout error: ${err.message}`);
     return res.status(500).json({ error: "Logout failed" });
   }
 };
 
+// ===============================
+// ME CONTROLLER
+// ===============================
 const me = async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized. Please login first." });
     }
-
     return res.json({ user: req.user });
   } catch (err) {
     console.error(`Me error: ${err.message}`);
