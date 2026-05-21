@@ -93,6 +93,9 @@ export const summarizePdf = (pdfUrl) =>
   api.post(`/api/teacher/summarize-pdf`, { pdfUrl }).then((r) => r.data);
 
 export const getStudentRequests = () =>
-  api.get(`/api/teacher/requests`).then((r) => r.data);
-
-
+  api.get(`/api/teacher/requests`).then((r) => {
+    // Handle both array response and wrapped response
+    if (Array.isArray(r.data)) return r.data;
+    if (Array.isArray(r.data?.requests)) return r.data.requests;
+    return [];
+  });

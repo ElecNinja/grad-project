@@ -111,12 +111,9 @@ function Offers() {
 
               <div className="avatar-circle">
                 <img
-                  src={
-                    offer.studentPhoto ||
-                    "https://i.pravatar.cc/150?img=12"
-                  }
-                  alt="student"
-                />
+  src={offer.studentPhoto || "https://ui-avatars.com/api/?name=" + encodeURIComponent(offer.studentName || 'S') + "&background=random&color=fff&size=128"}
+  alt="student"
+/>
               </div>
 
               <div className="offer-content">
