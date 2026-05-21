@@ -10,8 +10,13 @@ const { errorHandler, notFound } = require("../utils/errorHandler");
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://grad-project-eta.vercel.app/"
+];
+
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: allowedOrigins,
   credentials: true,
 }));
 
