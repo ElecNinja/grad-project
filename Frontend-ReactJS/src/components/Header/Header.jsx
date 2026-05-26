@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useSelector } from "react-redux";
 import { ChevronDown, Menu, X, Bell } from 'lucide-react';
 import { logoutUser } from '../../apis/handlers/logoutUser';
+import PopupMessage from '../popup/popupmessage';
 import logo from '../../assets/images/logo.png';
 import "./header.css"
 
@@ -11,7 +12,10 @@ function Header() {
   const navigate = useNavigate();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
+  const bellRef = useRef(null);
 
   const moreLinks = [
     { name: 'About Us', path: '/about' },
@@ -152,10 +156,25 @@ function Header() {
 
           {user?.loggedIn && (
             <>
-              <button className="bell-btn" aria-label="Notifications">
-                <Bell size={20} />
-                <span className="bell-dot" />
-              </button>
+              <div className="bell-wrapper" ref={bellRef}>
+                <button
+                  type="button"
+                  className="bell-btn"
+                  aria-label="Notifications"
+                  aria-expanded={notificationsOpen}
+                  onClick={() => setNotificationsOpen((open) => !open)}
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && <span className="bell-dot" />}
+                </button>
+                <PopupMessage
+                  isOpen={notificationsOpen}
+                  onClose={() => setNotificationsOpen(false)}
+                  recipientId={user?.id}
+                  anchorRef={bellRef}
+                  onUnreadCountChange={setUnreadCount}
+                />
+              </div>
               <button type="button" className="btn-outline" onClick={handleLogout}>
                 Logout
               </button>
