@@ -99,3 +99,5 @@ export const getStudentRequests = () =>
     if (Array.isArray(r.data?.requests)) return r.data.requests;
     return [];
   });
+
+export default api;
