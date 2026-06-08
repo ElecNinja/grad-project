@@ -27,8 +27,6 @@ export function signupUser(data) {
 
       const status = response.status;
 
-      console.log("STATUS:", status);
-      console.log("DATA:", response.data);
       switch (status) {
         case 201:
           res.response = true;

@@ -70,10 +70,10 @@ function getNotificationRoute(notification, role) {
   if (data.bootcamp_id) return "/bootcamp";
   if (data.course_id) return "/course";
   if (data.request_id) {
-    return role === "teacher" ? "/Work" : "/requests";
+    return role === "teacher" ? "/work" : "/requests";
   }
   if (data.bid_id) return "/Offers";
-  if (data.session_id) return role === "teacher" ? "/Work" : "/videos";
+  if (data.session_id) return role === "teacher" ? "/work" : "/videos";
 
   return null;
 }

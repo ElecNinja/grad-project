@@ -12,7 +12,10 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://grad-project-eta.vercel.app"
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -73,3 +76,7 @@ async def summarize_from_url(body: dict):
         }
     except:
         return {"error": "Summarization failed"}
+    
+@app.options("/{path:path}")
+async def options_handler():
+    return {}

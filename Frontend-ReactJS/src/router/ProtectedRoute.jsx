@@ -17,7 +17,7 @@ function ProtectedRoute({ allowedRoles }) {
 
   // Logged in but wrong role → redirect to their home page
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    const fallback = user.role === "teacher" ? "/Work" : "/dashboard";
+    const fallback = user.role === "teacher" ? "/work" : "/dashboard";
     return <Navigate to={fallback} replace />;
   }
 

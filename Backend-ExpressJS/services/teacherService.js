@@ -217,12 +217,103 @@ const getStudentRequests = async (profileId) => {
     return [];
   }
 };
+
+// ===============================
+// GET ACCEPTED OFFERS FOR TEACHER
+// ===============================
+const getAcceptedOffersTeacher = async (profileId) => {
+  try {
+    // Get teacher_profiles.id from profile_id
+    const { data: teacherProfile, error: profileError } = await supabase
+      .from("teacher_profiles")
+      .select("id")
+      .eq("profile_id", profileId)
+      .single();
+
+    if (profileError || !teacherProfile) {
+      console.log("Teacher profile not found:", profileError);
+      return [];
+    }
+
+    // Get all bids for this teacher (their accepted offers)
+    const { data: bids, error: bidsError } = await supabase
+      .from("bids")
+      .select(`
+        id,
+        price,
+        currency,
+        teaching_mode,
+        num_sessions,
+        status,
+        student_requests!bids_request_id_fkey (
+          id,
+          student_id,
+          title,
+          description,
+          preferred_mode,
+          status,
+          created_at
+        ),
+        student_profiles:student_requests!bids_request_id_fkey(student_id) (
+          student_id
+        )
+      `)
+      .eq("teacher_id", teacherProfile.id)
+      .neq("status", "rejected");
+
+    if (bidsError) {
+      console.log("Bids error:", bidsError);
+      return [];
+    }
+
+    // Get student IDs
+    const studentIds = bids
+      .map(b => b.student_requests?.student_id)
+      .filter(Boolean);
+
+    // Fetch student profiles
+    const { data: studentProfiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("id", studentIds);
+
+    // Build a map for quick lookup
+    const studentProfileMap = {};
+    (studentProfiles || []).forEach(p => { studentProfileMap[p.id] = p; });
+
+    return bids.map((bid) => {
+      const req = bid.student_requests;
+      const studentProfile = studentProfileMap[req?.student_id] || {};
+
+      return {
+        id: bid.id,
+        requestId: req?.id,
+        type: req?.preferred_mode || bid.teaching_mode || "recorded",
+        title: req?.title || "Untitled",
+        description: req?.description || "",
+        studentName: studentProfile.full_name || "Student",
+        studentPhoto: studentProfile.avatar_url || null,
+        pricePerHour: bid.price || 0,
+        currency: bid.currency || "USD",
+        numSessions: bid.num_sessions || 1,
+        bidStatus: bid.status || "pending",
+        createdAt: req?.created_at || null,
+      };
+    });
+
+  } catch (err) {
+    console.log("getAcceptedOffersTeacher error:", err);
+    return [];
+  }
+};
+
 module.exports = {
   uploadMaterial,
   getOffers,
   acceptOffer,
   summarizePdf,
   getStudentRequests,
+  getAcceptedOffersTeacher,
   getTeacherProfile,
   listTeachers,
   updateTeacherProfile,

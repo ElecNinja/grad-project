@@ -56,8 +56,6 @@ function Addmaterial() {
   const handleDragOver = (e) => e.preventDefault();
 
   const handleNext = async () => {
-    console.log("aiResult:", aiResult);
-  console.log("subject being sent:", aiResult?.field || aiResult?.sub_field || '');
     if (!description) {
       alert('Please add a description');
       return;

@@ -25,6 +25,7 @@ import TeacherProfile from "../pages/TeacherProfile/TeacherProfile";
 import StudentProfile from "../pages/StudentProfile/StudentProfile";
 import TeacherProfileView from "../pages/TeacherProfileView/TeacherProfileView";
 import FindExpert from "../pages/FindExpert/FindExpert";
+import TeacherCourseUpload from "../pages/TeacherCourseUpload/TeacherCourseUpload";
 import { getUser } from "../apis/handlers/getUser";
 
 // Pages where the Header (navbar) should NOT be shown
@@ -107,11 +108,12 @@ const Router = () => {
           {/* Any logged-in user */}
           <Route element={<ProtectedRoute />}>
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="work" element={<Work />} />
+            <Route path="Work" element={<Work />} />
           </Route>
 
           {/* Students only */}
           <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-            
             <Route path="requests" element={<Requests />} />
             <Route path="videos" element={<Videos />} />
             <Route path="student-profile" element={<StudentProfile />} />
@@ -120,8 +122,8 @@ const Router = () => {
           {/* Teachers only */}
           <Route element={<ProtectedRoute allowedRoles={["teacher"]} />}>
             <Route path="offers" element={<Offers />} />
-            <Route path="Work" element={<Work />} />
             <Route path="teacher-profile" element={<TeacherProfile />} />
+            <Route path="course-upload/:bidId" element={<TeacherCourseUpload />} />
           </Route>
 
           {/* Teacher profile view for logged-in users */}

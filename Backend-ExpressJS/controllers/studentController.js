@@ -412,7 +412,86 @@ const getMyRequests = async (req, res) => {
   }
 };
 
+// ===============================
+// GET ACCEPTED OFFERS FOR STUDENT
+// ===============================
+const getAcceptedOffers = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    if (!studentId) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
+
+    // Get student's requests that have at least one bid
+    const { data: requests, error } = await supabase
+      .from("student_requests")
+      .select(`
+        id,
+        title,
+        description,
+        preferred_mode,
+        status,
+        created_at,
+        bids (
+          id,
+          price,
+          currency,
+          teaching_mode,
+          num_sessions,
+          status,
+          teacher_id,
+          teacher_profiles!bids_teacher_id_fkey (
+            profile_id,
+            profiles!teacher_profiles_profile_id_fkey (
+              full_name,
+              avatar_url
+            )
+          )
+        )
+      `)
+      .eq("student_id", studentId)
+      .is("deleted_at", null);
+
+    if (error) {
+      console.error("Error fetching accepted offers:", error);
+      return res.status(500).json({ error: "Could not fetch accepted offers." });
+    }
+
+    // Filter requests with at least one bid (accepted offer)
+    const acceptedOffers = [];
+    (requests || []).forEach((request) => {
+      if (request.bids && request.bids.length > 0) {
+        request.bids.forEach((bid) => {
+          const teacherProfile = bid.teacher_profiles?.profiles;
+          acceptedOffers.push({
+            id: bid.id,
+            requestId: request.id,
+            type: request.preferred_mode || bid.teaching_mode || "recorded",
+            title: request.title || "Untitled",
+            description: request.description || "",
+            teacherName: teacherProfile?.full_name || "Teacher",
+            teacherPhoto: teacherProfile?.avatar_url || null,
+            pricePerHour: bid.price || 0,
+            currency: bid.currency || "USD",
+            numSessions: bid.num_sessions || 1,
+            bidStatus: bid.status || "pending",
+            createdAt: request.created_at || null,
+          });
+        });
+      }
+    });
+
+    return res.status(200).json({ offers: acceptedOffers });
+
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Server error." });
+  }
+};
+
 module.exports = {
   createRequest,
   getMyRequests,
+  getAcceptedOffers,
 };

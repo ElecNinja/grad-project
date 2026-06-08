@@ -207,6 +207,140 @@ const acceptRequestController = async (req, res) => {
     return res.status(500).json({ error: "Server error." });
   }
 };
+
+// ===============================
+// GET ACCEPTED OFFERS FOR TEACHER
+// ===============================
+const getAcceptedOffersTeacher = async (req, res) => {
+  try {
+    const teacherId = req.user?.id;
+
+    if (!teacherId) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
+
+    const offers = await teacherService.getAcceptedOffersTeacher(teacherId);
+    res.status(200).json({ offers });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || "Server error." });
+  }
+};
+
+// ===============================
+// UPLOAD COURSE CONTENT (TEACHER)
+// ===============================
+const uploadCourseContent = async (req, res) => {
+  try {
+    const { bidId, title, description, contentType } = req.body;
+    const file = req.file;
+    const teacherId = req.user?.id;
+
+    if (!teacherId) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
+
+    if (!bidId || !title || !contentType) {
+      return res.status(400).json({ error: "bidId, title, and contentType are required." });
+    }
+
+    // Verify the bid belongs to this teacher
+    const { data: bid, error: bidError } = await supabase
+      .from("bids")
+      .select("*")
+      .eq("id", bidId)
+      .single();
+
+    if (bidError || !bid) {
+      return res.status(404).json({ error: "Bid not found." });
+    }
+
+    // Verify teacher owns this bid
+    const { data: teacherProfile, error: tpError } = await supabase
+      .from("teacher_profiles")
+      .select("id")
+      .eq("profile_id", teacherId)
+      .single();
+
+    if (bid.teacher_id !== teacherProfile.id) {
+      return res.status(403).json({ error: "Unauthorized to upload for this course." });
+    }
+
+    // Upload file to storage if provided
+    let fileUrl = null;
+    if (file) {
+      const fileName = `course_${bidId}_${Date.now()}_${file.originalname}`;
+      const { error: uploadError } = await supabase.storage
+        .from("course-materials")
+        .upload(fileName, file.buffer, { contentType: file.mimetype });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("course-materials")
+        .getPublicUrl(fileName);
+      fileUrl = urlData.publicUrl;
+    }
+
+    // Insert course content
+    const { data: content, error: contentError } = await supabase
+      .from("course_content")
+      .insert([{
+        bid_id: bidId,
+        title,
+        description: description || '',
+        content_type: contentType,
+        file_url: fileUrl,
+        created_at: new Date(),
+      }])
+      .select()
+      .single();
+
+    if (contentError) {
+      console.error("Content error:", contentError);
+      return res.status(500).json({ error: "Could not save course content." });
+    }
+
+    return res.status(201).json({ message: "Course content uploaded successfully", content });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message || "Server error." });
+  }
+};
+
+// ===============================
+// GET COURSE CONTENT FOR STUDENT
+// ===============================
+const getCourseContent = async (req, res) => {
+  try {
+    const { bidId } = req.params;
+    const studentId = req.user?.id;
+
+    if (!studentId || !bidId) {
+      return res.status(400).json({ error: "Missing bidId." });
+    }
+
+    // Get course content
+    const { data: content, error: contentError } = await supabase
+      .from("course_content")
+      .select("*")
+      .eq("bid_id", bidId)
+      .order("created_at", { ascending: false });
+
+    if (contentError) {
+      console.error("Content error:", contentError);
+      return res.status(500).json({ error: "Could not fetch course content." });
+    }
+
+    return res.status(200).json({ content });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message || "Server error." });
+  }
+};
+
 module.exports = {
   uploadMaterial,
   getOffers,
@@ -218,5 +352,8 @@ module.exports = {
   getStudentProfile,
   updateStudentProfile,
   getRequestsController,   
-  acceptRequestController, 
+  acceptRequestController,
+  getAcceptedOffersTeacher,
+  uploadCourseContent,
+  getCourseContent,
 };
