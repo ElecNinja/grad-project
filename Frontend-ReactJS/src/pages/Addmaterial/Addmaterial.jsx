@@ -34,6 +34,7 @@ function Addmaterial() {
         setAiResult(res.data);
         // Don't auto-fill description - let the user write their own
       } catch {
+        console.error('AI analysis failed:', error);
         alert('AI analysis failed, you can continue manually');
       } finally {
         setAnalyzing(false);
