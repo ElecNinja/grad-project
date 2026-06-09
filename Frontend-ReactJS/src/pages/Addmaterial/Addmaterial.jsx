@@ -33,7 +33,8 @@ function Addmaterial() {
         const res = await uploadPdfForAnalysis(file);
         setAiResult(res.data);
         // Don't auto-fill description - let the user write their own
-      } catch {
+      } catch (error) {
+        
         console.error('AI analysis failed:', error);
         alert('AI analysis failed, you can continue manually');
       } finally {
