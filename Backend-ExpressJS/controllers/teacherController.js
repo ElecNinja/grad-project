@@ -56,6 +56,19 @@ const listTeachers = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/teacher/subjects
+ * Protected — list subjects for specialties selection.
+ */
+const listSubjects = async (req, res) => {
+  try {
+    const subjects = await teacherService.listSubjects();
+    res.status(200).json({ subjects });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 const getTeacherProfile = async (req, res) => {
   try {
     const teacherId = req.params.id;
@@ -76,17 +89,35 @@ const updateTeacherProfile = async (req, res) => {
     if (!teacherId) return res.status(401).json({ error: "Unauthorized." });
 
     const updates = { ...req.body };
-    if (req.file) {
+    const photoFile = req.files?.photo?.[0] || null;
+    const videoFile = req.files?.video?.[0] || null;
+
+    if (photoFile) {
       const fileName = `teacher_${teacherId}_${Date.now()}`;
       const { error: storageError } = await require("../config/supabase").storage
         .from("profile-photos")
-        .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+        .upload(fileName, photoFile.buffer, { contentType: photoFile.mimetype, upsert: true });
       if (storageError) throw storageError;
 
       const { data: urlData } = require("../config/supabase").storage
         .from("profile-photos")
         .getPublicUrl(fileName);
       updates.photo = urlData.publicUrl;
+    }
+
+    if (videoFile) {
+      const fileExt = videoFile.originalname?.split(".").pop() || "mp4";
+      const fileName = `teacher_intro_${teacherId}_${Date.now()}.${fileExt}`;
+      const { error: storageError } = await require("../config/supabase").storage
+        .from("teacher-videos")
+        .upload(fileName, videoFile.buffer, { contentType: videoFile.mimetype, upsert: true });
+
+      if (storageError) throw storageError;
+
+      const { data: urlData } = require("../config/supabase").storage
+        .from("teacher-videos")
+        .getPublicUrl(fileName);
+      updates.introduction_video = urlData.publicUrl;
     }
 
     const teacher = await teacherService.updateTeacherProfile(teacherId, updates);
@@ -213,6 +244,7 @@ module.exports = {
   acceptOffer,
   summarizePdf,
   listTeachers,
+  listSubjects,
   getTeacherProfile,
   updateTeacherProfile,
   getStudentProfile,

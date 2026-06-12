@@ -1,31 +1,83 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Camera, Save, BookOpen, DollarSign, User, FileText, Star, AlertCircle, CheckCircle } from 'lucide-react';
+import {
+  Camera,
+  CheckCircle,
+  AlertCircle,
+  Save,
+  Trash2,
+  Plus,
+  X,
+  Upload,
+  Pencil,
+  Video,
+  Award,
+  DollarSign,
+  Globe,
+  Clock,
+} from 'lucide-react';
 import { getTeacherProfile } from '../../apis/handlers/getTeacherProfile';
 import { updateTeacherProfile } from '../../apis/handlers/updateTeacherProfile';
+import { getSubjects } from '../../apis/handlers/getSubjects';
 import './TeacherProfile.css';
+
+const PROFICIENCY_OPTIONS = [
+  { value: 'native', label: 'Native / Bilingual' },
+  { value: 'fluent', label: 'Fluent' },
+  { value: 'conversational', label: 'Conversational' },
+  { value: 'basic', label: 'Basic' }, 
+];
+
+const LANGUAGE_LIST = [
+  'English', 'Spanish', 'Arabic', 'French', 'German',
+  'Italian', 'Portuguese', 'Turkish', 'Russian', 'Chinese', 'Japanese',
+  'Korean', 'Hindi', 'Urdu', 'Persian',
+];
+
+const getYouTubeId = (url) => {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+};
 
 function TeacherProfile() {
   const reduxUser = useSelector((state) => state.user);
+  const navigate = useNavigate();
 
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState(null);
+  const [subjects, setSubjects] = useState([]);
+
+  const [form, setForm] = useState({
     name: '',
     email: '',
     bio: '',
-    subject: '',
-    price_per_hour: '',
+    headline: '',
+    introduction_video: '',
+    hourly_rate_min: '',
+    hourly_rate_max: '',
+    years_experience: '',
+    teaching_languages: [{ lang: 'English', proficiency: 'native' }],
+    specialties: [],
     photo: '',
-    rating: 0,
   });
 
-  const [form, setForm] = useState({ ...profile });
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState({ show: false, type: '', message: '' });
-  const fileInputRef = useRef(null);
+  const photoInputRef = useRef(null);
+
+  const [subjectPickerOpen, setSubjectPickerOpen] = useState(false);
+  const [subjectSearch, setSubjectSearch] = useState('');
+
+  const filteredSubjects = useMemo(() => {
+    const q = subjectSearch.trim().toLowerCase();
+    if (!q) return subjects;
+    return subjects.filter((s) => (s.name || '').toLowerCase().includes(q));
+  }, [subjectSearch, subjects]);
 
   // ── Load profile on mount ──────────────────────────────────────────────────
   useEffect(() => {
@@ -34,12 +86,42 @@ function TeacherProfile() {
         setLoading(false);
         return;
       }
-      const result = await getTeacherProfile(reduxUser.id);
-      if (result.status === 200) {
-        setProfile(result.response);
-        setForm(result.response);
+      const [profileRes, subjectsRes] = await Promise.all([
+        getTeacherProfile(reduxUser.id),
+        getSubjects(),
+      ]);
+
+      if (subjectsRes.status === 200) setSubjects(subjectsRes.response || []);
+
+      if (profileRes.status === 200) {
+        const p = profileRes.response;
+        setProfile(p);
+
+        // Normalise teaching_languages: support both old (string[]) and new ({lang,proficiency}[]) formats
+        let langs = [{ lang: 'English', proficiency: 'native' }];
+        if (Array.isArray(p?.teaching_languages) && p.teaching_languages.length > 0) {
+          langs = p.teaching_languages.map((item) =>
+            typeof item === 'string'
+              ? { lang: item, proficiency: 'native' }
+              : item
+          );
+        }
+
+        setForm({
+          name: p?.name || '',
+          email: p?.email || '',
+          bio: p?.bio || '',
+          headline: p?.headline || '',
+          introduction_video: p?.introduction_video || '',
+          hourly_rate_min: p?.hourly_rate_min ?? '',
+          hourly_rate_max: p?.hourly_rate_max ?? '',
+          years_experience: p?.years_experience ?? '',
+          teaching_languages: langs,
+          specialties: Array.isArray(p?.specialties) ? p.specialties : [],
+          photo: p?.photo || '',
+        });
       } else {
-        showToast('error', result.message);
+        showToast('error', profileRes.message);
       }
       setLoading(false);
     };
@@ -64,14 +146,82 @@ function TeacherProfile() {
     setPhotoPreview(URL.createObjectURL(file));
   };
 
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setForm((prev) => ({ ...prev, photo: '' }));
+  };
+
+  const removeVideo = () => {
+    setForm((prev) => ({ ...prev, introduction_video: '' }));
+  };
+
+  const addLanguage = () => {
+    setForm((prev) => ({
+      ...prev,
+      teaching_languages: [...(prev.teaching_languages || []), { lang: '', proficiency: 'conversational' }],
+    }));
+  };
+
+  const updateLanguage = (index, field, value) => {
+    setForm((prev) => {
+      const next = [...(prev.teaching_languages || [])];
+      next[index] = { ...next[index], [field]: value };
+      return { ...prev, teaching_languages: next };
+    });
+  };
+
+  const removeLanguage = (index) => {
+    setForm((prev) => {
+      const next = [...(prev.teaching_languages || [])];
+      next.splice(index, 1);
+      return { ...prev, teaching_languages: next.length ? next : [{ lang: '', proficiency: 'native' }] };
+    });
+  };
+
+  const addSpecialty = (subject) => {
+    setForm((prev) => {
+      const exists = (prev.specialties || []).some((s) => s.id === subject.id);
+      if (exists) return prev;
+      return {
+        ...prev,
+        specialties: [
+          ...(prev.specialties || []),
+          { id: subject.id, name: subject.name, proficiency: 'intermediate' },
+        ],
+      };
+    });
+    setSubjectPickerOpen(false);
+    setSubjectSearch('');
+  };
+
+  const removeSpecialty = (id) => {
+    setForm((prev) => ({
+      ...prev,
+      specialties: (prev.specialties || []).filter((s) => s.id !== id),
+    }));
+  };
+
   const handleSave = async () => {
     setSaving(true);
     const updates = {
       name: form.name,
       bio: form.bio,
-      subject: form.subject,
-      price_per_hour: parseFloat(form.price_per_hour) || 0,
+      photo: form.photo === '' ? '' : undefined,
+      headline: form.headline,
+      introduction_video: form.introduction_video,
+      hourly_rate_min: form.hourly_rate_min === '' ? null : Number(form.hourly_rate_min),
+      hourly_rate_max: form.hourly_rate_max === '' ? null : Number(form.hourly_rate_max),
+      years_experience: form.years_experience === '' ? null : Number(form.years_experience),
+      teaching_languages: (form.teaching_languages || [])
+        .filter((l) => l.lang?.trim())
+        .map((l) => l.lang.trim()),
+      specialties: (form.specialties || []).map((s) => ({
+        subject_id: s.id,
+        proficiency: s.proficiency || 'intermediate',
+      })),
     };
+
     if (photoFile) updates.photo = photoFile;
 
     const result = await updateTeacherProfile(updates);
@@ -79,26 +229,31 @@ function TeacherProfile() {
 
     if (result.status === 200) {
       setProfile(result.response);
+      setForm((prev) => ({
+        ...prev,
+        photo: result.response?.photo || prev.photo,
+        introduction_video: result.response?.introduction_video ?? prev.introduction_video,
+        specialties: Array.isArray(result.response?.specialties)
+          ? result.response.specialties
+          : prev.specialties,
+        teaching_languages: Array.isArray(result.response?.teaching_languages) &&
+          result.response.teaching_languages.length
+          ? result.response.teaching_languages.map((item) =>
+              typeof item === 'string' ? { lang: item, proficiency: 'native' } : item
+            )
+          : prev.teaching_languages,
+      }));
       setPhotoFile(null);
+      setPhotoPreview(null);
       showToast('success', 'Profile saved successfully!');
     } else {
       showToast('error', result.message);
     }
   };
 
-  const displayPhoto = photoPreview || profile.photo || null;
+  const displayPhoto = photoPreview || form.photo || profile?.photo || null;
+  const displayVideo = form.introduction_video || '';
   const publicProfilePath = reduxUser?.id ? `/teacher-profile/${reduxUser.id}` : '/find-expert';
-
-  // ── Render stars ───────────────────────────────────────────────────────────
-  const renderStars = (rating) =>
-    [...Array(5)].map((_, i) => (
-      <Star
-        key={i}
-        size={18}
-        fill={i < Math.floor(rating) ? '#fbbf24' : 'none'}
-        color={i < Math.floor(rating) ? '#fbbf24' : '#d1d5db'}
-      />
-    ));
 
   if (loading) {
     return (
@@ -110,7 +265,7 @@ function TeacherProfile() {
   }
 
   return (
-    <div className="tp-page">
+    <div className="tp-edit-page">
       {/* Toast */}
       {toast.show && (
         <div className={`tp-toast tp-toast--${toast.type}`}>
@@ -119,153 +274,399 @@ function TeacherProfile() {
         </div>
       )}
 
-      <div className="tp-container">
-        {/* ── Left sidebar: avatar + stats ── */}
-        <aside className="tp-sidebar">
-          <div className="tp-avatar-wrap">
-            {displayPhoto ? (
-              <img src={displayPhoto} alt="Profile" className="tp-avatar" />
-            ) : (
-              <div className="tp-avatar tp-avatar--placeholder">
-                <User size={48} color="#1d4ed8" />
-              </div>
-            )}
-            <button
-              className="tp-avatar-btn"
-              onClick={() => fileInputRef.current?.click()}
-              title="Change photo"
-            >
-              <Camera size={16} />
+      <div className="tp-edit-container">
+        {/* ── Header ── */}
+        <header className="tp-edit-header">
+          <div>
+            <h1 className="tp-edit-title">{profile?.name || form.name || 'Teacher Profile'}</h1>
+            <p className="tp-edit-subtitle">Update your teacher profile and public information.</p>
+          </div>
+          <div className="tp-edit-header-actions">
+            <button className="tp-btn tp-btn--ghost" type="button" onClick={() => navigate(-1)}>
+              Cancel
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={handlePhotoChange}
-            />
+            <button
+              className="tp-btn tp-btn--primary"
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? <span className="tp-btn-spinner" /> : <Save size={16} />}
+              {saving ? 'Saving…' : 'Save Changes'}
+            </button>
+          </div>
+        </header>
+
+        {/* ── Profile Photo ── */}
+        <section className="tp-card">
+          <div className="tp-card-head">
+            <div className="tp-section-icon tp-section-icon--blue">
+              <Camera size={16} />
+            </div>
+            <div>
+              <h2>Profile Photo</h2>
+              <p className="tp-help">This photo will be visible to all.</p>
+            </div>
           </div>
 
-          <h2 className="tp-sidebar-name">{profile.name || 'Your Name'}</h2>
-          <p className="tp-sidebar-role">Teacher</p>
-
-          <div className="tp-stars">{renderStars(profile.rating || 0)}</div>
-          <p className="tp-rating-val">{profile.rating ? `${profile.rating} / 5` : 'No ratings yet'}</p>
-
-          <div className="tp-sidebar-stats">
-            <div className="tp-stat">
-              <BookOpen size={18} color="#1d4ed8" />
-              <span>{profile.subject || '—'}</span>
+          <div className="tp-photo-row">
+            <div className="tp-photo-preview">
+              {displayPhoto ? (
+                <img src={displayPhoto} alt="Profile" />
+              ) : (
+                <div className="tp-photo-placeholder" aria-label="No photo">
+                  <Camera size={26} />
+                </div>
+              )}
             </div>
-            <div className="tp-stat">
-              <DollarSign size={18} color="#1d4ed8" />
-              <span>
-                {profile.price_per_hour ? `$${profile.price_per_hour}/hr` : 'Price not set'}
-              </span>
-            </div>
-          </div>
-        </aside>
 
-        {/* ── Main form ── */}
-        <main className="tp-main">
-          <div className="tp-header">
-            <h1 className="tp-title">Edit Profile</h1>
-            <p className="tp-subtitle">Keep your profile up to date so students can find you.</p>
-          </div>
-
-          <div className="tp-form">
-            {/* Name */}
-            <div className="tp-field">
-              <label className="tp-label">
-                <User size={15} /> Full Name
-              </label>
+            <div className="tp-photo-actions">
               <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                className="tp-input"
-                placeholder="Your full name"
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handlePhotoChange}
               />
-            </div>
-
-            {/* Email (read-only) */}
-            <div className="tp-field">
-              <label className="tp-label">Email</label>
-              <input
-                type="email"
-                value={profile.email}
-                className="tp-input tp-input--readonly"
-                readOnly
-              />
-            </div>
-
-            {/* Subject */}
-            <div className="tp-field">
-              <label className="tp-label">
-                <BookOpen size={15} /> Subject / Specialty
-              </label>
-              <input
-                type="text"
-                name="subject"
-                value={form.subject}
-                onChange={handleChange}
-                className="tp-input"
-                placeholder="e.g. Mathematics, Chemistry, Physics…"
-              />
-            </div>
-
-            {/* Price */}
-            <div className="tp-field">
-              <label className="tp-label">
-                <DollarSign size={15} /> Price per Hour (USD)
-              </label>
-              <input
-                type="number"
-                name="price_per_hour"
-                value={form.price_per_hour}
-                onChange={handleChange}
-                className="tp-input"
-                placeholder="e.g. 25"
-                min="0"
-              />
-            </div>
-
-            {/* Bio */}
-            <div className="tp-field tp-field--full">
-              <label className="tp-label">
-                <FileText size={15} /> Bio
-              </label>
-              <textarea
-                name="bio"
-                value={form.bio}
-                onChange={handleChange}
-                className="tp-textarea"
-                placeholder="Tell students about yourself, your experience, and teaching style…"
-                rows={5}
-              />
-            </div>
-
-            {/* Save button */}
-            <div className="tp-actions">
-              <Link className="tp-secondary-btn" to={publicProfilePath}>
-                Preview Profile
-              </Link>
               <button
-                className="tp-save-btn"
-                onClick={handleSave}
-                disabled={saving}
+                className="tp-btn tp-btn--soft"
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
               >
-                {saving ? (
-                  <span className="tp-btn-spinner" />
-                ) : (
-                  <Save size={18} />
-                )}
-                {saving ? 'Saving…' : 'Save Changes'}
+                <Upload size={15} />
+                Update Photo
+              </button>
+              <button className="tp-btn tp-btn--ghost" type="button" onClick={removePhoto}>
+                Remove
               </button>
             </div>
           </div>
-        </main>
+        </section>
+
+        {/* ── Video Introduction ── */}
+        <section className="tp-card">
+          <div className="tp-card-head">
+            <div className="tp-section-icon tp-section-icon--purple">
+              <Video size={16} />
+            </div>
+            <div>
+              <h2>Video Introduction</h2>
+              <p className="tp-help">Add a YouTube video link to introduce yourself to prospective students.</p>
+            </div>
+          </div>
+
+          <div className="tp-video-grid">
+            <div className="tp-video-left">
+              {displayVideo ? (
+                (() => {
+                  const videoId = getYouTubeId(displayVideo);
+                  if (videoId) {
+                    return (
+                      <iframe
+                        className="tp-video"
+                        src={`https://www.youtube.com/embed/${videoId}`}
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      ></iframe>
+                    );
+                  } else {
+                    return (
+                      <div className="tp-video-empty tp-video-empty--error">
+                        Invalid YouTube URL. Please enter a valid link.
+                      </div>
+                    );
+                  }
+                })()
+              ) : (
+                <div className="tp-video-empty">No video set yet.</div>
+              )}
+            </div>
+
+            <div className="tp-video-right">
+              <div className="tp-field">
+                <label className="tp-label" htmlFor="introduction_video">
+                  YouTube URL
+                </label>
+                <input
+                  id="introduction_video"
+                  type="text"
+                  name="introduction_video"
+                  className="tp-input"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={form.introduction_video}
+                  onChange={handleChange}
+                />
+              </div>
+
+              {displayVideo && (
+                <button
+                  className="tp-btn tp-btn--ghost tp-btn--danger"
+                  style={{ marginTop: '8px' }}
+                  type="button"
+                  onClick={removeVideo}
+                >
+                  <Trash2 size={15} />
+                  Clear Video
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Description / Bio ── */}
+        <section className="tp-card">
+          <div className="tp-card-head tp-card-head--split">
+            <div className="tp-card-head-left">
+              <div className="tp-section-icon tp-section-icon--green">
+                <Pencil size={16} />
+              </div>
+              <div>
+                <h2>Description</h2>
+              </div>
+            </div>
+            <span className="tp-chip">
+              <Pencil size={13} />
+              Edit
+            </span>
+          </div>
+
+          <textarea
+            className="tp-textarea"
+            name="bio"
+            value={form.bio}
+            onChange={handleChange}
+            placeholder="Write your profile description..."
+            rows={6}
+          />
+        </section>
+
+        {/* ── Headline ── */}
+        <section className="tp-card">
+          <div className="tp-card-head">
+            <div className="tp-section-icon tp-section-icon--orange">
+              <Globe size={16} />
+            </div>
+            <div>
+              <h2>Headline</h2>
+              <p className="tp-help">A short tagline shown on your public profile.</p>
+            </div>
+          </div>
+          <input
+            className="tp-input tp-input--mt"
+            name="headline"
+            value={form.headline}
+            onChange={handleChange}
+            placeholder="e.g. Expert Chemistry Tutor with 10+ years experience"
+          />
+        </section>
+
+        {/* ── Hourly Rate & Experience ── */}
+        <section className="tp-card">
+          <div className="tp-card-head">
+            <div className="tp-section-icon tp-section-icon--emerald">
+              <DollarSign size={16} />
+            </div>
+            <div>
+              <h2>Rate & Experience</h2>
+              <p className="tp-help">Set your hourly rate range and years of experience.</p>
+            </div>
+          </div>
+
+          <div className="tp-rate-grid">
+            <div className="tp-field">
+              <label className="tp-label">Min Rate (USD / hr)</label>
+              <input
+                className="tp-input"
+                name="hourly_rate_min"
+                type="number"
+                min="0"
+                value={form.hourly_rate_min}
+                onChange={handleChange}
+                placeholder="e.g. 20"
+              />
+            </div>
+            <div className="tp-field">
+              <label className="tp-label">Max Rate (USD / hr)</label>
+              <input
+                className="tp-input"
+                name="hourly_rate_max"
+                type="number"
+                min="0"
+                value={form.hourly_rate_max}
+                onChange={handleChange}
+                placeholder="e.g. 80"
+              />
+            </div>
+            <div className="tp-field">
+              <label className="tp-label">Years of Experience</label>
+              <input
+                className="tp-input"
+                name="years_experience"
+                type="number"
+                min="0"
+                value={form.years_experience}
+                onChange={handleChange}
+                placeholder="e.g. 5"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* ── Specialties ── */}
+        <section className="tp-card">
+          <div className="tp-card-head tp-card-head--split">
+            <div className="tp-card-head-left">
+              <div className="tp-section-icon tp-section-icon--indigo">
+                <Award size={16} />
+              </div>
+              <div>
+                <h2>Specialties</h2>
+                <p className="tp-help">Add subjects you are qualified to teach.</p>
+              </div>
+            </div>
+            <button
+              className="tp-btn tp-btn--soft tp-btn--sm"
+              type="button"
+              onClick={() => setSubjectPickerOpen((v) => !v)}
+            >
+              <Plus size={15} />
+              Add New
+            </button>
+          </div>
+
+          {(form.specialties || []).length === 0 && !subjectPickerOpen && (
+            <p className="tp-muted tp-muted--center">Tell us about your specialties</p>
+          )}
+
+          {subjectPickerOpen && (
+            <div className="tp-subject-picker">
+              <input
+                className="tp-input"
+                placeholder="Search subjects..."
+                value={subjectSearch}
+                onChange={(e) => setSubjectSearch(e.target.value)}
+                autoFocus
+              />
+              <div className="tp-subject-list">
+                {filteredSubjects.slice(0, 20).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    className="tp-subject-item"
+                    onClick={() => addSpecialty(s)}
+                  >
+                    {s.name}
+                  </button>
+                ))}
+                {filteredSubjects.length === 0 && (
+                  <div className="tp-muted">No subjects found.</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="tp-chip-row">
+            {(form.specialties || []).map((s) => (
+              <span key={s.id} className="tp-tag">
+                {s.name}
+                <button
+                  type="button"
+                  className="tp-tag-x"
+                  onClick={() => removeSpecialty(s.id)}
+                  aria-label="Remove specialty"
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Languages Spoken ── */}
+        <section className="tp-card">
+          <div className="tp-card-head">
+            <div className="tp-section-icon tp-section-icon--teal">
+              <Globe size={16} />
+            </div>
+            <div>
+              <h2>Languages Spoken</h2>
+              <p className="tp-help">List languages you can conduct lessons in.</p>
+            </div>
+          </div>
+
+          <div className="tp-lang-table">
+            <div className="tp-lang-head">
+              <span>LANGUAGE</span>
+              <span>PROFICIENCY</span>
+              <span />
+            </div>
+
+            {(form.teaching_languages || []).map((entry, idx) => (
+              <div className="tp-lang-row" key={idx}>
+                <select
+                  className="tp-input"
+                  value={entry.lang || ''}
+                  onChange={(e) => updateLanguage(idx, 'lang', e.target.value)}
+                >
+                  <option value="">Select language</option>
+                  {LANGUAGE_LIST.map((l) => (
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  className="tp-input"
+                  value={entry.proficiency || 'native'}
+                  onChange={(e) => updateLanguage(idx, 'proficiency', e.target.value)}
+                >
+                  {PROFICIENCY_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  className="tp-icon-btn"
+                  type="button"
+                  onClick={() => removeLanguage(idx)}
+                  aria-label="Remove language"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+
+            <button
+              className="tp-btn tp-btn--ghost tp-btn--sm tp-add-row"
+              type="button"
+              onClick={addLanguage}
+            >
+              <Plus size={15} />
+              Add another language
+            </button>
+          </div>
+        </section>
+
+        {/* ── Bottom Actions ── */}
+        <div className="tp-bottom-actions">
+          <Link className="tp-btn tp-btn--ghost" to={publicProfilePath}>
+            Preview Profile
+          </Link>
+          <button
+            className="tp-btn tp-btn--primary"
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? <span className="tp-btn-spinner" /> : <Save size={16} />}
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
       </div>
     </div>
   );

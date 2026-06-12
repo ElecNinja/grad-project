@@ -16,7 +16,17 @@ router.get("/list", isAuthenticated, teacherController.listTeachers);
 
 
 router.get("/profile/:id", isAuthenticated, teacherController.getTeacherProfile);
-router.put("/profile", isAuthenticated, upload.single("photo"), teacherController.updateTeacherProfile);
+router.put(
+  "/profile",
+  isAuthenticated,
+  upload.fields([
+    { name: "photo", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
+  teacherController.updateTeacherProfile
+);
+
+router.get("/subjects", isAuthenticated, teacherController.listSubjects);
 
 router.get("/student/profile/:id", isAuthenticated, teacherController.getStudentProfile);
 router.put("/student/profile", isAuthenticated, upload.single("photo"), teacherController.updateStudentProfile);
