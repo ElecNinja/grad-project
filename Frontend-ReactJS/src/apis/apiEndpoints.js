@@ -8,6 +8,8 @@ export const apiEndpoints = {
   getMe: `${baseUrl}/api/me`,
   createRequest: `${baseUrl}/api/student/request`,   // ✅ added
   getMyRequests: `${baseUrl}/api/student/requests`,  // ✅ added
+  getAcceptedOffers: `${baseUrl}/api/student/accepted-offers`,  // ✅ added
+  getTeacherAcceptedOffers: `${baseUrl}/api/teacher/accepted-offers`,  // ✅ added
   getOffers: `${baseUrl}/api/teacher/offers`,
   acceptOffer: `${baseUrl}/api/teacher/accept-offer`,
  getTeachers: `${baseUrl}/api/teacher/list`,

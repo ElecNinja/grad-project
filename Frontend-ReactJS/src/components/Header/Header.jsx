@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useSelector } from "react-redux";
-import { ChevronDown, Menu, X, Bell } from 'lucide-react';
+import { ChevronDown, Menu, X, Bell, LogOut } from 'lucide-react';
 import { logoutUser } from '../../apis/handlers/logoutUser';
 import PopupMessage from '../popup/popupmessage';
 import logo from '../../assets/images/logo.png';
@@ -22,7 +22,6 @@ function Header() {
     { name: 'Help Center', path: '/help' },
     { name: 'Contact Us', path: '/contact' },
   ];
-  console.log('redux user:', user);
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -72,7 +71,7 @@ function Header() {
             {!user?.loggedIn && (
               <>
                 <li>
-                  <NavLink to="/Work" className="nav-link">
+                  <NavLink to="/work" className="nav-link">
                     Work
                   </NavLink>
                 </li>
@@ -104,7 +103,7 @@ function Header() {
             {user?.loggedIn && user?.role === 'teacher' && (
               <>
                 <li>
-                  <NavLink to="/Work" className="nav-link">
+                  <NavLink to="/work" className="nav-link">
                     Work
                   </NavLink>
                 </li>
@@ -175,8 +174,9 @@ function Header() {
                   onUnreadCountChange={setUnreadCount}
                 />
               </div>
-              <button type="button" className="btn-outline" onClick={handleLogout}>
-                Logout
+              <button type="button" className="btn-logout" onClick={handleLogout}>
+                <LogOut size={18} />
+                <span>Logout</span>
               </button>
               <NavLink
                 to={user?.role === 'teacher' ? '/teacher-profile' : '/student-profile'}
@@ -222,7 +222,7 @@ function Header() {
           {/* Logged OUT: Work & Offers */}
           {!user?.loggedIn && (
             <>
-              <NavLink to="/Work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+              <NavLink to="/work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 Work
               </NavLink>
               <NavLink to="/Offers" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
@@ -246,7 +246,7 @@ function Header() {
           {/* Logged in as TEACHER: Work & Offers */}
           {user?.loggedIn && user?.role === 'teacher' && (
             <>
-              <NavLink to="/Work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+              <NavLink to="/work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 Work
               </NavLink>
               <NavLink to="/Offers" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
@@ -266,7 +266,8 @@ function Header() {
 
           {user?.loggedIn && (
             <button type="button" className="mobile-logout-btn" onClick={handleLogout}>
-              Logout
+              <LogOut size={18} />
+              <span>Logout</span>
             </button>
           )}
 
