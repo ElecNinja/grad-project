@@ -750,13 +750,63 @@
   font-weight: 600;
 }
 
-/* ── Recommend Grid ─────────────────────────────────────────── */
+/* ── Recommend Grid (≤ 3 items, no scroll) ──────────────────── */
 .tpv-recommend-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
   gap: 14px;
 }
 
+/* ── Recommend Carousel (> 3 items) ─────────────────────────── */
+.tpv-carousel-wrap {
+  position: relative;
+}
+
+.tpv-carousel-track {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;          /* Firefox */
+  padding-bottom: 4px;            /* room for box-shadow on cards */
+}
+.tpv-carousel-track::-webkit-scrollbar { display: none; }
+
+.tpv-carousel-item {
+  flex: 0 0 168px;
+  scroll-snap-align: start;
+}
+
+/* Arrow buttons — hidden by default, shown when scroll possible */
+.tpv-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #374151;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, background 0.15s ease;
+}
+.tpv-carousel-arrow--left  { left: -18px; }
+.tpv-carousel-arrow--right { right: -18px; }
+.tpv-carousel-arrow--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.tpv-carousel-arrow:hover  { background: #f1f5f9; }
+
+/* ── Recommend Card ──────────────────────────────────────────── */
 .tpv-recommend-card {
   background: #f8fafc;
   border: 1px solid rgba(2, 6, 23, 0.07);
@@ -777,29 +827,39 @@
 }
 
 .tpv-recommend-photo {
+  position: relative;
   width: 72px;
   height: 72px;
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;    /* allow dot to overflow */
   flex-shrink: 0;
 }
+
+/* inner img/placeholder still clips to border-radius */
+.tpv-recommend-photo img,
+.tpv-recommend-placeholder {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Online presence dot on recommend cards */
+.tpv-recommend-online-dot {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  z-index: 2;
+  transition: background 0.3s ease;
+}
+
 
 .tpv-recommend-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.tpv-recommend-placeholder {
-  width: 72px;
-  height: 72px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
-  color: #fff;
-  font-size: 1.6rem;
-  font-weight: 800;
-  display: grid;
-  place-items: center;
 }
 
 .tpv-recommend-info {

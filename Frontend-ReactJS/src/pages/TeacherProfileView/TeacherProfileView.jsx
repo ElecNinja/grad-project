@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
@@ -19,7 +19,7 @@ import {
 import { getTeacherProfile } from '../../apis/handlers/getTeacherProfile';
 import { getTeacherReviews } from '../../apis/handlers/getTeacherReviews';
 import { getRecommendedTeachers } from '../../apis/handlers/getRecommendedTeachers';
-import { supabase } from '../../config/supabaseClient';
+import { useOnlineIds } from '../../context/PresenceContext';
 import './TeacherProfileView.css';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -100,7 +100,7 @@ function ReviewCard({ review }) {
   );
 }
 
-function RecommendCard({ teacher }) {
+function RecommendCard({ teacher, isOnline }) {
   return (
     <Link to={`/teacher-profile/${teacher.id}`} className="tpv-recommend-card">
       <div className="tpv-recommend-photo">
@@ -111,6 +111,11 @@ function RecommendCard({ teacher }) {
             {(teacher.name || 'T')[0].toUpperCase()}
           </div>
         )}
+        <span
+          className="tpv-recommend-online-dot"
+          style={{ background: isOnline ? '#22c55e' : '#94a3b8' }}
+          title={isOnline ? 'Online' : 'Offline'}
+        />
       </div>
       <div className="tpv-recommend-info">
         <p className="tpv-recommend-name">{teacher.name}</p>
@@ -124,6 +129,65 @@ function RecommendCard({ teacher }) {
   );
 }
 
+function RecommendCarousel({ teachers, onlineIds }) {
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const CARD_WIDTH = 188; // card width + gap
+
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    checkScroll();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    const ro = new ResizeObserver(checkScroll);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      ro.disconnect();
+    };
+  }, [teachers]);
+
+  const scroll = (dir) => {
+    scrollRef.current?.scrollBy({ left: dir * CARD_WIDTH * 2, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="tpv-carousel-wrap">
+      <button
+        className={`tpv-carousel-arrow tpv-carousel-arrow--left ${canScrollLeft ? 'tpv-carousel-arrow--visible' : ''}`}
+        onClick={() => scroll(-1)}
+        aria-label="Scroll left"
+      >
+        <ChevronLeft size={18} />
+      </button>
+
+      <div className="tpv-carousel-track" ref={scrollRef}>
+        {teachers.map((t) => (
+          <div key={t.id} className="tpv-carousel-item">
+            <RecommendCard teacher={t} isOnline={onlineIds.has(t.id)} />
+          </div>
+        ))}
+      </div>
+
+      <button
+        className={`tpv-carousel-arrow tpv-carousel-arrow--right ${canScrollRight ? 'tpv-carousel-arrow--visible' : ''}`}
+        onClick={() => scroll(1)}
+        aria-label="Scroll right"
+      >
+        <ChevronRight size={18} />
+      </button>
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────
 
 const REVIEWS_PER_PAGE = 6;
@@ -131,6 +195,9 @@ const REVIEWS_PER_PAGE = 6;
 function TeacherProfileView() {
   const { id } = useParams();
   const currentUser = useSelector((state) => state.user);
+
+  // ── Global presence — reads from shared PresenceContext (set in Router.jsx) ──
+  const onlineIds = useOnlineIds();
 
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -146,7 +213,6 @@ function TeacherProfileView() {
   const [saved, setSaved] = useState(false);
   const [langFilter, setLangFilter] = useState('All');
   const [bioExpanded, setBioExpanded] = useState(false);
-  const [viewedTeacherOnline, setViewedTeacherOnline] = useState(false);
 
   // ── Load profile ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -188,34 +254,12 @@ function TeacherProfileView() {
     })();
   }, [id]);
 
-  useEffect(() => {
-    if (!id) return undefined;
-
-    const channel = supabase.channel(`online-users-${id}`)
-
-    const updateViewedTeacherStatus = () => {
-      const onlineUsers = Object.values(channel.presenceState()).flat();
-      setViewedTeacherOnline(
-        onlineUsers.some((presence) => presence?.user_id === id)
-      );
-    };
-
-    channel
-      .on("presence", { event: "sync" }, updateViewedTeacherStatus)
-      .on("presence", { event: "join" }, updateViewedTeacherStatus)
-      .on("presence", { event: "leave" }, updateViewedTeacherStatus)
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [id]);
-
   // ── Derived values ─────────────────────────────────────────────────────
   const isOwnProfile = currentUser?.id === id;
   const displayPhoto = profile?.photo || null;
   const videoId = getYouTubeId(profile?.introduction_video);
-  const isOnline = Boolean(profile?.is_online || viewedTeacherOnline);
+  // id here is the profile UUID — matches what Router.jsx tracks
+  const isOnline = onlineIds.has(id);
 
   const languages = Array.isArray(profile?.teaching_languages)
     ? profile.teaching_languages.map((item) =>
@@ -470,9 +514,15 @@ function TeacherProfileView() {
                     See all <ChevronRight size={14} />
                   </Link>
                 </div>
-                <div className="tpv-recommend-grid">
-                  {recommended.map((t) => <RecommendCard key={t.id} teacher={t} />)}
-                </div>
+                {recommended.length > 3 ? (
+                  <RecommendCarousel teachers={recommended} onlineIds={onlineIds} />
+                ) : (
+                  <div className="tpv-recommend-grid">
+                    {recommended.map((t) => (
+                      <RecommendCard key={t.id} teacher={t} isOnline={onlineIds.has(t.id)} />
+                    ))}
+                  </div>
+                )}
               </section>
             )}
           </main>
