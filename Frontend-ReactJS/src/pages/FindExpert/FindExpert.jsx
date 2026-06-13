@@ -88,7 +88,7 @@ function FindExpert() {
     return result;
   }, [teachers, query, selectedSubject, selectedRating]);
 
-  const teachersPerPage = 3;
+  const teachersPerPage = 10;
   const totalPages = Math.ceil(filteredTeachers.length / teachersPerPage) || 1;
 
   const paginatedTeachers = useMemo(() => {
