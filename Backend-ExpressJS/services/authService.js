@@ -90,6 +90,7 @@ const createTeacherProfile = async (profileId, fields) => {
         profile_id: profileId,
         ...fields,
       },
+       { onConflict: "profile_id" }
     ])
     .select()
     .single();
