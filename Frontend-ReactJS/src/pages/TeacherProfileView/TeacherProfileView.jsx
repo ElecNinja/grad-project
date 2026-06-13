@@ -160,7 +160,7 @@ function RecommendCarousel({ teachers, onlineIds }) {
   };
 
   return (
-    <div className="tpv-carousel-wrap">
+    <div className={`tpv-carousel-wrap ${canScrollLeft ? 'tpv-carousel-wrap--fade-left' : ''} ${canScrollRight ? 'tpv-carousel-wrap--fade-right' : ''}`}>
       <button
         className={`tpv-carousel-arrow tpv-carousel-arrow--left ${canScrollLeft ? 'tpv-carousel-arrow--visible' : ''}`}
         onClick={() => scroll(-1)}
