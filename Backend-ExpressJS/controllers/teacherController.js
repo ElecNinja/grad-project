@@ -83,6 +83,33 @@ const getTeacherProfile = async (req, res) => {
   }
 };
 
+const getTeacherReviews = async (req, res) => {
+  try {
+    const teacherId = req.params.id;
+    const page = parseInt(req.query.page) || 0;
+    const limit = parseInt(req.query.limit) || 6;
+
+    if (!teacherId) return res.status(400).json({ error: "Teacher ID is required." });
+
+    const result = await teacherService.getTeacherReviews(teacherId, page, limit);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const getRecommendedTeachers = async (req, res) => {
+  try {
+    const teacherId = req.params.id;
+    if (!teacherId) return res.status(400).json({ error: "Teacher ID is required." });
+
+    const teachers = await teacherService.getRecommendedTeachers(teacherId);
+    res.status(200).json({ teachers });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 const updateTeacherProfile = async (req, res) => {
   try {
     const teacherId = req.user?.id;
@@ -380,6 +407,8 @@ module.exports = {
   listTeachers,
   listSubjects,
   getTeacherProfile,
+  getTeacherReviews,
+  getRecommendedTeachers,
   updateTeacherProfile,
   getStudentProfile,
   updateStudentProfile,

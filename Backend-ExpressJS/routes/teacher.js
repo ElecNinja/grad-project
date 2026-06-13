@@ -17,6 +17,8 @@ router.get("/list", isAuthenticated, teacherController.listTeachers);
 
 
 router.get("/profile/:id", isAuthenticated, teacherController.getTeacherProfile);
+router.get("/profile/:id/reviews", isAuthenticated, teacherController.getTeacherReviews);
+router.get("/profile/:id/recommended", isAuthenticated, teacherController.getRecommendedTeachers);
 router.put(
   "/profile",
   isAuthenticated,
