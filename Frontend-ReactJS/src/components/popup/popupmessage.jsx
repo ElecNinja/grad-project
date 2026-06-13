@@ -95,10 +95,11 @@ function PopupMessage({
   const [markingAll, setMarkingAll] = useState(false);
 
   const syncUnreadCount = useCallback(
-    async (items = notifications) => {
+    async (items) => {
       if (typeof onUnreadCountChange !== "function") return;
+      const targetItems = items || [];
 
-      const unread = items.filter((item) => !item.is_read).length;
+      const unread = targetItems.filter((item) => !item.is_read).length;
       if (recipientId) {
         const count = await fetchUnreadCount(recipientId);
         onUnreadCountChange(count || unread);
@@ -107,7 +108,7 @@ function PopupMessage({
 
       onUnreadCountChange(unread);
     },
-    [notifications, onUnreadCountChange, recipientId]
+    [onUnreadCountChange, recipientId]
   );
 
   const loadNotifications = useCallback(async () => {
