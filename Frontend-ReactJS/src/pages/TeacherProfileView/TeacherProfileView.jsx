@@ -144,6 +144,7 @@ function TeacherProfileView() {
   const [recommended, setRecommended] = useState([]);
   const [saved, setSaved] = useState(false);
   const [langFilter, setLangFilter] = useState('All');
+  const [bioExpanded, setBioExpanded] = useState(false);
 
   // ── Load profile ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -189,7 +190,7 @@ function TeacherProfileView() {
   const isOwnProfile = currentUser?.id === id;
   const displayPhoto = profile?.photo || null;
   const videoId = getYouTubeId(profile?.introduction_video);
-  const isOnline = !!profile?.is_online;
+  const isOnline = Boolean(profile?.is_online || (isOwnProfile && currentUser?.loggedIn));
 
   const languages = Array.isArray(profile?.teaching_languages)
     ? profile.teaching_languages.map((item) =>
@@ -204,6 +205,8 @@ function TeacherProfileView() {
   const ratingCount = profile?.rating_count ?? reviewTotal;
   const isPopular = ratingCount >= 10 || avgRating >= 4.5;
   const totalReviewPages = Math.ceil(reviewTotal / REVIEWS_PER_PAGE);
+  const bioText = profile?.bio || 'No bio has been added yet.';
+  const canExpandBio = bioText.length > 260;
 
   const handleShare = () => {
     if (navigator.share) navigator.share({ title: profile?.name, url: window.location.href });
@@ -326,7 +329,19 @@ function TeacherProfileView() {
             {/* About Me */}
             <section className="tpv-section">
               <h2 className="tpv-section-title">About me</h2>
-              <p className="tpv-bio">{profile?.bio || 'No bio has been added yet.'}</p>
+              <div className={`tpv-bio-wrap ${bioExpanded ? 'tpv-bio-wrap--expanded' : ''}`}>
+                <p className="tpv-bio">{bioText}</p>
+              </div>
+              {canExpandBio && (
+                <button
+                  type="button"
+                  className="tpv-bio-toggle"
+                  aria-expanded={bioExpanded}
+                  onClick={() => setBioExpanded((open) => !open)}
+                >
+                  {bioExpanded ? 'Show less' : 'Read more'}
+                </button>
+              )}
             </section>
 
             {/* My Specialties */}
