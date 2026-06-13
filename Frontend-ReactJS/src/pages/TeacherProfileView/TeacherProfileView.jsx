@@ -19,6 +19,7 @@ import {
 import { getTeacherProfile } from '../../apis/handlers/getTeacherProfile';
 import { getTeacherReviews } from '../../apis/handlers/getTeacherReviews';
 import { getRecommendedTeachers } from '../../apis/handlers/getRecommendedTeachers';
+import { supabase } from '../../config/supabaseClient';
 import './TeacherProfileView.css';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -145,6 +146,7 @@ function TeacherProfileView() {
   const [saved, setSaved] = useState(false);
   const [langFilter, setLangFilter] = useState('All');
   const [bioExpanded, setBioExpanded] = useState(false);
+  const [viewedTeacherOnline, setViewedTeacherOnline] = useState(false);
 
   // ── Load profile ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -186,11 +188,34 @@ function TeacherProfileView() {
     })();
   }, [id]);
 
+  useEffect(() => {
+    if (!id) return undefined;
+
+    const channel = supabase.channel("online-users");
+
+    const updateViewedTeacherStatus = () => {
+      const onlineUsers = Object.values(channel.presenceState()).flat();
+      setViewedTeacherOnline(
+        onlineUsers.some((presence) => presence?.user_id === id)
+      );
+    };
+
+    channel
+      .on("presence", { event: "sync" }, updateViewedTeacherStatus)
+      .on("presence", { event: "join" }, updateViewedTeacherStatus)
+      .on("presence", { event: "leave" }, updateViewedTeacherStatus)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id]);
+
   // ── Derived values ─────────────────────────────────────────────────────
   const isOwnProfile = currentUser?.id === id;
   const displayPhoto = profile?.photo || null;
   const videoId = getYouTubeId(profile?.introduction_video);
-  const isOnline = Boolean(profile?.is_online || (isOwnProfile && currentUser?.loggedIn));
+  const isOnline = Boolean(profile?.is_online || viewedTeacherOnline);
 
   const languages = Array.isArray(profile?.teaching_languages)
     ? profile.teaching_languages.map((item) =>

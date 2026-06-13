@@ -428,17 +428,6 @@
   overflow: hidden;
 }
 
-.tpv-bio-wrap:not(.tpv-bio-wrap--expanded)::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 3.2em;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 78%);
-}
-
 .tpv-bio-wrap--expanded {
   max-height: none;
 }
