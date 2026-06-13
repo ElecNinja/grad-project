@@ -3,8 +3,8 @@ import { apiEndpoints } from "../apiEndpoints";
 
 /**
  * Updates the logged-in teacher's profile.
- * Sends multipart/form-data if a photo file is included, otherwise JSON.
- * @param {{ name?: string, bio?: string, subject?: string, price_per_hour?: number, photo?: File }} profileData
+ * Sends multipart/form-data if any file is included, otherwise JSON.
+ * @param {{ name?: string, bio?: string, photo?: File, video?: File, headline?: string, introduction_video?: string, hourly_rate_min?: number, hourly_rate_max?: number, teaching_languages?: string[]|string, specialties?: any[]|string, specialty_subject_ids?: string[]|string }} profileData
  * @returns {{ response: object|null, status: number, message: string }}
  */
 export async function updateTeacherProfile(profileData) {
@@ -13,13 +13,26 @@ export async function updateTeacherProfile(profileData) {
     let body;
     let headers = {};
 
-    if (profileData.photo instanceof File) {
-      // Multipart when a new photo is being uploaded
+    const hasFile =
+      profileData.photo instanceof File || profileData.video instanceof File;
+
+    if (hasFile) {
+      // Multipart when a file is being uploaded
       body = new FormData();
       Object.entries(profileData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) body.append(key, value);
+        if (value === undefined || value === null) return;
+        // File / Blob must be appended as-is so multer receives real binary data
+        if (value instanceof File || value instanceof Blob) {
+          body.append(key, value, value.name);
+          return;
+        }
+        if (Array.isArray(value) || typeof value === "object") {
+          body.append(key, JSON.stringify(value));
+          return;
+        }
+        body.append(key, value);
       });
-      headers["Content-Type"] = "multipart/form-data";
+      // Do NOT manually set Content-Type — axios sets it with the correct boundary automatically
     } else {
       body = profileData;
     }

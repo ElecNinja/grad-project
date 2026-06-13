@@ -175,23 +175,59 @@
     color: #1d4ed8;
 }
 
+/* Logout Button - Modern style */
+.btn-logout {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #b91c1c;
+    border: 1.5px solid #fca5a5;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+}
+
+.btn-logout:hover {
+    background: linear-gradient(135deg, #fecaca, #fca5a5);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+    transform: translateY(-2px);
+}
+
+.btn-logout:active {
+    transform: translateY(0);
+}
+
 /* Mobile Menu Button */
 .mobile-menu-btn {
     display: none;
     background: rgba(255, 255, 255, 0.2);
     border: none;
     color: white;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 8px;
     cursor: pointer;
-    transition: 0.3s;
+    transition: all 0.3s ease;
     align-items: center;
     justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
 }
 
 .mobile-menu-btn:hover {
     background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.mobile-menu-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2.5;
 }
 
 /* Mobile Menu */
@@ -247,17 +283,24 @@
 
 .mobile-logout-btn {
     padding: 12px 20px;
-    background: #fee2e2;
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
     color: #b91c1c;
-    border: 1px solid #fecaca;
+    border: 1.5px solid #fca5a5;
     border-radius: 8px;
     font-size: 16px;
+    font-weight: 600;
     text-align: left;
     cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .mobile-logout-btn:hover {
-    background: #fecaca;
+    background: linear-gradient(135deg, #fecaca, #fca5a5);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
 }
 
 .mobile-divider {
@@ -291,6 +334,10 @@
     }
 }
 /* Bell */
+.bell-wrapper {
+    position: relative;
+}
+
 .bell-btn {
     position: relative;
     background: transparent;

@@ -12,11 +12,24 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://grad-project-eta.vercel.app"
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+@app.get("/")
+def health():
+    return {"status": "AI service running"}
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
+    
 @app.post("/analyze-pdf")
 async def analyze_pdf(file: UploadFile = File(...)):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp:
@@ -73,3 +86,7 @@ async def summarize_from_url(body: dict):
         }
     except:
         return {"error": "Summarization failed"}
+    
+@app.options("/{path:path}")
+async def options_handler():
+    return {}

@@ -1,0 +1,236 @@
+.popup-message {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(380px, calc(100vw - 24px));
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  overflow: hidden;
+  z-index: 1100;
+}
+
+.popup-message__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  background: linear-gradient(180deg, #f8fbff 0%, #fff 100%);
+}
+
+.popup-message__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.popup-message__subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.popup-message__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.popup-message__mark-all,
+.popup-message__close {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.popup-message__mark-all:hover,
+.popup-message__close:hover {
+  background: rgba(29, 78, 216, 0.08);
+}
+
+.popup-message__close {
+  color: #64748b;
+}
+
+.popup-message__body {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.popup-message__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 36px 24px;
+  text-align: center;
+  color: #64748b;
+}
+
+.popup-message__state strong {
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.popup-message__state span {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.popup-message__state--error {
+  color: #dc2626;
+}
+
+.popup-message__list {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+}
+
+.popup-message__item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  box-shadow: none;
+}
+
+.popup-message__item:hover {
+  background: #f8fbff;
+}
+
+.popup-message__item--unread {
+  background: rgba(29, 78, 216, 0.05);
+}
+
+.popup-message__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #1d4ed8;
+  background: rgba(29, 78, 216, 0.1);
+}
+
+.popup-message__icon--payment_received,
+.popup-message__icon--payment_failed,
+.popup-message__icon--bid_received,
+.popup-message__icon--bid_accepted,
+.popup-message__icon--bid_rejected {
+  color: #0f766e;
+  background: rgba(15, 118, 110, 0.12);
+}
+
+.popup-message__icon--new_message {
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.12);
+}
+
+.popup-message__icon--bootcamp_enrollment,
+.popup-message__icon--bootcamp_update {
+  color: #c2410c;
+  background: rgba(194, 65, 12, 0.12);
+}
+
+.popup-message__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.popup-message__item-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.popup-message__item-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.popup-message__time {
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.popup-message__badge {
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #1d4ed8;
+  background: rgba(29, 78, 216, 0.08);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.popup-message__item-body {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #475569;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.popup-message__unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f97316;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.popup-message__spin {
+  animation: popup-message-spin 0.8s linear infinite;
+}
+
+@keyframes popup-message-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .popup-message {
+    position: fixed;
+    top: 72px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+}

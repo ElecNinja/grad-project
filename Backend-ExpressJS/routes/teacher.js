@@ -10,18 +10,33 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 router.post("/upload-material", isAuthenticated, upload.single("file"), teacherController.uploadMaterial);
 router.get("/offers/:teacherId", isAuthenticated, teacherController.getOffers);
+router.get("/accepted-offers", isAuthenticated, teacherController.getAcceptedOffersTeacher);
 router.post("/accept-offer", isAuthenticated, teacherController.acceptOffer);
 router.post("/summarize-pdf", isAuthenticated, teacherController.summarizePdf);
 router.get("/list", isAuthenticated, teacherController.listTeachers);
 
 
 router.get("/profile/:id", isAuthenticated, teacherController.getTeacherProfile);
-router.put("/profile", isAuthenticated, upload.single("photo"), teacherController.updateTeacherProfile);
+router.put(
+  "/profile",
+  isAuthenticated,
+  upload.fields([
+    { name: "photo", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
+  teacherController.updateTeacherProfile
+);
+
+router.get("/subjects", isAuthenticated, teacherController.listSubjects);
 
 router.get("/student/profile/:id", isAuthenticated, teacherController.getStudentProfile);
 router.put("/student/profile", isAuthenticated, upload.single("photo"), teacherController.updateStudentProfile);
 
 router.get("/requests", isAuthenticated, teacherController.getRequestsController);
 router.post("/accept-request", isAuthenticated, teacherController.acceptRequestController);
+
+// Course content routes
+router.post("/upload-content", isAuthenticated, upload.single("file"), teacherController.uploadCourseContent);
+router.get("/course-content/:bidId", isAuthenticated, teacherController.getCourseContent);
 
 module.exports = router;

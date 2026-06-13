@@ -9,13 +9,22 @@ const mapProfile = (profile, extras = {}) => ({
   name: profile.full_name || profile.name || "",
   email: profile.email || "",
   role: profile.role || "",
-  bio: profile.bio || extras.headline || "",
+  bio: profile.bio || "",
   photo: profile.avatar_url || profile.photo || "",
-  subject: extras.headline || profile.subject || "",
-  price_per_hour: profile.price_per_hour ?? null,
-  rating: profile.rating ?? null,
+  headline: extras.headline ?? null,
+  // Backwards-compatible fields used by older frontend pages
+  subject: extras.headline ?? "",
+  introduction_video: extras.introduction_video ?? null,
+  hourly_rate_min: extras.hourly_rate_min ?? null,
+  hourly_rate_max: extras.hourly_rate_max ?? null,
+  price_per_hour: extras.hourly_rate_min ?? null,
   years_experience: extras.years_experience ?? null,
   teaching_languages: extras.teaching_languages ?? [],
+  avg_rating: extras.avg_rating ?? null,
+  rating: extras.avg_rating ?? null,
+  rating_count: extras.rating_count ?? null,
+  is_accepting: extras.is_accepting ?? null,
+  specialties: extras.specialties ?? [],
 });
 
 const loadTeacherExtras = async (profileIds) => {
@@ -23,13 +32,54 @@ const loadTeacherExtras = async (profileIds) => {
 
   const { data, error } = await supabase
     .from("teacher_profiles")
-    .select("profile_id, headline, years_experience, teaching_languages")
+    .select(
+      "id, profile_id, headline, introduction_video, hourly_rate_min, hourly_rate_max, years_experience, teaching_languages, avg_rating, rating_count, is_accepting"
+    )
     .in("profile_id", profileIds);
 
   if (error || !data) return new Map();
 
   return new Map(data.map((row) => [row.profile_id, row]));
 };
+
+const loadTeacherSpecialties = async (teacherProfileId) => {
+  if (!teacherProfileId) return [];
+
+  const { data, error } = await supabase
+    .from("teacher_subjects")
+    .select(
+      `
+      proficiency,
+      subjects!teacher_subjects_subject_id_fkey (
+        id,
+        name,
+        slug
+      )
+    `
+    )
+    .eq("teacher_id", teacherProfileId);
+
+  if (error || !data) return [];
+
+  return data
+    .map((row) => ({
+      id: row.subjects?.id,
+      name: row.subjects?.name,
+      slug: row.subjects?.slug,
+      proficiency: row.proficiency || "intermediate",
+    }))
+    .filter((s) => s.id && s.name);
+};
+
+async function listSubjects() {
+  const { data, error } = await supabase
+    .from("subjects")
+    .select("id, name, slug")
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
 
 // ===============================
 // Upload material to storage + DB
@@ -217,14 +267,106 @@ const getStudentRequests = async (profileId) => {
     return [];
   }
 };
+
+// ===============================
+// GET ACCEPTED OFFERS FOR TEACHER
+// ===============================
+const getAcceptedOffersTeacher = async (profileId) => {
+  try {
+    // Get teacher_profiles.id from profile_id
+    const { data: teacherProfile, error: profileError } = await supabase
+      .from("teacher_profiles")
+      .select("id")
+      .eq("profile_id", profileId)
+      .single();
+
+    if (profileError || !teacherProfile) {
+      console.log("Teacher profile not found:", profileError);
+      return [];
+    }
+
+    // Get all bids for this teacher (their accepted offers)
+    const { data: bids, error: bidsError } = await supabase
+      .from("bids")
+      .select(`
+        id,
+        price,
+        currency,
+        teaching_mode,
+        num_sessions,
+        status,
+        student_requests!bids_request_id_fkey (
+          id,
+          student_id,
+          title,
+          description,
+          preferred_mode,
+          status,
+          created_at
+        ),
+        student_profiles:student_requests!bids_request_id_fkey(student_id) (
+          student_id
+        )
+      `)
+      .eq("teacher_id", teacherProfile.id)
+      .neq("status", "rejected");
+
+    if (bidsError) {
+      console.log("Bids error:", bidsError);
+      return [];
+    }
+
+    // Get student IDs
+    const studentIds = bids
+      .map(b => b.student_requests?.student_id)
+      .filter(Boolean);
+
+    // Fetch student profiles
+    const { data: studentProfiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("id", studentIds);
+
+    // Build a map for quick lookup
+    const studentProfileMap = {};
+    (studentProfiles || []).forEach(p => { studentProfileMap[p.id] = p; });
+
+    return bids.map((bid) => {
+      const req = bid.student_requests;
+      const studentProfile = studentProfileMap[req?.student_id] || {};
+
+      return {
+        id: bid.id,
+        requestId: req?.id,
+        type: req?.preferred_mode || bid.teaching_mode || "recorded",
+        title: req?.title || "Untitled",
+        description: req?.description || "",
+        studentName: studentProfile.full_name || "Student",
+        studentPhoto: studentProfile.avatar_url || null,
+        pricePerHour: bid.price || 0,
+        currency: bid.currency || "USD",
+        numSessions: bid.num_sessions || 1,
+        bidStatus: bid.status || "pending",
+        createdAt: req?.created_at || null,
+      };
+    });
+
+  } catch (err) {
+    console.log("getAcceptedOffersTeacher error:", err);
+    return [];
+  }
+};
+
 module.exports = {
   uploadMaterial,
   getOffers,
   acceptOffer,
   summarizePdf,
   getStudentRequests,
+  getAcceptedOffersTeacher,
   getTeacherProfile,
   listTeachers,
+  listSubjects,
   updateTeacherProfile,
   getStudentProfile,
   updateStudentProfile,
@@ -247,8 +389,10 @@ async function getTeacherProfile(teacherId) {
   }
 
   const extras = await loadTeacherExtras([data.id]);
+  const extraRow = extras.get(data.id) || {};
+  const specialties = await loadTeacherSpecialties(extraRow.id);
 
-  return mapProfile(data, extras.get(data.id));
+  return mapProfile(data, { ...extraRow, specialties });
 }
 
 // ===============================
@@ -276,7 +420,19 @@ async function listTeachers() {
 // Update teacher profile
 // ===============================
 async function updateTeacherProfile(teacherId, updates) {
-  const allowed = ["name", "bio", "subject", "photo"];
+  const allowed = [
+    "name",
+    "bio",
+    "photo",
+    "headline",
+    "introduction_video",
+    "hourly_rate_min",
+    "hourly_rate_max",
+    "years_experience",
+    "teaching_languages",
+    "specialty_subject_ids",
+    "specialties",
+  ];
 
   const safeUpdates = Object.fromEntries(
     Object.entries(updates).filter(([key]) =>
@@ -287,6 +443,24 @@ async function updateTeacherProfile(teacherId, updates) {
   if (Object.keys(safeUpdates).length === 0) {
     throw new Error("No valid fields to update.");
   }
+
+  // Parse JSON fields if they come as strings (multipart/form-data)
+  const parseJsonMaybe = (val) => {
+    if (val === undefined || val === null) return val;
+    if (typeof val !== "string") return val;
+    const trimmed = val.trim();
+    if (!trimmed) return val;
+    if (!(trimmed.startsWith("[") || trimmed.startsWith("{"))) return val;
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return val;
+    }
+  };
+
+  safeUpdates.teaching_languages = parseJsonMaybe(safeUpdates.teaching_languages);
+  safeUpdates.specialty_subject_ids = parseJsonMaybe(safeUpdates.specialty_subject_ids);
+  safeUpdates.specialties = parseJsonMaybe(safeUpdates.specialties);
 
   const { data, error } = await supabase
     .from("profiles")
@@ -309,19 +483,81 @@ async function updateTeacherProfile(teacherId, updates) {
 
   if (error) throw error;
 
-  if (safeUpdates.subject) {
-    await supabase.from("teacher_profiles").upsert(
-      {
-        profile_id: teacherId,
-        headline: safeUpdates.subject,
-      },
-      { onConflict: "profile_id" }
-    );
+  // Upsert teacher_profiles details
+  const tpPayload = {
+    profile_id: teacherId,
+    ...(safeUpdates.headline !== undefined ? { headline: safeUpdates.headline } : {}),
+    ...(safeUpdates.introduction_video !== undefined
+      ? { introduction_video: safeUpdates.introduction_video }
+      : {}),
+    ...(safeUpdates.hourly_rate_min !== undefined
+      ? { hourly_rate_min: safeUpdates.hourly_rate_min }
+      : {}),
+    ...(safeUpdates.hourly_rate_max !== undefined
+      ? { hourly_rate_max: safeUpdates.hourly_rate_max }
+      : {}),
+    ...(safeUpdates.years_experience !== undefined
+      ? { years_experience: safeUpdates.years_experience }
+      : {}),
+    ...(safeUpdates.teaching_languages !== undefined && Array.isArray(safeUpdates.teaching_languages)
+      ? { teaching_languages: safeUpdates.teaching_languages }
+      : {}),
+  };
+
+  // Only upsert if any teacher_profiles fields were provided
+  const tpHasExtras = Object.keys(tpPayload).length > 1;
+  if (tpHasExtras) {
+    await supabase.from("teacher_profiles").upsert(tpPayload, { onConflict: "profile_id" });
+  }
+
+  // Resolve teacher_profiles.id for specialties update and final response
+  const { data: tpRow, error: tpError } = await supabase
+    .from("teacher_profiles")
+    .select("id")
+    .eq("profile_id", teacherId)
+    .single();
+  if (tpError) throw tpError;
+
+  // Specialties update: accept either specialty_subject_ids: uuid[] or specialties: [{subject_id, proficiency}]
+  const subjectIds = Array.isArray(safeUpdates.specialty_subject_ids)
+    ? safeUpdates.specialty_subject_ids
+    : null;
+  const specialties = Array.isArray(safeUpdates.specialties) ? safeUpdates.specialties : null;
+
+  if (subjectIds || specialties) {
+    // Clear existing then insert new
+    await supabase.from("teacher_subjects").delete().eq("teacher_id", tpRow.id);
+
+    let insertRows = [];
+    if (specialties) {
+      insertRows = specialties
+        .map((s) => ({
+          teacher_id: tpRow.id,
+          subject_id: s.subject_id || s.id,
+          proficiency: s.proficiency || "intermediate",
+        }))
+        .filter((r) => r.subject_id);
+    } else if (subjectIds) {
+      insertRows = subjectIds
+        .filter(Boolean)
+        .map((subject_id) => ({
+          teacher_id: tpRow.id,
+          subject_id,
+          proficiency: "intermediate",
+        }));
+    }
+
+    if (insertRows.length > 0) {
+      const { error: insErr } = await supabase.from("teacher_subjects").insert(insertRows);
+      if (insErr) throw insErr;
+    }
   }
 
   const extras = await loadTeacherExtras([data.id]);
+  const extraRow = extras.get(data.id) || {};
+  const updatedSpecialties = await loadTeacherSpecialties(extraRow.id);
 
-  return mapProfile(data, extras.get(data.id));
+  return mapProfile(data, { ...extraRow, specialties: updatedSpecialties });
 }
 
 // ===============================
