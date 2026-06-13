@@ -191,7 +191,7 @@ function TeacherProfileView() {
   useEffect(() => {
     if (!id) return undefined;
 
-    const channel = supabase.channel("online-users");
+    const channel = supabase.channel(`online-users-${id}`)
 
     const updateViewedTeacherStatus = () => {
       const onlineUsers = Object.values(channel.presenceState()).flat();
