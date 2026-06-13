@@ -238,129 +238,19 @@ function TeacherProfileView() {
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="tpv-page">
-
-
-
-      {/* ══ IDENTITY ROW ═══════════════════════════════════════════════ */}
-      <div className="tpv-identity-row">
-        <div className="tpv-identity-left">
-          <div className="tpv-avatar-wrap">
-            {displayPhoto ? (
-              <img src={displayPhoto} alt={profile?.name} className="tpv-avatar" />
-            ) : (
-              <div className="tpv-avatar tpv-avatar--placeholder">
-                {(profile?.name || 'T')[0].toUpperCase()}
-              </div>
-            )}
-            <span
-              className="tpv-online-dot"
-              style={{ background: isOnline ? '#22c55e' : '#94a3b8' }}
-            />
-          </div>
-
-          <div className="tpv-identity-info">
-            <div className="tpv-name-row">
-              <h1 className="tpv-name">{profile?.name || 'Teacher'}</h1>
-              {isPopular && (
-                <span className="tpv-popular-badge">
-                  <Zap size={12} /> Super popular
-                </span>
-              )}
-            </div>
-            <p className="tpv-headline">{profile?.headline || 'Teacher'}</p>
-            <div className="tpv-meta-row">
-              <div className="tpv-stars-inline">
-                {renderStars(avgRating, 15)}
-                <span className="tpv-rating-num">
-                  {avgRating ? avgRating.toFixed(1) : 'No ratings'}
-                </span>
-              </div>
-              {profile?.years_experience && (
-                <span className="tpv-meta-chip">
-                  <Clock size={13} /> {profile.years_experience} yrs experience
-                </span>
-              )}
-              {(profile?.hourly_rate_min || profile?.hourly_rate_max) && (
-                <span className="tpv-meta-chip">
-                  <DollarSign size={13} />
-                  {profile.hourly_rate_min && profile.hourly_rate_max
-                    ? `$${profile.hourly_rate_min}–$${profile.hourly_rate_max}/hr`
-                    : profile.hourly_rate_min
-                    ? `From $${profile.hourly_rate_min}/hr`
-                    : `Up to $${profile.hourly_rate_max}/hr`}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Action card */}
-        <div className="tpv-action-card">
-          {/* Stats */}
-          <div className="tpv-stats-row">
-            <div className="tpv-stat-item">
-              <span className="tpv-stat-num">{ratingCount}</span>
-              <span className="tpv-stat-label">Reviews</span>
-            </div>
-            <div className="tpv-stat-divider" />
-            <div className="tpv-stat-item">
-              <span
-                className="tpv-stat-num tpv-stat-num--status"
-                style={{ color: isOnline ? '#22c55e' : '#94a3b8' }}
-              >●</span>
-              <span className="tpv-stat-label">{isOnline ? 'Available' : 'Offline'}</span>
-            </div>
-            <div className="tpv-stat-divider" />
-            <div className="tpv-stat-item">
-              <span className="tpv-stat-num">{profile?.specialties?.length || 0}</span>
-              <span className="tpv-stat-label">Subjects</span>
-            </div>
-          </div>
-
-          {/* Buttons */}
-          <div className="tpv-action-buttons">
-            <button className="tpv-btn tpv-btn--primary tpv-btn--full">
-              <MessageCircle size={16} /> Send a Message
-            </button>
-            <button
-              className={`tpv-btn tpv-btn--outline tpv-btn--full ${saved ? 'tpv-btn--saved' : ''}`}
-              onClick={() => setSaved((v) => !v)}
-            >
-              <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
-              {saved ? 'Saved' : 'Save to My List'}
-            </button>
-            <button className="tpv-btn tpv-btn--ghost tpv-btn--full" onClick={handleShare}>
-              <Share2 size={16} /> Share a Tutor
-            </button>
-          </div>
-
-          {isPopular && (
-            <div className="tpv-popular-info">
-              <Zap size={13} color="#f59e0b" />
-              <span>Super popular — usually replies within a few hours</span>
-            </div>
-          )}
-
-          {isOwnProfile && (
-            <Link className="tpv-btn tpv-btn--edit tpv-btn--full" to="/teacher-profile">
-              Edit Profile
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* ══ BODY ════════════════════════════════════════════════════════ */}
-      <div className="tpv-body">
-        <main className="tpv-main">
-          {/* Introduction Video */}
+      <div className="tpv-layout">
+        
+        {/* ══ LEFT COLUMN (Main Content) ════════════════════════════════ */}
+        <div className="tpv-layout-main">
+          
+          {/* Introduction Video (Moved above the name) */}
           {profile?.introduction_video && (
-            <section className="tpv-video-section">
-              <h2 className="tpv-section-title">Introduction</h2>
+            <section className="tpv-section tpv-video-section">
               <div className="tpv-video-wrapper">
                 {videoId ? (
                   <iframe
                     className="tpv-intro-video"
-                    src={`https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1&rel=0&modestbranding=1`}
+                    src={`https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1&rel=0&modestbranding=1&hd=1&vq=hd1080`}
                     title="Teacher intro video"
                     frameBorder="0"
                     allow="encrypted-media"
@@ -379,125 +269,230 @@ function TeacherProfileView() {
             </section>
           )}
 
-          {/* About Me */}
-          <section className="tpv-section">
-            <h2 className="tpv-section-title">About me</h2>
-            <p className="tpv-bio">{profile?.bio || 'No bio has been added yet.'}</p>
-          </section>
-
-          {/* My Specialties */}
-          {profile?.specialties?.length > 0 && (
-            <section className="tpv-section">
-              <h2 className="tpv-section-title">My Specialties</h2>
-              <SpecialtyAccordion specialties={profile.specialties} />
-            </section>
-          )}
-
-          {/* I Speak */}
-          {languages.length > 0 && (
-            <section className="tpv-section">
-              <h2 className="tpv-section-title">I speak</h2>
-              {langTabs.length > 1 && (
-                <div className="tpv-lang-tabs">
-                  {langTabs.map((tab) => (
-                    <button
-                      key={tab}
-                      className={`tpv-lang-tab ${langFilter === tab ? 'tpv-lang-tab--active' : ''}`}
-                      onClick={() => setLangFilter(tab)}
-                    >
-                      {tab}
-                    </button>
-                  ))}
+          {/* ══ IDENTITY ROW ═══════════════════════════════════════════════ */}
+          <div className="tpv-identity-row">
+            <div className="tpv-avatar-wrap">
+              {displayPhoto ? (
+                <img src={displayPhoto} alt={profile?.name} className="tpv-avatar" />
+              ) : (
+                <div className="tpv-avatar tpv-avatar--placeholder">
+                  {(profile?.name || 'T')[0].toUpperCase()}
                 </div>
               )}
-              <div className="tpv-lang-list">
-                {filteredLangs.map((l, i) => (
-                  <div key={i} className="tpv-lang-item">
-                    <span className="tpv-lang-name">{l.lang}</span>
-                    <span className={`tpv-lang-badge tpv-lang-badge--${l.proficiency}`}>
-                      {l.proficiency}
-                    </span>
-                  </div>
-                ))}
+              <span
+                className="tpv-online-dot"
+                style={{ background: isOnline ? '#22c55e' : '#94a3b8' }}
+              />
+            </div>
+
+            <div className="tpv-identity-info">
+              <div className="tpv-name-row">
+                <h1 className="tpv-name">{profile?.name || 'Teacher'}</h1>
+                {isPopular && (
+                  <span className="tpv-popular-badge">
+                    <Zap size={12} /> Super popular
+                  </span>
+                )}
               </div>
+              <p className="tpv-headline">{profile?.headline || 'Teacher'}</p>
+              <div className="tpv-meta-row">
+                <div className="tpv-stars-inline">
+                  {renderStars(avgRating, 15)}
+                  <span className="tpv-rating-num">
+                    {avgRating ? avgRating.toFixed(1) : 'No ratings'}
+                  </span>
+                </div>
+                {profile?.years_experience && (
+                  <span className="tpv-meta-chip">
+                    <Clock size={13} /> {profile.years_experience} yrs experience
+                  </span>
+                )}
+                {(profile?.hourly_rate_min || profile?.hourly_rate_max) && (
+                  <span className="tpv-meta-chip">
+                    <DollarSign size={13} />
+                    {profile.hourly_rate_min && profile.hourly_rate_max
+                      ? `$${profile.hourly_rate_min}–$${profile.hourly_rate_max}/hr`
+                      : profile.hourly_rate_min
+                      ? `From $${profile.hourly_rate_min}/hr`
+                      : `Up to $${profile.hourly_rate_max}/hr`}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ══ BODY ════════════════════════════════════════════════════════ */}
+          <main className="tpv-main">
+            {/* About Me */}
+            <section className="tpv-section">
+              <h2 className="tpv-section-title">About me</h2>
+              <p className="tpv-bio">{profile?.bio || 'No bio has been added yet.'}</p>
             </section>
-          )}
 
-          {/* Reviews */}
-          <section className="tpv-section">
-            <h2 className="tpv-section-title">What my students say</h2>
+            {/* My Specialties */}
+            {profile?.specialties?.length > 0 && (
+              <section className="tpv-section">
+                <h2 className="tpv-section-title">My Specialties</h2>
+                <SpecialtyAccordion specialties={profile.specialties} />
+              </section>
+            )}
 
-            <div className="tpv-rating-summary">
-              <div className="tpv-rating-big">
-                <span className="tpv-rating-score">{avgRating ? avgRating.toFixed(1) : '—'}</span>
-                <div className="tpv-rating-stars-big">{renderStars(avgRating, 22)}</div>
-                <span className="tpv-rating-count">Based on {ratingCount} reviews</span>
-              </div>
-              <div className="tpv-rating-bars">
-                {(breakdown.length > 0 ? breakdown : [5,4,3,2,1].map(s => ({ stars: s, pct: 0 }))).map(({ stars, pct }) => (
-                  <div key={stars} className="tpv-bar-row">
-                    <span className="tpv-bar-label">{stars}★</span>
-                    <div className="tpv-bar-track">
-                      <div className="tpv-bar-fill" style={{ width: `${pct}%` }} />
-                    </div>
-                    <span className="tpv-bar-pct">{pct}%</span>
+            {/* I Speak */}
+            {languages.length > 0 && (
+              <section className="tpv-section">
+                <h2 className="tpv-section-title">I speak</h2>
+                {langTabs.length > 1 && (
+                  <div className="tpv-lang-tabs">
+                    {langTabs.map((tab) => (
+                      <button
+                        key={tab}
+                        className={`tpv-lang-tab ${langFilter === tab ? 'tpv-lang-tab--active' : ''}`}
+                        onClick={() => setLangFilter(tab)}
+                      >
+                        {tab}
+                      </button>
+                    ))}
                   </div>
-                ))}
+                )}
+                <div className="tpv-lang-list">
+                  {filteredLangs.map((l, i) => (
+                    <div key={i} className="tpv-lang-item">
+                      <span className="tpv-lang-name">{l.lang}</span>
+                      <span className={`tpv-lang-badge tpv-lang-badge--${l.proficiency}`}>
+                        {l.proficiency}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Reviews */}
+            <section className="tpv-section">
+              <h2 className="tpv-section-title">What my students say</h2>
+
+              <div className="tpv-rating-summary">
+                <div className="tpv-rating-big">
+                  <span className="tpv-rating-score">{avgRating ? avgRating.toFixed(1) : '—'}</span>
+                  <div className="tpv-rating-stars-big">{renderStars(avgRating, 22)}</div>
+                  <span className="tpv-rating-count">Based on {ratingCount} reviews</span>
+                </div>
+                <div className="tpv-rating-bars">
+                  {(breakdown.length > 0 ? breakdown : [5,4,3,2,1].map(s => ({ stars: s, pct: 0 }))).map(({ stars, pct }) => (
+                    <div key={stars} className="tpv-bar-row">
+                      <span className="tpv-bar-label">{stars}★</span>
+                      <div className="tpv-bar-track">
+                        <div className="tpv-bar-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="tpv-bar-pct">{pct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {reviewLoading ? (
+                <div className="tpv-reviews-loading"><div className="tpv-spinner tpv-spinner--sm" /></div>
+              ) : reviews.length > 0 ? (
+                <div className="tpv-reviews-grid">
+                  {reviews.map((r) => <ReviewCard key={r.id} review={r} />)}
+                </div>
+              ) : (
+                <p className="tpv-no-reviews">No reviews yet — be the first!</p>
+              )}
+
+              {totalReviewPages > 1 && (
+                <div className="tpv-review-pagination">
+                  <button
+                    className="tpv-btn tpv-btn--ghost tpv-btn--sm"
+                    disabled={reviewPage === 0 || reviewLoading}
+                    onClick={() => setReviewPage((p) => p - 1)}
+                  >
+                    <ChevronLeft size={15} /> Previous
+                  </button>
+                  <span className="tpv-page-info">Page {reviewPage + 1} of {totalReviewPages}</span>
+                  <button
+                    className="tpv-btn tpv-btn--ghost tpv-btn--sm"
+                    disabled={reviewPage + 1 >= totalReviewPages || reviewLoading}
+                    onClick={() => setReviewPage((p) => p + 1)}
+                  >
+                    Next <ChevronRight size={15} />
+                  </button>
+                </div>
+              )}
+            </section>
+
+            {/* Recommended Teachers */}
+            {recommended.length > 0 && (
+              <section className="tpv-section">
+                <div className="tpv-section-head">
+                  <h2 className="tpv-section-title">Recommended Teachers</h2>
+                  <Link className="tpv-see-all" to="/find-expert">
+                    See all <ChevronRight size={14} />
+                  </Link>
+                </div>
+                <div className="tpv-recommend-grid">
+                  {recommended.map((t) => <RecommendCard key={t.id} teacher={t} />)}
+                </div>
+              </section>
+            )}
+          </main>
+        </div>
+
+        {/* ══ RIGHT COLUMN (Sticky Sidebar) ══════════════════════════════ */}
+        <aside className="tpv-layout-sidebar">
+          <div className="tpv-action-card">
+            {/* Stats */}
+            <div className="tpv-stats-row">
+              <div className="tpv-stat-item">
+                <span className="tpv-stat-num">{ratingCount}</span>
+                <span className="tpv-stat-label">Reviews</span>
+              </div>
+              <div className="tpv-stat-divider" />
+              <div className="tpv-stat-item">
+                <span
+                  className="tpv-stat-num tpv-stat-num--status"
+                  style={{ color: isOnline ? '#22c55e' : '#94a3b8' }}
+                >●</span>
+                <span className="tpv-stat-label">{isOnline ? 'Available' : 'Offline'}</span>
+              </div>
+              <div className="tpv-stat-divider" />
+              <div className="tpv-stat-item">
+                <span className="tpv-stat-num">{profile?.specialties?.length || 0}</span>
+                <span className="tpv-stat-label">Subjects</span>
               </div>
             </div>
 
-            {reviewLoading ? (
-              <div className="tpv-reviews-loading"><div className="tpv-spinner tpv-spinner--sm" /></div>
-            ) : reviews.length > 0 ? (
-              <div className="tpv-reviews-grid">
-                {reviews.map((r) => <ReviewCard key={r.id} review={r} />)}
+            {/* Buttons */}
+            <div className="tpv-action-buttons">
+              <button className="tpv-btn tpv-btn--primary tpv-btn--full">
+                <MessageCircle size={16} /> Send a Message
+              </button>
+              <button
+                className={`tpv-btn tpv-btn--outline tpv-btn--full ${saved ? 'tpv-btn--saved' : ''}`}
+                onClick={() => setSaved((v) => !v)}
+              >
+                <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
+                {saved ? 'Saved' : 'Save to My List'}
+              </button>
+              <button className="tpv-btn tpv-btn--ghost tpv-btn--full" onClick={handleShare}>
+                <Share2 size={16} /> Share a Tutor
+              </button>
+            </div>
+
+            {isPopular && (
+              <div className="tpv-popular-info">
+                <Zap size={13} color="#f59e0b" />
+                <span>Super popular — usually replies within a few hours</span>
               </div>
-            ) : (
-              <p className="tpv-no-reviews">No reviews yet — be the first!</p>
             )}
 
-            {totalReviewPages > 1 && (
-              <div className="tpv-review-pagination">
-                <button
-                  className="tpv-btn tpv-btn--ghost tpv-btn--sm"
-                  disabled={reviewPage === 0 || reviewLoading}
-                  onClick={() => setReviewPage((p) => p - 1)}
-                >
-                  <ChevronLeft size={15} /> Previous
-                </button>
-                <span className="tpv-page-info">Page {reviewPage + 1} of {totalReviewPages}</span>
-                <button
-                  className="tpv-btn tpv-btn--ghost tpv-btn--sm"
-                  disabled={reviewPage + 1 >= totalReviewPages || reviewLoading}
-                  onClick={() => setReviewPage((p) => p + 1)}
-                >
-                  Next <ChevronRight size={15} />
-                </button>
-              </div>
+            {isOwnProfile && (
+              <Link className="tpv-btn tpv-btn--edit tpv-btn--full" to="/teacher-profile">
+                Edit Profile
+              </Link>
             )}
-          </section>
-
-          {/* Recommended Teachers */}
-          {recommended.length > 0 && (
-            <section className="tpv-section">
-              <div className="tpv-section-head">
-                <h2 className="tpv-section-title">Recommended Teachers</h2>
-                <Link className="tpv-see-all" to="/find-expert">
-                  See all <ChevronRight size={14} />
-                </Link>
-              </div>
-              <div className="tpv-recommend-grid">
-                {recommended.map((t) => <RecommendCard key={t.id} teacher={t} />)}
-              </div>
-            </section>
-          )}
-
-          <div className="tpv-back-row">
-            <Link className="tpv-back-link" to="/find-expert">
-              <ArrowLeft size={15} /> Back to experts
-            </Link>
           </div>
-        </main>
+        </aside>
       </div>
     </div>
   );
