@@ -85,13 +85,10 @@ const getProfileById = async (profileId) => {
 const createTeacherProfile = async (profileId, fields) => {
   const { data, error } = await supabase
     .from("teacher_profiles")
-    .insert([
-      {
-        profile_id: profileId,
-        ...fields,
-      },
-       { onConflict: "profile_id" }
-    ])
+    .upsert(
+      { profile_id: profileId, ...fields },
+      { onConflict: "profile_id" }
+    )
     .select()
     .single();
 

@@ -370,8 +370,6 @@ module.exports = {
   updateTeacherProfile,
   getStudentProfile,
   updateStudentProfile,
-  getTeacherReviews,
-  getRecommendedTeachers,
 };
 
 // ===============================
@@ -502,7 +500,7 @@ async function updateTeacherProfile(teacherId, updates) {
       ? { years_experience: safeUpdates.years_experience }
       : {}),
     ...(safeUpdates.teaching_languages !== undefined && Array.isArray(safeUpdates.teaching_languages)
-      ? { teaching_languages: safeUpdates.teaching_languages }
+      ? { teaching_languages: safeUpdates.teaching_languages.map(l => typeof l === 'string' ? { lang: l, proficiency: 'native' } : l).filter(l => l.lang) }
       : {}),
   };
 
@@ -619,139 +617,4 @@ async function updateStudentProfile(studentId, updates) {
   if (error) throw error;
 
   return mapProfile(data);
-}
-
-// ===============================
-// Get paginated reviews for a teacher
-// ===============================
-async function getTeacherReviews(teacherId, page = 0, limit = 6) {
-  // Resolve teacher_profiles.id from the profiles UUID
-  const { data: tpRow } = await supabase
-    .from("teacher_profiles")
-    .select("id")
-    .eq("profile_id", teacherId)
-    .single();
-
-  if (!tpRow) return { reviews: [], total: 0, breakdown: [] };
-
-  const offset = page * limit;
-
-  // Fetch paginated reviews
-  const { data: rows, error, count } = await supabase
-    .from("reviews")
-    .select(
-      `
-      id,
-      rating,
-      comment,
-      created_at,
-      reviewer_id,
-      profiles!reviews_reviewer_id_fkey ( full_name, avatar_url )
-      `,
-      { count: "exact" }
-    )
-    .eq("teacher_id", tpRow.id)
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (error) throw error;
-
-  const reviews = (rows || []).map((r) => ({
-    id: r.id,
-    rating: r.rating,
-    comment: r.comment || "",
-    date: r.created_at
-      ? new Date(r.created_at).toLocaleDateString("en-US", {
-          month: "long",
-          year: "numeric",
-        })
-      : "",
-    author: r.profiles?.full_name || "Anonymous",
-    avatar: r.profiles?.avatar_url || null,
-  }));
-
-  // Compute per-star breakdown from ALL reviews (not just this page)
-  const { data: allRows } = await supabase
-    .from("reviews")
-    .select("rating")
-    .eq("teacher_id", tpRow.id);
-
-  const totalAll = (allRows || []).length;
-  const starCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-  (allRows || []).forEach((r) => {
-    const s = Math.round(r.rating);
-    if (s >= 1 && s <= 5) starCounts[s]++;
-  });
-
-  const breakdown = [5, 4, 3, 2, 1].map((star) => ({
-    stars: star,
-    pct: totalAll > 0 ? Math.round((starCounts[star] / totalAll) * 100) : 0,
-  }));
-
-  return { reviews, total: count || 0, breakdown };
-}
-
-// ===============================
-// Get recommended teachers (same subject, sorted by avg_rating)
-// ===============================
-async function getRecommendedTeachers(teacherId) {
-  // Get this teacher's teacher_profiles.id
-  const { data: tpRow } = await supabase
-    .from("teacher_profiles")
-    .select("id")
-    .eq("profile_id", teacherId)
-    .single();
-
-  if (!tpRow) return [];
-
-  // Get all subject IDs for this teacher
-  const { data: mySubjects } = await supabase
-    .from("teacher_subjects")
-    .select("subject_id")
-    .eq("teacher_id", tpRow.id);
-
-  const subjectIds = (mySubjects || []).map((s) => s.subject_id).filter(Boolean);
-
-  // Find other teacher_profiles that share at least one subject
-  let matchedTpIds = null;
-  if (subjectIds.length > 0) {
-    const { data: matchRows } = await supabase
-      .from("teacher_subjects")
-      .select("teacher_id")
-      .in("subject_id", subjectIds)
-      .neq("teacher_id", tpRow.id);
-
-    matchedTpIds = [...new Set((matchRows || []).map((r) => r.teacher_id))];
-    if (matchedTpIds.length === 0) return [];
-  }
-
-  let query = supabase
-    .from("teacher_profiles")
-    .select(
-      `
-      id,
-      profile_id,
-      headline,
-      avg_rating,
-      profiles!teacher_profiles_profile_id_fkey ( full_name, avatar_url )
-      `
-    )
-    .neq("profile_id", teacherId)
-    .order("avg_rating", { ascending: false })
-    .limit(4);
-
-  if (matchedTpIds !== null) {
-    query = query.in("id", matchedTpIds);
-  }
-
-  const { data: teachers, error } = await query;
-  if (error) throw error;
-
-  return (teachers || []).map((t) => ({
-    id: t.profile_id,
-    name: t.profiles?.full_name || "Teacher",
-    photo: t.profiles?.avatar_url || null,
-    headline: t.headline || null,
-    avg_rating: t.avg_rating || null,
-  }));
 }

@@ -204,6 +204,7 @@ function TeacherProfile() {
 
   const handleSave = async () => {
     setSaving(true);
+    
     const updates = {
       name: form.name,
       bio: form.bio,
@@ -215,15 +216,19 @@ function TeacherProfile() {
       years_experience: form.years_experience === '' ? null : Number(form.years_experience),
       teaching_languages: (form.teaching_languages || [])
         .filter((l) => l.lang?.trim())
-        .map((l) => l.lang.trim()),
+        .map((l) => ({ lang: l.lang.trim(), proficiency: l.proficiency || 'native' })),
       specialties: (form.specialties || []).map((s) => ({
         subject_id: s.id,
         proficiency: s.proficiency || 'intermediate',
+        
       })),
+      
     };
 
+  
+    
     if (photoFile) updates.photo = photoFile;
-
+    
     const result = await updateTeacherProfile(updates);
     setSaving(false);
 

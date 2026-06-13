@@ -59,7 +59,7 @@ const signup = async (req, res) => {
         const { data: subjectData } = await supabase
           .from('subjects')
           .select('id')
-          .ilike('name', `%${subject.trim()}%`)
+          .ilike('name', subject.trim())
           .single();
 
         console.log("Subject found:", subjectData);

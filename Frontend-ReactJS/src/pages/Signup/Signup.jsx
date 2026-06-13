@@ -181,6 +181,7 @@ function Signup() {
         education: formData.education || null,
         experience: formData.experience || null,
         subject: formData.subject || null, 
+        specialties: formData.subject ? [{ name: formData.subject, proficiency: 'intermediate' }] : [],
       });
 
       dispatch(setLoader(false));
