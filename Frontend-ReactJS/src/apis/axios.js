@@ -12,40 +12,51 @@ export const api = axios.create({
   }
 });
 
-// Attach JWT token to every request
 api.interceptors.request.use((config) => {
-  // Try localStorage first, then Redux store
-  const tokenFromStorage = typeof window !== "undefined"
-    ? window.localStorage.getItem("supabase_access_token")
-    : null;
-  const tokenFromStore = store.getState().user?.token;
-  const token = tokenFromStorage || tokenFromStore;
+  if (typeof window !== "undefined") {
+    const token = window.localStorage.getItem("supabase_access_token");
 
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  return config;
+});
+
+// Automatically send token with every request
+api.interceptors.request.use((config) => {
+  const token = store.getState().user?.token;
   if (token) {
-    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// ─── AI Analysis ──────────────────────────────────────────────────────────────
-// Calls Express /api/ai/analyze-pdf which proxies to the FastAPI AI service.
-// This keeps the AI service off the public internet — only Express is exposed.
-export const uploadPdfForAnalysis = (file, requestId) => {
+const AI_BASE_URL = import.meta.env.VITE_AI_URL;
+
+export const uploadPdfForAnalysis = (file) => {
   const formData = new FormData();
   formData.append('file', file);
-  if (requestId) {
-    formData.append('request_id', requestId);
-  }
-  return api.post(`/api/ai/analyze-pdf`, formData, {
+  return axios.post(`${AI_BASE_URL}/analyze-pdf`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 120000, // 2 minutes — LLM can be slow
   });
 };
 
-// ─── Student Request ───────────────────────────────────────────────────────────
-// Step 1: Upload PDF to storage + create student_request + request_files rows
-// Returns: { request_id, file_url }
+export const uploadTeacherMaterial = (studentId, file, description, materialType) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("studentId", studentId);
+  formData.append("description", description);
+  formData.append("materialType", materialType);
+  // Use api instance to send session cookie
+  return api.post(`/api/teacher/upload-material`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }).then((r) => r.data);
+};
+
+//  Student creates a request
 export const createStudentRequest = (file, description, materialType, subject) => {
   const formData = new FormData();
   if (file) formData.append("file", file);
@@ -54,18 +65,6 @@ export const createStudentRequest = (file, description, materialType, subject) =
   formData.append("title", description || "New Request");
   formData.append("subject", subject || "");
   return api.post(`/api/student/request`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  }).then((r) => r.data);
-};
-
-// ─── Teacher ──────────────────────────────────────────────────────────────────
-export const uploadTeacherMaterial = (studentId, file, description, materialType) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("studentId", studentId);
-  formData.append("description", description);
-  formData.append("materialType", materialType);
-  return api.post(`/api/teacher/upload-material`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   }).then((r) => r.data);
 };
@@ -79,8 +78,10 @@ export const acceptRequest = (requestId, price, teachingMode) =>
     numSessions: 1,
   }).then((r) => r.data);
 
+  
+// Student gets their requests
 export const getMyRequests = () =>
-  api.get(`/api/student/requests`).then((r) => r.data.requests);
+  api.get(`/api/student/requests`).then((r) => r.data.requests); 
 
 export const getTeacherOffers = (teacherId) =>
   api.get(`/api/teacher/offers/${teacherId}`).then((r) => r.data);
@@ -93,6 +94,7 @@ export const summarizePdf = (pdfUrl) =>
 
 export const getStudentRequests = () =>
   api.get(`/api/teacher/requests`).then((r) => {
+    // Handle both array response and wrapped response
     if (Array.isArray(r.data)) return r.data;
     if (Array.isArray(r.data?.requests)) return r.data.requests;
     return [];

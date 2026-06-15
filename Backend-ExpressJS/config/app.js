@@ -4,8 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const authRoutes = require('../routes/auth');
 const teacherRouter = require('../routes/teacher');
-const studentRouter = require('../routes/student');
-const aiRouter = require('../routes/ai'); // ✅ AI proxy
+const studentRouter = require('../routes/student'); // ✅ added
 const { sanitizeInput, rateLimiter } = require("../middleware/securityMiddleware");
 const { errorHandler, notFound } = require("../utils/errorHandler");
 
@@ -39,8 +38,7 @@ app.use(sanitizeInput);
 
 app.use('/api', authRoutes);
 app.use('/api/teacher', teacherRouter);
-app.use('/api/student', studentRouter);
-app.use('/api/ai', aiRouter); // ✅ AI proxy — forwards to FastAPI
+app.use('/api/student', studentRouter); // ✅ added
 
 // Handle unknown routes
 app.use(notFound);
