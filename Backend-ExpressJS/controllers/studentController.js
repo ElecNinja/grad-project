@@ -1,4 +1,4 @@
-const supabase = require("../config/supabase");
+/*const supabase = require("../config/supabase");
 
 // ===============================
 // CREATE STUDENT REQUEST
@@ -492,6 +492,514 @@ const getAcceptedOffers = async (req, res) => {
 
 module.exports = {
   createRequest,
+  getMyRequests,
+  getAcceptedOffers,
+};
+*/
+
+const supabase = require("../config/supabase");
+
+// ===============================
+// CREATE STUDENT REQUEST
+// ===============================
+const createRequest = async (req, res) => {
+  try {
+    const { description, materialType, title } = req.body;
+
+    const studentId = req.user.id;
+    const file = req.file;
+
+    const modeMap = {
+      bootCamp: "bootcamp",
+      recordVideo: "recorded",
+      meeting: "live_1on1",
+    };
+
+    // =============================================
+    // STEP 1: CREATE REQUEST ROW
+    // =============================================
+    const { data: request, error: requestError } = await supabase
+      .from("student_requests")
+      .insert([
+        {
+          student_id: studentId,
+          title: title || description || "New Request",
+          description: description || null,
+          preferred_mode: modeMap[materialType] || "any",
+          status: "pending_analysis",
+        },
+      ])
+      .select()
+      .single();
+
+    if (requestError) {
+      console.error("REQUEST ERROR:", requestError);
+      return res.status(500).json({ error: "Could not create request." });
+    }
+
+    // =============================================
+    // STEP 2: UPLOAD FILE TO STORAGE
+    // =============================================
+    let fileUrl = null;
+
+    if (file) {
+      const fileName = `${studentId}_${Date.now()}_${file.originalname}`;
+
+      const { error: storageError } = await supabase.storage
+        .from("request-files")
+        .upload(fileName, file.buffer, { contentType: file.mimetype });
+
+      if (storageError) {
+        console.error("STORAGE ERROR:", storageError);
+      } else {
+        const { data: urlData } = supabase.storage
+          .from("request-files")
+          .getPublicUrl(fileName);
+
+        fileUrl = urlData.publicUrl;
+
+        const { error: fileInsertError } = await supabase
+          .from("request_files")
+          .insert([
+            {
+              request_id: request.id,
+              file_name: file.originalname,
+              file_url: fileUrl,
+              file_size_bytes: file.size,
+              mime_type: file.mimetype,
+            },
+          ]);
+
+        if (fileInsertError) {
+          console.error("FILE INSERT ERROR:", fileInsertError);
+        }
+      }
+    }
+
+    // =============================================
+    // STEP 3: RETURN request_id + file_url TO FRONTEND
+    // The frontend will then call the AI service with these.
+    // The AI service will analyze the PDF, save to request_analysis,
+    // and then call POST /api/student/match/:requestId to run matching.
+    // =============================================
+    return res.status(201).json({
+      message: "Request created",
+      request_id: request.id,
+      file_url: fileUrl,
+      request,
+    });
+
+  } catch (err) {
+    console.error("SERVER ERROR:", err);
+    return res.status(500).json({ error: "Server error." });
+  }
+};
+
+// ===============================
+// MATCH TEACHERS FOR A REQUEST
+// Called internally by the AI service after analysis is saved
+// POST /api/student/match/:requestId
+// Body: { field, sub_field, secret }
+// ===============================
+const matchTeachersForRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { field, sub_field, secret } = req.body;
+
+    // Simple shared secret so only the AI service can call this
+    const INTERNAL_SECRET = process.env.INTERNAL_MATCH_SECRET || "aidemy_internal_match";
+    if (secret !== INTERNAL_SECRET) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
+
+    if (!requestId) {
+      return res.status(400).json({ error: "requestId is required." });
+    }
+
+    // =============================================
+    // SUBJECT NORMALIZATION
+    // Map AI output to exact subject names in DB
+    // =============================================
+    const combined = `${field || ""} ${sub_field || ""}`.toLowerCase();
+    let searchTerm = field || sub_field || "";
+
+    if (
+      combined.includes("cyber") ||
+      combined.includes("security") ||
+      combined.includes("penetration") ||
+      combined.includes("kali") ||
+      combined.includes("network security")
+    ) {
+      searchTerm = "Cyber Security";
+    } else if (
+      combined.includes("programming") ||
+      combined.includes("coding") ||
+      combined.includes("python") ||
+      combined.includes("javascript") ||
+      combined.includes("java") ||
+      combined.includes("c++") ||
+      combined.includes("react") ||
+      combined.includes("language")
+    ) {
+      searchTerm = "Programming";
+    } else if (
+      combined.includes("computer science") ||
+      combined.includes("computer") ||
+      combined.includes("software") ||
+      combined.includes("algorithm") ||
+      combined.includes("operating system")
+    ) {
+      searchTerm = "Computer Science";
+    } else if (
+      combined.includes("math") ||
+      combined.includes("calculus") ||
+      combined.includes("algebra") ||
+      combined.includes("geometry") ||
+      combined.includes("equation")
+    ) {
+      searchTerm = "Mathematics";
+    } else if (
+      combined.includes("data") ||
+      combined.includes("statistics") ||
+      combined.includes("analysis") ||
+      combined.includes("excel") ||
+      combined.includes("pandas") ||
+      combined.includes("visualization")
+    ) {
+      searchTerm = "Data Analysis";
+    } else if (
+      combined.includes("artificial intelligence") ||
+      combined.includes("machine learning") ||
+      combined.includes("deep learning") ||
+      combined.includes("neural") ||
+      combined.includes("nlp")
+    ) {
+      searchTerm = "AI";
+    } else if (
+      combined.includes("physics") ||
+      combined.includes("mechanics") ||
+      combined.includes("thermodynamics") ||
+      combined.includes("quantum")
+    ) {
+      searchTerm = "Physics";
+    } else if (
+      combined.includes("chemistry") ||
+      combined.includes("organic") ||
+      combined.includes("chemical")
+    ) {
+      searchTerm = "Chemistry";
+    } else if (
+      combined.includes("biology") ||
+      combined.includes("genetics") ||
+      combined.includes("cell") ||
+      combined.includes("anatomy")
+    ) {
+      searchTerm = "Biology";
+    } else if (
+      combined.includes("english") ||
+      combined.includes("grammar") ||
+      combined.includes("writing") ||
+      combined.includes("literature")
+    ) {
+      searchTerm = "English";
+    } else if (
+      combined.includes("economics") ||
+      combined.includes("microeconomics") ||
+      combined.includes("macroeconomics")
+    ) {
+      searchTerm = "Economics";
+    } else if (
+      combined.includes("accounting") ||
+      combined.includes("finance") ||
+      combined.includes("bookkeeping")
+    ) {
+      searchTerm = "Accounting";
+    } else if (
+      combined.includes("engineering") ||
+      combined.includes("mechanical") ||
+      combined.includes("electrical") ||
+      combined.includes("civil")
+    ) {
+      searchTerm = "Engineering";
+    } else if (
+      combined.includes("medicine") ||
+      combined.includes("medical") ||
+      combined.includes("pharmacy") ||
+      combined.includes("nursing")
+    ) {
+      searchTerm = "Medicine";
+    } else if (
+      combined.includes("law") ||
+      combined.includes("legal") ||
+      combined.includes("constitution")
+    ) {
+      searchTerm = "Law";
+    }
+
+    console.log(`[MATCH] request_id=${requestId} | field=${field} | sub_field=${sub_field} | searchTerm=${searchTerm}`);
+
+    // =============================================
+    // FIND SUBJECT IN DB
+    // =============================================
+    const { data: subjectRows } = await supabase
+      .from("subjects")
+      .select("id, name")
+      .ilike("name", `%${searchTerm}%`)
+      .limit(3);
+
+    const subjectData = subjectRows?.[0] || null;
+    console.log("[MATCH] Found subject:", subjectData);
+
+    if (!subjectData) {
+      console.log("[MATCH] Subject not found in DB for:", searchTerm);
+      await supabase
+        .from("student_requests")
+        .update({ status: "open" })
+        .eq("id", requestId);
+
+      return res.status(200).json({
+        message: "No subject found in DB. Status set to open.",
+        matched: 0,
+      });
+    }
+
+    // =============================================
+    // FIND MATCHING TEACHERS
+    // =============================================
+    const { data: teacherSubjects, error: teacherError } = await supabase
+      .from("teacher_subjects")
+      .select(`
+        teacher_id,
+        proficiency,
+        teacher_profiles!inner(
+          id,
+          avg_rating,
+          total_sessions,
+          is_accepting
+        )
+      `)
+      .eq("subject_id", subjectData.id)
+      .eq("teacher_profiles.is_accepting", true);
+
+    if (teacherError) {
+      console.error("[MATCH] Teacher query error:", teacherError);
+    }
+
+    if (!teacherSubjects || teacherSubjects.length === 0) {
+      console.log("[MATCH] No teachers found for subject:", subjectData.name);
+      await supabase
+        .from("student_requests")
+        .update({ status: "open" })
+        .eq("id", requestId);
+
+      return res.status(200).json({
+        message: "No teachers found. Status set to open.",
+        matched: 0,
+      });
+    }
+
+    // =============================================
+    // SCORE AND RANK TEACHERS
+    // =============================================
+    const scoredTeachers = teacherSubjects.map((t) => {
+      let score = 0.5;
+
+      if (t.proficiency === "expert") score += 0.3;
+      else if (t.proficiency === "intermediate") score += 0.15;
+
+      const rating = t.teacher_profiles?.avg_rating || 0;
+      score += (rating / 5) * 0.15;
+
+      const sessions = t.teacher_profiles?.total_sessions || 0;
+      score += Math.min(sessions / 100, 1) * 0.05;
+
+      return {
+        teacher_id: t.teacher_id,
+        match_score: Number(score.toFixed(2)),
+      };
+    });
+
+    const rankedTeachers = scoredTeachers
+      .sort((a, b) => b.match_score - a.match_score)
+      .slice(0, 10);
+
+    // =============================================
+    // INSERT MATCHES
+    // =============================================
+    const matchRows = rankedTeachers.map((teacher, index) => ({
+      request_id: requestId,
+      teacher_id: teacher.teacher_id,
+      match_score: teacher.match_score,
+      rank: index + 1,
+      notified_at: new Date().toISOString(),
+    }));
+
+    const { data: insertedMatches, error: matchError } = await supabase
+      .from("request_matches")
+      .insert(matchRows)
+      .select();
+
+    if (matchError) {
+      console.error("[MATCH] Match insert error:", matchError);
+      await supabase
+        .from("student_requests")
+        .update({ status: "open" })
+        .eq("id", requestId);
+
+      return res.status(500).json({ error: "Match insert failed." });
+    }
+
+    // =============================================
+    // UPDATE STATUS TO MATCHED
+    // =============================================
+    await supabase
+      .from("student_requests")
+      .update({ status: "matched" })
+      .eq("id", requestId);
+
+    console.log(`[MATCH] Done. ${insertedMatches.length} teachers matched for request ${requestId}`);
+
+    return res.status(200).json({
+      message: "Matching completed",
+      matched: insertedMatches.length,
+      matches: insertedMatches,
+    });
+
+  } catch (err) {
+    console.error("[MATCH] Server error:", err);
+    return res.status(500).json({ error: "Server error." });
+  }
+};
+
+// ===============================
+// GET STUDENT'S OWN REQUESTS
+// ===============================
+const getMyRequests = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    const { data: requests, error } = await supabase
+      .from("student_requests")
+      .select(`
+        *,
+        request_files (
+          id,
+          file_name,
+          file_url,
+          mime_type
+        ),
+        bids (
+          id,
+          price,
+          currency,
+          teaching_mode,
+          num_sessions,
+          status,
+          teacher_id,
+          teacher_profiles!bids_teacher_id_fkey (
+            profile_id,
+            profiles!teacher_profiles_profile_id_fkey (
+              full_name,
+              avatar_url
+            )
+          )
+        )
+      `)
+      .eq("student_id", studentId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: "Could not fetch requests." });
+    }
+
+    return res.json({ requests });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Server error." });
+  }
+};
+
+// ===============================
+// GET ACCEPTED OFFERS FOR STUDENT
+// ===============================
+const getAcceptedOffers = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    if (!studentId) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
+
+    const { data: requests, error } = await supabase
+      .from("student_requests")
+      .select(`
+        id,
+        title,
+        description,
+        preferred_mode,
+        status,
+        created_at,
+        bids (
+          id,
+          price,
+          currency,
+          teaching_mode,
+          num_sessions,
+          status,
+          teacher_id,
+          teacher_profiles!bids_teacher_id_fkey (
+            profile_id,
+            profiles!teacher_profiles_profile_id_fkey (
+              full_name,
+              avatar_url
+            )
+          )
+        )
+      `)
+      .eq("student_id", studentId)
+      .is("deleted_at", null);
+
+    if (error) {
+      console.error("Error fetching accepted offers:", error);
+      return res.status(500).json({ error: "Could not fetch accepted offers." });
+    }
+
+    const acceptedOffers = [];
+    (requests || []).forEach((request) => {
+      if (request.bids && request.bids.length > 0) {
+        request.bids.forEach((bid) => {
+          const teacherProfile = bid.teacher_profiles?.profiles;
+          acceptedOffers.push({
+            id: bid.id,
+            requestId: request.id,
+            type: request.preferred_mode || bid.teaching_mode || "recorded",
+            title: request.title || "Untitled",
+            description: request.description || "",
+            teacherName: teacherProfile?.full_name || "Teacher",
+            teacherPhoto: teacherProfile?.avatar_url || null,
+            pricePerHour: bid.price || 0,
+            currency: bid.currency || "USD",
+            numSessions: bid.num_sessions || 1,
+            bidStatus: bid.status || "pending",
+            createdAt: request.created_at || null,
+          });
+        });
+      }
+    });
+
+    return res.status(200).json({ offers: acceptedOffers });
+
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Server error." });
+  }
+};
+
+module.exports = {
+  createRequest,
+  matchTeachersForRequest,
   getMyRequests,
   getAcceptedOffers,
 };
