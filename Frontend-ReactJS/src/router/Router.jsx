@@ -27,7 +27,8 @@ import TeacherProfileView from "../pages/TeacherProfileView/TeacherProfileView";
 import FindExpert from "../pages/FindExpert/FindExpert";
 import TeacherCourseUpload from "../pages/TeacherCourseUpload/TeacherCourseUpload";
 import { getUser } from "../apis/handlers/getUser";
-import { supabase } from "../config/supabaseClient";
+import { PresenceProvider } from "../context/PresenceContext";
+
 
 // Pages where the Header (navbar) should NOT be shown
 const NO_HEADER_PAGES = ['/login', '/signup', '/deletedAccount'];
@@ -82,38 +83,13 @@ const Router = () => {
     };
   }, [user?.loggedIn]);
 
-  useEffect(() => {
-    if (!user?.loggedIn || !user?.id) return undefined;
-
-    const channel = supabase.channel("online-users", {
-      config: {
-        presence: {
-          key: user.id,
-        },
-      },
-    });
-
-    channel.subscribe((status) => {
-      if (status !== "SUBSCRIBED") return;
-
-      channel.track({
-        user_id: user.id,
-        role: user.role,
-        online_at: new Date().toISOString(),
-      });
-    });
-
-    return () => {
-      channel.untrack();
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, user?.loggedIn, user?.role]);
 
   if (!authReady) {
     return <Loader />;
   }
 
   return (
+    <PresenceProvider userId={user?.loggedIn ? user.id : null} role={user?.role}>
     <BrowserRouter>
       {loaderDisplay && <Loader />}
       <AppLayout>
@@ -165,6 +141,7 @@ const Router = () => {
       </AppLayout>
       <Footer />
     </BrowserRouter>
+    </PresenceProvider>
   );
 };
 

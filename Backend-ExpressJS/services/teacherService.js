@@ -713,20 +713,20 @@ async function getRecommendedTeachers(teacherId) {
 
   const subjectIds = (mySubjects || []).map((s) => s.subject_id).filter(Boolean);
 
+  // If teacher has no specialties yet, return empty — no random fallback
+  if (subjectIds.length === 0) return [];
+
   // Find other teacher_profiles that share at least one subject
-  let matchedTpIds = null;
-  if (subjectIds.length > 0) {
-    const { data: matchRows } = await supabase
-      .from("teacher_subjects")
-      .select("teacher_id")
-      .in("subject_id", subjectIds)
-      .neq("teacher_id", tpRow.id);
+  const { data: matchRows } = await supabase
+    .from("teacher_subjects")
+    .select("teacher_id")
+    .in("subject_id", subjectIds)
+    .neq("teacher_id", tpRow.id);
 
-    matchedTpIds = [...new Set((matchRows || []).map((r) => r.teacher_id))];
-    if (matchedTpIds.length === 0) return [];
-  }
+  const matchedTpIds = [...new Set((matchRows || []).map((r) => r.teacher_id))];
+  if (matchedTpIds.length === 0) return [];
 
-  let query = supabase
+  const { data: teachers, error } = await supabase
     .from("teacher_profiles")
     .select(
       `
@@ -737,15 +737,10 @@ async function getRecommendedTeachers(teacherId) {
       profiles!teacher_profiles_profile_id_fkey ( full_name, avatar_url )
       `
     )
+    .in("id", matchedTpIds)
     .neq("profile_id", teacherId)
     .order("avg_rating", { ascending: false })
     .limit(4);
-
-  if (matchedTpIds !== null) {
-    query = query.in("id", matchedTpIds);
-  }
-
-  const { data: teachers, error } = await query;
   if (error) throw error;
 
   return (teachers || []).map((t) => ({

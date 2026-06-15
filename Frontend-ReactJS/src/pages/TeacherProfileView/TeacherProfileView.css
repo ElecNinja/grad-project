@@ -750,20 +750,116 @@
   font-weight: 600;
 }
 
-/* ── Recommend Grid ─────────────────────────────────────────── */
+/* ── Recommend Grid (≤ 3 items, no scroll) ──────────────────── */
 .tpv-recommend-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
   gap: 14px;
 }
 
+/* ── Recommend Carousel (> 3 items) ─────────────────────────── */
+.tpv-carousel-wrap {
+  position: relative;
+}
+
+/* Gradient fade overlays for edges */
+.tpv-carousel-wrap::before,
+.tpv-carousel-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 4px; /* align with padding-bottom of track */
+  width: 48px;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tpv-carousel-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, #ffffff, transparent);
+}
+
+.tpv-carousel-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, #ffffff, transparent);
+}
+
+.tpv-carousel-wrap--fade-left::before {
+  opacity: 1;
+}
+
+.tpv-carousel-wrap--fade-right::after {
+  opacity: 1;
+}
+
+.tpv-carousel-track {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;          /* Firefox */
+  padding-bottom: 4px;            /* room for box-shadow on cards */
+}
+.tpv-carousel-track::-webkit-scrollbar { display: none; }
+
+.tpv-carousel-item {
+  flex: 0 0 168px;
+  scroll-snap-align: start;
+}
+
+/* Arrow buttons — hidden by default, shown when scroll possible */
+.tpv-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%) scale(1);
+  z-index: 10;
+  width: 38px;
+  height: 38px;
+  min-width: 38px; /* override any global button min-width */
+  max-width: 38px;
+  padding: 0;      /* override any global button padding */
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.tpv-carousel-arrow--left  { left: -19px; }
+.tpv-carousel-arrow--right { right: -19px; }
+.tpv-carousel-arrow--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.tpv-carousel-arrow:hover {
+  background: #ffffff;
+  transform: translateY(-50%) scale(1.12);
+  box-shadow: 0 6px 20px rgba(29, 78, 216, 0.15); /* subtle brand colored glow */
+  border-color: #3b82f6;
+  color: #2563eb;
+}
+.tpv-carousel-arrow:active {
+  transform: translateY(-50%) scale(0.92);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ── Recommend Card ──────────────────────────────────────────── */
 .tpv-recommend-card {
   background: #f8fafc;
   border: 1px solid rgba(2, 6, 23, 0.07);
   border-radius: 16px;
   padding: 18px;
   text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, opacity 0.25s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -771,35 +867,53 @@
   gap: 10px;
 }
 
+/* Dim other cards slightly when hovering one */
+.tpv-recommend-grid:hover .tpv-recommend-card:not(:hover),
+.tpv-carousel-track:hover .tpv-recommend-card:not(:hover) {
+  opacity: 0.65;
+}
+
 .tpv-recommend-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-5px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+  background: #ffffff; /* slightly pop on white background */
+  border-color: rgba(37, 99, 235, 0.15);
 }
 
 .tpv-recommend-photo {
+  position: relative;
   width: 72px;
   height: 72px;
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;    /* allow dot to overflow */
   flex-shrink: 0;
 }
+
+/* inner img/placeholder still clips to border-radius */
+.tpv-recommend-photo img,
+.tpv-recommend-placeholder {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Online presence dot on recommend cards */
+.tpv-recommend-online-dot {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  z-index: 2;
+  transition: background 0.3s ease;
+}
+
 
 .tpv-recommend-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.tpv-recommend-placeholder {
-  width: 72px;
-  height: 72px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
-  color: #fff;
-  font-size: 1.6rem;
-  font-weight: 800;
-  display: grid;
-  place-items: center;
 }
 
 .tpv-recommend-info {
