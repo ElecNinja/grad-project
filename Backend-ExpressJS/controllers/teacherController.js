@@ -230,7 +230,16 @@ const acceptRequestController = async (req, res) => {
     if (tpError || !teacherProfile) {
       return res.status(404).json({ error: "Teacher profile not found." });
     }
+const { data: existingBid } = await supabase
+  .from("bids")
+  .select("id")
+  .eq("request_id", requestId)
+  .eq("teacher_id", teacherProfile.id)
+  .single();
 
+if (existingBid) {
+  return res.status(200).json({ message: "Already accepted.", bid: existingBid });
+}
     // Insert into bids table
     const { data: bid, error: bidError } = await supabase
       .from("bids")
@@ -253,12 +262,20 @@ const acceptRequestController = async (req, res) => {
     }
 
     // Update request status to matched
-    await supabase
-      .from("student_requests")
-      .update({ status: 'matched' })
-      .eq("id", requestId);
+   // Update request status to matched
+const { data: updatedRequest, error: updateError } = await supabase
+  .from("student_requests")
+  .update({ status: 'in_progress' })
+  .eq("id", requestId)
+  .select();
 
-    return res.status(201).json({ message: "Bid created successfully", bid });
+if (updateError) {
+  console.error("Failed to update request status:", updateError);
+} else {
+  console.log("Request status updated:", updatedRequest);
+}
+
+return res.status(201).json({ message: "Bid created successfully", bid });
 
   } catch (err) {
     console.error(err);
@@ -399,6 +416,41 @@ const getCourseContent = async (req, res) => {
   }
 };
 
+// ===============================
+// TEACHER UPLOADS A VIDEO FOR A SPECIFIC STUDENT
+// (powers the "Upload and Publish" button in Work.jsx;
+//  the video then shows up on that student's /videos page)
+// ===============================
+const uploadTeacherVideoController = async (req, res) => {
+  try {
+    const teacherProfileId = req.user?.id;
+    const { studentId, title, description, videoUrl, videoType, thumbnailUrl } = req.body;
+
+    if (!teacherProfileId) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
+
+    if (!studentId || !title) {
+      return res.status(400).json({ error: "studentId and title are required." });
+    }
+
+    const video = await teacherService.uploadTeacherVideo(
+      teacherProfileId,
+      studentId,
+      title,
+      description,
+      videoUrl,
+      videoType,
+      thumbnailUrl
+    );
+
+    return res.status(201).json({ message: "Video uploaded successfully", video });
+  } catch (err) {
+    console.error("uploadTeacherVideoController error:", err);
+    return res.status(500).json({ error: err.message || "Server error." });
+  }
+};
+
 module.exports = {
   uploadMaterial,
   getOffers,
@@ -417,4 +469,5 @@ module.exports = {
   getAcceptedOffersTeacher,
   uploadCourseContent,
   getCourseContent,
+  uploadTeacherVideoController,
 };

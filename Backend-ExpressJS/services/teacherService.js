@@ -248,11 +248,13 @@ const getStudentRequests = async (profileId) => {
     (profiles || []).forEach(p => { profileMap[p.id] = p; });
 
     return matches.map((m) => {
-      const r = m.student_requests;
-      const profile = profileMap[r?.student_id] || {};
+  const r = m.student_requests;
+  if (r?.status === 'in_progress') return null;
+   if (r?.student_id === profileId) return null;
+  const profile = profileMap[r?.student_id] || {};
 
-      return {
-        id: r?.id,
+  return {
+    id: r?.id,
         studentName: profile.full_name || "Student",
         studentPhoto: profile.avatar_url || null,
         description: r?.description || "",
@@ -261,7 +263,7 @@ const getStudentRequests = async (profileId) => {
         fileUrl: r?.request_files?.[0]?.file_url || null,
         fileName: r?.request_files?.[0]?.file_name || null,
       };
-    });
+    }) .filter(Boolean);
 
   } catch (err) {
     console.log("getStudentRequests error:", err);
@@ -303,7 +305,8 @@ const getAcceptedOffersTeacher = async (profileId) => {
           description,
           preferred_mode,
           status,
-          created_at
+          created_at,
+          request_files ( file_name, file_url, mime_type )
         ),
         student_profiles:student_requests!bids_request_id_fkey(student_id) (
           student_id
@@ -335,6 +338,9 @@ const getAcceptedOffersTeacher = async (profileId) => {
     return bids.map((bid) => {
       const req = bid.student_requests;
       const studentProfile = studentProfileMap[req?.student_id] || {};
+      // A request can have multiple uploaded files; use the first one as
+      // the "student PDF" shown in the teacher's My Lists view.
+      const file = req?.request_files?.[0] || null;
 
       return {
         id: bid.id,
@@ -349,6 +355,8 @@ const getAcceptedOffersTeacher = async (profileId) => {
         numSessions: bid.num_sessions || 1,
         bidStatus: bid.status || "pending",
         createdAt: req?.created_at || null,
+        fileUrl: file?.file_url || null,
+        fileName: file?.file_name || null,
       };
     });
 
@@ -358,6 +366,76 @@ const getAcceptedOffersTeacher = async (profileId) => {
   }
 };
 
+// ===============================
+// Teacher uploads a video for a specific student
+// ===============================
+const uploadTeacherVideo = async (
+  teacherProfileId,
+  studentId,
+  title,
+  description,
+  videoUrl,
+  videoType,
+  thumbnailUrl
+) => {
+  const allowedTypes = ["recorded", "bootcamp", "live_1on1"];
+  const safeType = allowedTypes.includes(videoType) ? videoType : "recorded";
+
+  const { data, error } = await supabase
+    .from("teacher_uploaded_videos")
+    .insert([
+      {
+        teacher_id: teacherProfileId,
+        student_id: studentId,
+        title,
+        description: description || null,
+        video_url: videoUrl || null,
+        thumbnail_url: thumbnailUrl || null,
+        video_type: safeType,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// ===============================
+// Get videos a teacher has uploaded for a specific student
+// (used by the student's Videos page)
+// ===============================
+const getStudentUploadedVideos = async (studentId) => {
+  const { data, error } = await supabase
+    .from("teacher_uploaded_videos")
+    .select(`
+      id,
+      title,
+      description,
+      video_url,
+      thumbnail_url,
+      video_type,
+      created_at,
+      teacher_id,
+      profiles!teacher_uploaded_videos_teacher_id_fkey ( full_name, avatar_url )
+    `)
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return (data || []).map((row) => ({
+    id: row.id,
+    type: row.video_type === "bootcamp" ? "BOOTCAMP" : "COURSE",
+    title: row.title,
+    description: row.description || "",
+    videoUrl: row.video_url,
+    thumbnail: row.thumbnail_url || null,
+    expert: row.profiles?.full_name || "Teacher",
+    createdAt: row.created_at,
+  }));
+};
+
 module.exports = {
   uploadMaterial,
   getOffers,
@@ -365,6 +443,8 @@ module.exports = {
   summarizePdf,
   getStudentRequests,
   getAcceptedOffersTeacher,
+  uploadTeacherVideo,
+  getStudentUploadedVideos,
   getTeacherProfile,
   listTeachers,
   listSubjects,
@@ -643,8 +723,7 @@ async function getTeacherReviews(teacherId, page = 0, limit = 6) {
     .select(
       `
       id,
-      rating,
-      comment,
+      body,
       created_at,
       reviewer_id,
       profiles!reviews_reviewer_id_fkey ( full_name, avatar_url )
@@ -660,7 +739,7 @@ async function getTeacherReviews(teacherId, page = 0, limit = 6) {
   const reviews = (rows || []).map((r) => ({
     id: r.id,
     rating: r.rating,
-    comment: r.comment || "",
+    comment: r.body || "",
     date: r.created_at
       ? new Date(r.created_at).toLocaleDateString("en-US", {
           month: "long",

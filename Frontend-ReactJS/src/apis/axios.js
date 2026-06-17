@@ -83,6 +83,9 @@ export const acceptRequest = (requestId, price, teachingMode) =>
 export const getMyRequests = () =>
   api.get(`/api/student/requests`).then((r) => r.data.requests); 
 
+export const confirmBid = (bidId) =>
+  api.post(`/api/student/confirm-bid`, { bidId }).then((r) => r.data);
+
 export const getTeacherOffers = (teacherId) =>
   api.get(`/api/teacher/offers/${teacherId}`).then((r) => r.data);
 

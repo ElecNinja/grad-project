@@ -1,6 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import { useSelector } from 'react-redux';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import { 
   Search, 
@@ -22,11 +23,14 @@ import jinxPng from '../../assets/images/realjinx.webp';
 import dropPng from '../../assets/images/drop.png';      // Add this
 import findPng from '../../assets/images/find.png';      // Add this
 import progressPng from '../../assets/images/progress.png'; // Add this
-
 import './home.css';
 
 function Homepage() {
-  const stats = [
+  const navigate = useNavigate();
+  const isLoggedIn = useSelector((state) => state.user.loggedIn);
+  console.log('isLoggedIn:', isLoggedIn);
+
+    const stats = [
     { value: '+30,000', label: 'Experienced Teachers' },
     { value: '+300,000', label: '5-star Teacher reviews' },
     { value: '+10,000', label: 'Subjects Taught' },
@@ -106,6 +110,7 @@ function Homepage() {
       image: jinxPng,
       description: "I'm Jinx, your math teacher. I've spent years twisting numbers, breaking rules, and finding patterns where others see chaos. To me, math isn't just logic — it's madness beautifully disguised as order. I've always believed that true genius lies on the edge between reason and insanity. People may think I'm unpredictable, but every move I make adds up perfectly. Math isn't just what I teach. It's what keeps my mind alive. Study with me, and you won't just solve equations — you'll explode them."
     }
+    
   ];
 
   return (
@@ -147,9 +152,9 @@ function Homepage() {
           {/* Upload Button */}
           <div className="upload-area-simple">
             <p className="upload-label">Share your PDF... Your teacher waiting to help</p>
-            <button className="upload-button-large">
+            <button className="upload-button-large" onClick={() => navigate('/add-material')}>
               <Upload size={20} />
-              Upload
+                Upload
             </button>
           </div>
 
@@ -302,23 +307,25 @@ function Homepage() {
     </Swiper>
   </div>
 </section>
-      {/* CTA Section */}
-      <section className="cta-section">
-        <div className="container">
-          <h2 className="cta-title">
-            <span className="cta-stuck">Stuck?</span>{' '}
-            <span className="cta-blue">Upload your PDF. We'll take it from there.</span>
-          </h2>
-          <p className="cta-description">
-            Choosing who helps you matters.<br />
-            Let's make sure you work with the right teachers,<br />
-            in a clear, simple, and stress-free way.
-          </p>
-          <Link to="/signup" className="cta-button">
-            Join Us <ChevronRight size={20} />
-          </Link>
-        </div>
-      </section>
+     {/* CTA Section */}
+{!isLoggedIn && (
+<section className="cta-section">
+  <div className="container">
+    <h2 className="cta-title">
+      <span className="cta-stuck">Stuck?</span>{' '}
+      <span className="cta-blue">Upload your PDF. We'll take it from there.</span>
+    </h2>
+    <p className="cta-description">
+      Choosing who helps you matters.<br />
+      Let's make sure you work with the right teachers,<br />
+      in a clear, simple, and stress-free way.
+    </p>
+    <Link to="/signup" className="cta-button">
+      Join Us <ChevronRight size={20} />
+    </Link>
+  </div>
+</section>
+)}
     </div>
   );
 }

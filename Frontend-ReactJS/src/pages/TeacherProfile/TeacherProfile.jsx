@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   Camera,
   CheckCircle,
@@ -20,13 +20,20 @@ import {
 import { getTeacherProfile } from '../../apis/handlers/getTeacherProfile';
 import { updateTeacherProfile } from '../../apis/handlers/updateTeacherProfile';
 import { getSubjects } from '../../apis/handlers/getSubjects';
+import { setAvatar } from '../../redux/userSlice';
 import './TeacherProfile.css';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 const PROFICIENCY_OPTIONS = [
   { value: 'native', label: 'Native / Bilingual' },
   { value: 'fluent', label: 'Fluent' },
   { value: 'conversational', label: 'Conversational' },
-  { value: 'basic', label: 'Basic' }, 
+  { value: 'basic', label: 'Basic' },
 ];
 
 const LANGUAGE_LIST = [
@@ -45,6 +52,7 @@ const getYouTubeId = (url) => {
 function TeacherProfile() {
   const reduxUser = useSelector((state) => state.user);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [profile, setProfile] = useState(null);
   const [subjects, setSubjects] = useState([]);
@@ -79,62 +87,63 @@ function TeacherProfile() {
     return subjects.filter((s) => (s.name || '').toLowerCase().includes(q));
   }, [subjectSearch, subjects]);
 
-  // ── Load profile on mount ──────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       if (!reduxUser?.id) {
         setLoading(false);
         return;
       }
-      const [profileRes, subjectsRes] = await Promise.all([
-        getTeacherProfile(reduxUser.id),
-        getSubjects(),
-      ]);
+      try {
+        const [profileRes, subjectsRes] = await Promise.all([
+          getTeacherProfile(reduxUser.id),
+          getSubjects(),
+        ]);
 
-      if (subjectsRes.status === 200) setSubjects(subjectsRes.response || []);
+        if (subjectsRes.status === 200) setSubjects(subjectsRes.response || []);
 
-      if (profileRes.status === 200) {
-        const p = profileRes.response;
-        setProfile(p);
+        if (profileRes.status === 200) {
+          const p = profileRes.response;
+          setProfile(p);
 
-        // Normalise teaching_languages: support both old (string[]) and new ({lang,proficiency}[]) formats
-        let langs = [{ lang: 'English', proficiency: 'native' }];
-        if (Array.isArray(p?.teaching_languages) && p.teaching_languages.length > 0) {
-          langs = p.teaching_languages.map((item) =>
-            typeof item === 'string'
-              ? { lang: item, proficiency: 'native' }
-              : item
-          );
+          let langs = [{ lang: 'English', proficiency: 'native' }];
+          if (Array.isArray(p?.teaching_languages) && p.teaching_languages.length > 0) {
+            langs = p.teaching_languages.map((item) =>
+              typeof item === 'string'
+                ? { lang: item, proficiency: 'native' }
+                : item
+            );
+          }
+
+          setForm({
+            name: p?.name || '',
+            email: p?.email || '',
+            bio: p?.bio || '',
+            headline: p?.headline || '',
+            introduction_video: p?.introduction_video || '',
+            hourly_rate_min: p?.hourly_rate_min ?? '',
+            hourly_rate_max: p?.hourly_rate_max ?? '',
+            years_experience: p?.years_experience ?? '',
+            teaching_languages: langs,
+            specialties: Array.isArray(p?.specialties) ? p.specialties : [],
+            photo: p?.photo || '',
+          });
+        } else {
+          showToast('error', profileRes.message || 'Failed to load profile');
         }
-
-        setForm({
-          name: p?.name || '',
-          email: p?.email || '',
-          bio: p?.bio || '',
-          headline: p?.headline || '',
-          introduction_video: p?.introduction_video || '',
-          hourly_rate_min: p?.hourly_rate_min ?? '',
-          hourly_rate_max: p?.hourly_rate_max ?? '',
-          years_experience: p?.years_experience ?? '',
-          teaching_languages: langs,
-          specialties: Array.isArray(p?.specialties) ? p.specialties : [],
-          photo: p?.photo || '',
-        });
-      } else {
-        showToast('error', profileRes.message);
+      } catch (err) {
+        console.error('Load profile error:', err);
+        showToast('error', 'Something went wrong while loading your profile');
       }
       setLoading(false);
     };
     load();
   }, [reduxUser?.id]);
 
-  // ── Toast helper ───────────────────────────────────────────────────────────
   const showToast = (type, message) => {
     setToast({ show: true, type, message });
     setTimeout(() => setToast({ show: false, type: '', message: '' }), 3500);
   };
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -202,58 +211,105 @@ function TeacherProfile() {
     }));
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    
-    const updates = {
-      name: form.name,
-      bio: form.bio,
-      photo: form.photo === '' ? '' : undefined,
-      headline: form.headline,
-      introduction_video: form.introduction_video,
-      hourly_rate_min: form.hourly_rate_min === '' ? null : Number(form.hourly_rate_min),
-      hourly_rate_max: form.hourly_rate_max === '' ? null : Number(form.hourly_rate_max),
-      years_experience: form.years_experience === '' ? null : Number(form.years_experience),
-      teaching_languages: (form.teaching_languages || [])
-        .filter((l) => l.lang?.trim())
-        .map((l) => ({ lang: l.lang.trim(), proficiency: l.proficiency || 'native' })),
-      specialties: (form.specialties || []).map((s) => ({
-        subject_id: s.id,
-        proficiency: s.proficiency || 'intermediate',
-        
-      })),
-      
-    };
-
-  
-    
-    if (photoFile) updates.photo = photoFile;
-    
-    const result = await updateTeacherProfile(updates);
-    setSaving(false);
-
-    if (result.status === 200) {
-      setProfile(result.response);
-      setForm((prev) => ({
-        ...prev,
-        photo: result.response?.photo || prev.photo,
-        introduction_video: result.response?.introduction_video ?? prev.introduction_video,
-        specialties: Array.isArray(result.response?.specialties)
-          ? result.response.specialties
-          : prev.specialties,
-        teaching_languages: Array.isArray(result.response?.teaching_languages) &&
-          result.response.teaching_languages.length
-          ? result.response.teaching_languages.map((item) =>
-              typeof item === 'string' ? { lang: item, proficiency: 'native' } : item
-            )
-          : prev.teaching_languages,
-      }));
-      setPhotoFile(null);
-      setPhotoPreview(null);
-      showToast('success', 'Profile saved successfully!');
-    } else {
-      showToast('error', result.message);
+  const validateForm = () => {
+    if (!form.name?.trim()) {
+      showToast('error', 'Name is required');
+      return false;
     }
+    if (
+      form.hourly_rate_min !== '' &&
+      form.hourly_rate_max !== '' &&
+      Number(form.hourly_rate_min) > Number(form.hourly_rate_max)
+    ) {
+      showToast('error', 'Min rate cannot be greater than max rate');
+      return false;
+    }
+    if (form.years_experience !== '' && Number(form.years_experience) < 0) {
+      showToast('error', 'Years of experience cannot be negative');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) return;
+
+    setSaving(true);
+
+    try {
+      const updates = {
+        name: form.name,
+        bio: form.bio,
+        headline: form.headline,
+        introduction_video: form.introduction_video || '',
+        hourly_rate_min: form.hourly_rate_min === '' ? null : Number(form.hourly_rate_min),
+        hourly_rate_max: form.hourly_rate_max === '' ? null : Number(form.hourly_rate_max),
+        years_experience: form.years_experience === '' ? null : Number(form.years_experience),
+        teaching_languages: (form.teaching_languages || [])
+          .filter((l) => l.lang?.trim())
+          .map((l) => ({ lang: l.lang.trim(), proficiency: l.proficiency || 'native' })),
+        specialties: (form.specialties || []).map((s) => ({
+          subject_id: s.id,
+          proficiency: s.proficiency || 'intermediate',
+        })),
+      };
+
+      if (photoFile instanceof File) {
+        const fileName = `teacher_${reduxUser.id}_${Date.now()}`;
+        const { error: uploadError } = await supabase.storage
+          .from('avatar')
+          .upload(fileName, photoFile, { upsert: true });
+
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('avatar')
+            .getPublicUrl(fileName);
+          updates.photo = urlData.publicUrl;
+        } else {
+          console.error('Photo upload error:', uploadError);
+        }
+      } else if (form.photo === '') {
+        updates.photo = '';
+      }
+
+      const result = await updateTeacherProfile(updates);
+
+      if (result.status === 200) {
+        const updated = result.response;
+        setProfile(updated);
+
+        setForm((prev) => ({
+          ...prev,
+          photo: updates.photo ?? updated?.photo ?? prev.photo,
+          introduction_video: updated?.introduction_video ?? prev.introduction_video,
+          specialties: Array.isArray(updated?.specialties)
+            ? updated.specialties
+            : prev.specialties,
+          teaching_languages:
+            Array.isArray(updated?.teaching_languages) && updated.teaching_languages.length
+              ? updated.teaching_languages.map((item) =>
+                  typeof item === 'string' ? { lang: item, proficiency: 'native' } : item
+                )
+              : prev.teaching_languages,
+        }));
+
+        if (updates.photo) {
+          dispatch(setAvatar(updates.photo));
+        }
+
+        setPhotoFile(null);
+        setPhotoPreview(null);
+        showToast('success', 'Profile saved successfully!');
+      } else {
+        showToast('error', result.message || 'Failed to save profile. Please try again.');
+        console.error('Save profile error response:', result);
+      }
+    } catch (err) {
+      console.error('Save profile exception:', err);
+      showToast('error', 'Something went wrong. Please try again.');
+    }
+
+    setSaving(false);
   };
 
   const displayPhoto = photoPreview || form.photo || profile?.photo || null;
@@ -271,7 +327,6 @@ function TeacherProfile() {
 
   return (
     <div className="tp-edit-page">
-      {/* Toast */}
       {toast.show && (
         <div className={`tp-toast tp-toast--${toast.type}`}>
           {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
@@ -280,7 +335,6 @@ function TeacherProfile() {
       )}
 
       <div className="tp-edit-container">
-        {/* ── Header ── */}
         <header className="tp-edit-header">
           <div>
             <h1 className="tp-edit-title">{profile?.name || form.name || 'Teacher Profile'}</h1>
@@ -302,7 +356,7 @@ function TeacherProfile() {
           </div>
         </header>
 
-        {/* ── Profile Photo ── */}
+        {/* Profile Photo */}
         <section className="tp-card">
           <div className="tp-card-head">
             <div className="tp-section-icon tp-section-icon--blue">
@@ -348,7 +402,7 @@ function TeacherProfile() {
           </div>
         </section>
 
-        {/* ── Video Introduction ── */}
+        {/* Video Introduction */}
         <section className="tp-card">
           <div className="tp-card-head">
             <div className="tp-section-icon tp-section-icon--purple">
@@ -420,7 +474,7 @@ function TeacherProfile() {
           </div>
         </section>
 
-        {/* ── Description / Bio ── */}
+        {/* Description */}
         <section className="tp-card">
           <div className="tp-card-head tp-card-head--split">
             <div className="tp-card-head-left">
@@ -447,7 +501,7 @@ function TeacherProfile() {
           />
         </section>
 
-        {/* ── Headline ── */}
+        {/* Headline */}
         <section className="tp-card">
           <div className="tp-card-head">
             <div className="tp-section-icon tp-section-icon--orange">
@@ -467,7 +521,7 @@ function TeacherProfile() {
           />
         </section>
 
-        {/* ── Hourly Rate & Experience ── */}
+        {/* Rate & Experience */}
         <section className="tp-card">
           <div className="tp-card-head">
             <div className="tp-section-icon tp-section-icon--emerald">
@@ -519,7 +573,7 @@ function TeacherProfile() {
           </div>
         </section>
 
-        {/* ── Specialties ── */}
+        {/* Specialties */}
         <section className="tp-card">
           <div className="tp-card-head tp-card-head--split">
             <div className="tp-card-head-left">
@@ -589,7 +643,7 @@ function TeacherProfile() {
           </div>
         </section>
 
-        {/* ── Languages Spoken ── */}
+        {/* Languages */}
         <section className="tp-card">
           <div className="tp-card-head">
             <div className="tp-section-icon tp-section-icon--teal">
@@ -617,9 +671,7 @@ function TeacherProfile() {
                 >
                   <option value="">Select language</option>
                   {LANGUAGE_LIST.map((l) => (
-                    <option key={l} value={l}>
-                      {l}
-                    </option>
+                    <option key={l} value={l}>{l}</option>
                   ))}
                 </select>
 
@@ -629,9 +681,7 @@ function TeacherProfile() {
                   onChange={(e) => updateLanguage(idx, 'proficiency', e.target.value)}
                 >
                   {PROFICIENCY_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
 
@@ -657,7 +707,7 @@ function TeacherProfile() {
           </div>
         </section>
 
-        {/* ── Bottom Actions ── */}
+        {/* Bottom Actions */}
         <div className="tp-bottom-actions">
           <Link className="tp-btn tp-btn--ghost" to={publicProfilePath}>
             Preview Profile

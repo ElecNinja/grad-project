@@ -41,16 +41,17 @@ const signup = async (req, res) => {
 
     // Create teacher profile and link subject
     if (role === "teacher") {
-      const { data: teacherProfile, error: teacherError } = await createTeacherProfile(userId, {
-        headline: about || null,
-        years_experience: experience ? parseInt(experience) : null,
-        teaching_languages: ["English"],
-      });
+     const { data: teacherProfile, error: teacherError } = await createTeacherProfile(userId, {
+         headline: about || null,
+            years_experience: experience ? parseInt(experience) : null,
+          teaching_languages: [{ lang: "English", proficiency: "native" }],     
+          });
 
-      if (teacherError) {
-        console.error("TEACHER PROFILE ERROR:", teacherError);
-      }
+        if (teacherError) {
+              console.error("TEACHER PROFILE ERROR:", teacherError);
+            }
 
+console.log("Teacher profile created:", teacherProfile);
       // Save subject in teacher_subjects table
       if (subject && teacherProfile) {
         console.log("Saving subject for teacher:", subject);

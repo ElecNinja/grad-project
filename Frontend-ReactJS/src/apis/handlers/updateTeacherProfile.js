@@ -26,10 +26,18 @@ export async function updateTeacherProfile(profileData) {
           body.append(key, value, value.name);
           return;
         }
-        if (Array.isArray(value) || typeof value === "object") {
-          body.append(key, JSON.stringify(value));
-          return;
-        }
+        if (value instanceof File || value instanceof Blob) {
+  body.append(key, value, value.name);
+  return;
+}
+if (Array.isArray(value)) {
+  body.append(key, JSON.stringify(value));
+  return;
+}
+if (typeof value === "object") {
+  body.append(key, JSON.stringify(value));
+  return;
+}
         body.append(key, value);
       });
       // Do NOT manually set Content-Type — axios sets it with the correct boundary automatically

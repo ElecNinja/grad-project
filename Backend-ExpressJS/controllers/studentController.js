@@ -387,8 +387,10 @@ const getMyRequests = async (req, res) => {
           num_sessions,
           status,
           teacher_id,
-          teacher_profiles!bids_teacher_id_fkey (
+         teacher_profiles!bids_teacher_id_fkey (
             profile_id,
+            years_experience,
+            introduction_video,
             profiles!teacher_profiles_profile_id_fkey (
               full_name,
               avatar_url
@@ -489,9 +491,55 @@ const getAcceptedOffers = async (req, res) => {
     return res.status(500).json({ error: "Server error." });
   }
 };
+// ===============================
+// CONFIRM BID (STUDENT ACCEPTS & PAYS)
+// ===============================
+const confirmBid = async (req, res) => {
+  try {
+    const { bidId } = req.body;
+    const studentId = req.user.id;
 
+    if (!bidId) {
+      return res.status(400).json({ error: "bidId is required." });
+    }
+
+    // Verify the bid belongs to a request owned by this student
+    const { data: bid, error: bidError } = await supabase
+      .from("bids")
+      .select("id, request_id, student_requests!bids_request_id_fkey(student_id)")
+      .eq("id", bidId)
+      .single();
+
+    if (bidError || !bid) {
+      return res.status(404).json({ error: "Bid not found." });
+    }
+
+    if (bid.student_requests?.student_id !== studentId) {
+      return res.status(403).json({ error: "Unauthorized to confirm this bid." });
+    }
+
+    const { data: updatedBid, error: updateError } = await supabase
+      .from("bids")
+      .update({ status: "accepted" })
+      .eq("id", bidId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Confirm bid update error:", updateError);
+      return res.status(500).json({ error: "Could not confirm bid." });
+    }
+
+    return res.status(200).json({ message: "Bid confirmed successfully", bid: updatedBid });
+
+  } catch (err) {
+    console.error("confirmBid error:", err);
+    return res.status(500).json({ error: "Server error." });
+  }
+};
 module.exports = {
   createRequest,
   getMyRequests,
   getAcceptedOffers,
+  confirmBid,
 };

@@ -41,4 +41,7 @@ router.post("/accept-request", isAuthenticated, teacherController.acceptRequestC
 router.post("/upload-content", isAuthenticated, upload.single("file"), teacherController.uploadCourseContent);
 router.get("/course-content/:bidId", isAuthenticated, teacherController.getCourseContent);
 
+// Teacher uploads a video for a specific student (Work.jsx "Upload and Publish")
+router.post("/upload-video", isAuthenticated, teacherController.uploadTeacherVideoController);
+
 module.exports = router;
