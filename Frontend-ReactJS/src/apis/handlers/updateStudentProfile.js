@@ -4,7 +4,7 @@ import { apiEndpoints } from "../apiEndpoints";
 /**
  * Updates the logged-in student's profile.
  * Sends multipart/form-data if a photo file is included, otherwise JSON.
- * @param {{ name?: string, bio?: string, photo?: File }} profileData
+ * @param {{ name?: string, bio?: string, country?: string, timezone?: string, field?: string, specialist?: string, photo?: File }} profileData
  * @returns {{ response: object|null, status: number, message: string }}
  */
 export async function updateStudentProfile(profileData) {
