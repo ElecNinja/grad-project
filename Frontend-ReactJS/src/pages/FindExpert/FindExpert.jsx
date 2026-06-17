@@ -27,6 +27,7 @@ function FindExpert() {
   const [selectedRating, setSelectedRating] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState({});
+  const [playingTeacherId, setPlayingTeacherId] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -42,9 +43,10 @@ function FindExpert() {
     load();
   }, []);
 
-  // Reset page on filter changes
+  // Reset page and playing video on filter changes
   useEffect(() => {
     setCurrentPage(1);
+    setPlayingTeacherId(null);
   }, [query, selectedSubject, selectedRating]);
 
   const availableSubjects = useMemo(() => {
@@ -168,7 +170,8 @@ function FindExpert() {
           <div className="fe-grid">
             {paginatedTeachers.map((teacher) => {
               const videoId = getYouTubeId(teacher.introduction_video);
-              const hasVideo = !!videoId;
+              const hasVideo = !!teacher.introduction_video;
+              const isPlaying = playingTeacherId === teacher.id;
               return (
                 <article key={teacher.id} className="fe-card">
                   <div className="fe-card-left">
@@ -204,9 +207,9 @@ function FindExpert() {
 
                       <div className="fe-stat-item">
                         <div className="fe-stat-value">
-                          {Math.floor((teacher.rating_count || 0) * 8.5 + 12)}
+                          {teacher.total_sessions || 0}
                         </div>
-                        <div className="fe-stat-label">LESSONS</div>
+                        <div className="fe-stat-label">SESSIONS</div>
                       </div>
 
                       <div className="fe-stat-divider" />
@@ -243,21 +246,47 @@ function FindExpert() {
                   </div>
 
                   <div className="fe-card-right">
-                    <div className={`fe-video-thumbnail-wrap ${!hasVideo ? 'disabled' : ''}`}>
-                      <img
-                        src={
-                          hasVideo
-                            ? `https://img.youtube.com/vi/${videoId}/0.jpg`
-                            : teacher.photo || 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=600&auto=format&fit=crop'
-                        }
-                        alt="Intro video thumbnail"
-                        className="fe-video-thumbnail"
-                      />
-                      <div className="fe-video-play-overlay">
-                        <div className={`fe-play-button ${!hasVideo ? 'disabled' : ''}`} title={!hasVideo ? 'No introduction video available' : 'Watch introduction'}>
-                          <Play size={16} fill="#fff" color="#fff" />
-                        </div>
-                      </div>
+                    <div
+                      className={`fe-video-thumbnail-wrap ${!hasVideo ? 'disabled' : ''}`}
+                      onClick={() => hasVideo && !isPlaying && setPlayingTeacherId(teacher.id)}
+                      style={hasVideo && !isPlaying ? { cursor: 'pointer' } : {}}
+                    >
+                      {isPlaying ? (
+                        videoId ? (
+                          <iframe
+                            src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+                            title="YouTube video player"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            style={{ width: '100%', height: '100%', border: '0', display: 'block' }}
+                          />
+                        ) : (
+                          <video
+                            src={teacher.introduction_video}
+                            controls
+                            autoPlay
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                          />
+                        )
+                      ) : (
+                        <>
+                          <img
+                            src={
+                              videoId
+                                ? `https://img.youtube.com/vi/${videoId}/0.jpg`
+                                : teacher.photo || 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=600&auto=format&fit=crop'
+                            }
+                            alt="Intro video thumbnail"
+                            className="fe-video-thumbnail"
+                          />
+                          <div className="fe-video-play-overlay">
+                            <div className={`fe-play-button ${!hasVideo ? 'disabled' : ''}`} title={!hasVideo ? 'No introduction video available' : 'Watch introduction'}>
+                              <Play size={16} fill="#fff" color="#fff" />
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </article>
@@ -277,7 +306,10 @@ function FindExpert() {
                 <button
                   className="fe-page-btn"
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  onClick={() => {
+                    setCurrentPage((prev) => Math.max(prev - 1, 1));
+                    setPlayingTeacherId(null);
+                  }}
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -286,7 +318,10 @@ function FindExpert() {
                   <button
                     key={page}
                     className={`fe-page-btn ${currentPage === page ? 'active' : ''}`}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => {
+                      setCurrentPage(page);
+                      setPlayingTeacherId(null);
+                    }}
                   >
                     {page}
                   </button>
@@ -295,7 +330,10 @@ function FindExpert() {
                 <button
                   className="fe-page-btn"
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  onClick={() => {
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+                    setPlayingTeacherId(null);
+                  }}
                 >
                   <ChevronRight size={16} />
                 </button>

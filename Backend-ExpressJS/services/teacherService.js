@@ -23,6 +23,7 @@ const mapProfile = (profile, extras = {}) => ({
   avg_rating: extras.avg_rating ?? null,
   rating: extras.avg_rating ?? null,
   rating_count: extras.rating_count ?? null,
+  total_sessions: extras.total_sessions ?? 0,
   is_accepting: extras.is_accepting ?? null,
   specialties: extras.specialties ?? [],
 
@@ -34,7 +35,7 @@ const loadTeacherExtras = async (profileIds) => {
   const { data, error } = await supabase
     .from("teacher_profiles")
     .select(
-      "id, profile_id, headline, introduction_video, hourly_rate_min, hourly_rate_max, years_experience, teaching_languages, avg_rating, rating_count, is_accepting"
+      "id, profile_id, headline, introduction_video, hourly_rate_min, hourly_rate_max, years_experience, teaching_languages, avg_rating, rating_count, is_accepting, total_sessions"
     )
     .in("profile_id", profileIds);
 
@@ -649,7 +650,7 @@ async function updateTeacherProfile(teacherId, updates) {
 async function getStudentProfile(studentId) {
   const { data, error } = await supabase
     .from("profiles")
-    .select(baseProfileSelect)
+    .select("id, full_name, email, role, bio, avatar_url, country, timezone, field, specialist, created_at")
     .eq("id", studentId)
     .eq("role", "student")
     .single();
@@ -659,14 +660,26 @@ async function getStudentProfile(studentId) {
     throw error;
   }
 
-  return mapProfile(data);
+  return {
+    id:         data.id,
+    name:       data.full_name  || "",
+    email:      data.email      || "",
+    role:       data.role       || "",
+    bio:        data.bio        || "",
+    photo:      data.avatar_url || "",
+    country:    data.country    || "",
+    timezone:   data.timezone   || "",
+    field:      data.field      || "",
+    specialist: data.specialist || "",
+    created_at: data.created_at || null,
+  };
 }
 
 // ===============================
 // Update student profile
 // ===============================
 async function updateStudentProfile(studentId, updates) {
-  const allowed = ["name", "bio", "photo"];
+  const allowed = ["name", "bio", "photo", "country", "timezone", "field", "specialist"];
 
   const safeUpdates = Object.fromEntries(
     Object.entries(updates).filter(([key]) =>
@@ -678,28 +691,37 @@ async function updateStudentProfile(studentId, updates) {
     throw new Error("No valid fields to update.");
   }
 
+  const profilePatch = {};
+  if (safeUpdates.name       !== undefined) profilePatch.full_name  = safeUpdates.name;
+  if (safeUpdates.bio        !== undefined) profilePatch.bio        = safeUpdates.bio;
+  if (safeUpdates.photo      !== undefined) profilePatch.avatar_url = safeUpdates.photo;
+  if (safeUpdates.country    !== undefined) profilePatch.country    = safeUpdates.country;
+  if (safeUpdates.timezone   !== undefined) profilePatch.timezone   = safeUpdates.timezone;
+  if (safeUpdates.field      !== undefined) profilePatch.field      = safeUpdates.field;
+  if (safeUpdates.specialist !== undefined) profilePatch.specialist = safeUpdates.specialist;
+
   const { data, error } = await supabase
     .from("profiles")
-    .update({
-      ...(safeUpdates.name !== undefined
-        ? { full_name: safeUpdates.name }
-        : {}),
-
-      ...(safeUpdates.bio !== undefined
-        ? { bio: safeUpdates.bio }
-        : {}),
-
-      ...(safeUpdates.photo !== undefined
-        ? { avatar_url: safeUpdates.photo }
-        : {}),
-    })
+    .update(profilePatch)
     .eq("id", studentId)
-    .select(baseProfileSelect)
+    .select("id, full_name, email, role, bio, avatar_url, country, timezone, field, specialist, created_at")
     .single();
 
   if (error) throw error;
 
-  return mapProfile(data);
+  return {
+    id:         data.id,
+    name:       data.full_name || "",
+    email:      data.email     || "",
+    role:       data.role      || "",
+    bio:        data.bio       || "",
+    photo:      data.avatar_url || "",
+    country:    data.country   || "",
+    timezone:   data.timezone  || "",
+    field:      data.field     || "",
+    specialist: data.specialist || "",
+    created_at: data.created_at || null,
+  };
 }
 
 // ===============================
