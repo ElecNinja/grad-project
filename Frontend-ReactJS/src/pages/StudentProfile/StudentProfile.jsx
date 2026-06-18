@@ -39,6 +39,7 @@ const TIMEZONES = [
   'Asia/Singapore','Asia/Tokyo','Australia/Sydney',
 ];
 
+
 /* ════════════════════════════════════════════════════════
    COMPONENT
    ════════════════════════════════════════════════════════ */
@@ -68,7 +69,10 @@ function StudentProfile() {
 
   /* ── cleanup blob ── */
   useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
-
+  const handleShare = () => {
+    if (navigator.share) navigator.share({ title: profile?.name, url: window.location.href });
+    else navigator.clipboard.writeText(window.location.href);
+  };
   /* ── load all data ── */
   useEffect(() => {
     if (!reduxUser?.id) { setLoading(false); return; }
@@ -243,7 +247,7 @@ function StudentProfile() {
             <button className="sp-btn-edit" id="edit-profile-btn" onClick={openEdit}>
               <Edit2 size={14}/> Edit Profile
             </button>
-            <button className="sp-btn-share" aria-label="Share">
+            <button className="sp-btn-share" onClick={handleShare}>
               <Share2 size={16}/>
             </button>
           </div>
