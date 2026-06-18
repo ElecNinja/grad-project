@@ -14,7 +14,7 @@ function Footer() {
         {/* Support Section */}
         <div className="Footer-Section">
           <h3 className="Footer-Title">Support</h3>
-          <NavLink className="Footer-Text">Need any help?</NavLink>
+          <NavLink to="/support" className="Footer-Text">Need any help?</NavLink>
         </div>
 
         {/* Contacts Section */}

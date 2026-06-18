@@ -42,7 +42,7 @@ export function loginUser(data) {
 
   const logInRequest = async () => {
     try {
-      const response = await api.post(apiEndpoints.login, requestData, {
+      const response = await api.post('/api/login', requestData, {
         validateStatus: () => true
       });
 

@@ -11,6 +11,7 @@ import Terms from "../pages/Terms/Terms";
 import Login from "../pages/Login/Login";
 import Signup from "../pages/Signup/Signup";
 import DeletedAccount from "../pages/DeletedAccount/DeletedAccount";
+import Support from "../pages/Support";
 // Protected pages
 import ProtectedRoute from "./ProtectedRoute";
 import Dashboard from "../pages/Dashboard/Dashboard";
@@ -54,6 +55,7 @@ const Router = () => {
           <Route index element={<Home />} />
           <Route path="/" element={<Home />} />
           <Route path="terms" element={<Terms />} />
+          <Route path="support" element={<Support />} />
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
           <Route path="deletedAccount" element={<DeletedAccount />} />
