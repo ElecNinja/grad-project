@@ -528,36 +528,14 @@ function TeacherProfile() {
               <DollarSign size={16} />
             </div>
             <div>
-              <h2>Rate & Experience</h2>
+              <h2>Years of Experience</h2>
               <p className="tp-help">Set your hourly rate range and years of experience.</p>
             </div>
           </div>
 
           <div className="tp-rate-grid">
-            <div className="tp-field">
-              <label className="tp-label">Min Rate (USD / hr)</label>
-              <input
-                className="tp-input"
-                name="hourly_rate_min"
-                type="number"
-                min="0"
-                value={form.hourly_rate_min}
-                onChange={handleChange}
-                placeholder="e.g. 20"
-              />
-            </div>
-            <div className="tp-field">
-              <label className="tp-label">Max Rate (USD / hr)</label>
-              <input
-                className="tp-input"
-                name="hourly_rate_max"
-                type="number"
-                min="0"
-                value={form.hourly_rate_max}
-                onChange={handleChange}
-                placeholder="e.g. 80"
-              />
-            </div>
+
+
             <div className="tp-field">
               <label className="tp-label">Years of Experience</label>
               <input
