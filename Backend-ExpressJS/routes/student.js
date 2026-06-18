@@ -25,4 +25,9 @@ router.get("/videos/bootcamps", isAuthenticated, getMyBootcamps);
 // Student gets videos a teacher uploaded specifically for them
 router.get("/videos/uploaded", isAuthenticated, getMyUploadedVideos);
 
+
+const publicBootcampController = require("../controllers/publicBootcampController");
+router.get("/public-bootcamps", isAuthenticated, publicBootcampController.listAvailablePublicBootcampsController);
+router.post("/public-bootcamps/:bootcampId/enroll", isAuthenticated, publicBootcampController.enrollPublicBootcampController);
+
 module.exports = router;

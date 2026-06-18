@@ -28,6 +28,7 @@ import FindExpert from "../pages/FindExpert/FindExpert";
 import TeacherCourseUpload from "../pages/TeacherCourseUpload/TeacherCourseUpload";
 import { getUser } from "../apis/handlers/getUser";
 import { PresenceProvider } from "../context/PresenceContext";
+import CoursePlayer from "../pages/Courseplayer/Courseplayer";
 
 
 // Pages where the Header (navbar) should NOT be shown
@@ -120,8 +121,9 @@ const Router = () => {
           <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
             <Route path="requests" element={<Requests />} />
             <Route path="videos" element={<Videos />} />
+            <Route path="course-player" element={<CoursePlayer />} />
             <Route path="student-profile" element={<StudentProfile />} />
-          </Route>
+              </Route>
 
           {/* Teachers only */}
           <Route element={<ProtectedRoute allowedRoles={["teacher"]} />}>

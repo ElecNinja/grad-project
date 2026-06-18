@@ -44,4 +44,30 @@ router.get("/course-content/:bidId", isAuthenticated, teacherController.getCours
 // Teacher uploads a video for a specific student (Work.jsx "Upload and Publish")
 router.post("/upload-video", isAuthenticated, teacherController.uploadTeacherVideoController);
 
+const publicBootcampController = require("../controllers/publicBootcampController");
+
+// Create a bootcamp with its first section + that section's videos
+router.post("/public-bootcamps", isAuthenticated, publicBootcampController.createPublicBootcampController);
+
+// Add a new section (e.g. "CSS", "JavaScript") to an existing bootcamp
+router.post(
+  "/public-bootcamps/:bootcampId/sections",
+  isAuthenticated,
+  publicBootcampController.addSectionController
+);
+
+// Add a video under an existing section
+router.post(
+  "/public-bootcamps/:bootcampId/sections/:sectionId/videos",
+  isAuthenticated,
+  publicBootcampController.addVideoController
+);
+
+// Convert a private/single-student bootcamp into a public, capacity-limited one
+router.post(
+  "/public-bootcamps/:bootcampId/make-public",
+  isAuthenticated,
+  publicBootcampController.makeBootcampPublicController
+);
+
 module.exports = router;
