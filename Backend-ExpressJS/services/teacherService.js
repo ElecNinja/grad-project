@@ -346,6 +346,7 @@ const getAcceptedOffersTeacher = async (profileId) => {
       return {
         id: bid.id,
         requestId: req?.id,
+        studentId: req?.student_id,
         type: req?.preferred_mode || bid.teaching_mode || "recorded",
         title: req?.title || "Untitled",
         description: req?.description || "",

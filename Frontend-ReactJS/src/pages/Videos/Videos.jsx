@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Videos.css';
 import { getMyVideoCourses, getMyVideoBootcamps } from '../../apis/handlers/getStudentVideos';
-
+import { getMyUploadedVideos } from '../../apis/handlers/getMyUploadedVideos';
 function Videos() {
   const [activeTab, setActiveTab] = useState('courses');
   const [courses, setCourses] = useState([]);
