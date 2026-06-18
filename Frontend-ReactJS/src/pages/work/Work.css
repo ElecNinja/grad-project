@@ -24,6 +24,31 @@
   padding: 0;
 }
 
+/* force no shadow on all buttons */
+button,
+.btn-select,
+.btn-publish,
+.btn-watch,
+.btn-watched,
+.watch-limit-btn,
+.action-btn,
+.chevron-btn,
+.notif-bell-btn {
+  box-shadow: none !important;
+}
+
+button:hover,
+.btn-select:hover,
+.btn-publish:hover,
+.btn-watch:hover,
+.btn-watched:hover,
+.watch-limit-btn:hover,
+.action-btn:hover,
+.chevron-btn:hover,
+.notif-bell-btn:hover {
+  box-shadow: none !important;
+}
+
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--bg);
