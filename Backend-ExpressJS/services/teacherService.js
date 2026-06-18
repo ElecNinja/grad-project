@@ -73,6 +73,44 @@ const loadTeacherSpecialties = async (teacherProfileId) => {
     .filter((s) => s.id && s.name);
 };
 
+const loadTeacherSpecialtiesByProfileId = async (teacherProfileIds) => {
+  if (!teacherProfileIds || teacherProfileIds.length === 0) return new Map();
+
+  const { data, error } = await supabase
+    .from("teacher_subjects")
+    .select(
+      `
+      teacher_id,
+      proficiency,
+      subjects!teacher_subjects_subject_id_fkey (
+        id,
+        name,
+        slug
+      )
+    `
+    )
+    .in("teacher_id", teacherProfileIds);
+
+  if (error || !data) return new Map();
+
+  const specialtiesByTeacherProfileId = new Map();
+
+  data.forEach((row) => {
+    if (!row.subjects?.id || !row.subjects?.name) return;
+
+    const current = specialtiesByTeacherProfileId.get(row.teacher_id) || [];
+    current.push({
+      id: row.subjects.id,
+      name: row.subjects.name,
+      slug: row.subjects.slug,
+      proficiency: row.proficiency || "intermediate",
+    });
+    specialtiesByTeacherProfileId.set(row.teacher_id, current);
+  });
+
+  return specialtiesByTeacherProfileId;
+};
+
 async function listSubjects() {
   const { data, error } = await supabase
     .from("subjects")
@@ -495,10 +533,15 @@ async function listTeachers() {
   const extras = await loadTeacherExtras(
     (data || []).map((t) => t.id)
   );
+  const teacherProfileIds = [...extras.values()].map((row) => row.id).filter(Boolean);
+  const specialtiesByProfileId = await loadTeacherSpecialtiesByProfileId(teacherProfileIds);
 
-  return (data || []).map((t) =>
-    mapProfile(t, extras.get(t.id))
-  );
+  return (data || []).map((t) => {
+    const extraRow = extras.get(t.id) || {};
+    const specialties = specialtiesByProfileId.get(extraRow.id) || [];
+
+    return mapProfile(t, { ...extraRow, specialties });
+  });
 }
 
 // ===============================

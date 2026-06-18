@@ -233,6 +233,26 @@
   color: #0f172a;
 }
 
+.fe-specialty-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.fe-specialty-tag {
+  max-width: 180px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background-color: #eef6ff;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .fe-bio {
     display: -webkit-box;
   -webkit-line-clamp: 2;

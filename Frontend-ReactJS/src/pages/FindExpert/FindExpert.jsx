@@ -6,16 +6,9 @@ import './FindExpert.css';
 
 const getYouTubeId = (url) => {
   if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
   const match = url.match(regExp);
   return (match && match[2].length === 11) ? match[2] : null;
-};
-
-const getYouTubeThumbnail = (url) => {
-  const videoId = getYouTubeId(url);
-  return videoId
-    ? `https://img.youtube.com/vi/${videoId}/0.jpg`
-    : 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=600&auto=format&fit=crop';
 };
 
 function FindExpert() {
@@ -50,11 +43,15 @@ function FindExpert() {
   }, [query, selectedSubject, selectedRating]);
 
   const availableSubjects = useMemo(() => {
-    const subs = new Set();
-    teachers.forEach((t) => {
-      if (t.subject) subs.add(t.subject);
+    const subjects = new Set();
+
+    teachers.forEach((teacher) => {
+      (teacher.specialties || []).forEach((specialty) => {
+        if (specialty?.name) subjects.add(specialty.name);
+      });
     });
-    return Array.from(subs);
+
+    return Array.from(subjects).sort((a, b) => a.localeCompare(b));
   }, [teachers]);
 
   const filteredTeachers = useMemo(() => {
@@ -64,7 +61,10 @@ function FindExpert() {
     const search = query.trim().toLowerCase();
     if (search) {
       result = result.filter((teacher) => {
-        const haystack = [teacher.name, teacher.subject, teacher.bio]
+        const specialtyNames = (teacher.specialties || [])
+          .map((specialty) => specialty?.name)
+          .filter(Boolean);
+        const haystack = [teacher.name, ...specialtyNames, teacher.bio]
           .filter(Boolean)
           .join(' ')
           .toLowerCase();
@@ -72,10 +72,13 @@ function FindExpert() {
       });
     }
 
+
     // Subject filter
     if (selectedSubject) {
-      result = result.filter(
-        (teacher) => (teacher.subject || 'General').toLowerCase() === selectedSubject.toLowerCase()
+      result = result.filter((teacher) =>
+        (teacher.specialties || []).some(
+          (specialty) => (specialty?.name || '').toLowerCase() === selectedSubject.toLowerCase()
+        )
       );
     }
 
@@ -126,12 +129,9 @@ function FindExpert() {
                 className="fe-select"
               >
                 <option value="">All Subjects</option>
-                {availableSubjects.map((sub) => (
-                  <option key={sub} value={sub}>{sub}</option>
+                {availableSubjects.map((subject) => (
+                  <option key={subject} value={subject}>{subject}</option>
                 ))}
-                {!availableSubjects.includes('Chemistry') && <option value="Chemistry">Chemistry</option>}
-                {!availableSubjects.includes('Mathematics') && <option value="Mathematics">Mathematics</option>}
-                {!availableSubjects.includes('Physics') && <option value="Physics">Physics</option>}
               </select>
             </div>
           </div>
@@ -188,6 +188,15 @@ function FindExpert() {
 
                       <div className="fe-profile-info">
                         <h3 className="fe-name">{teacher.name || 'Teacher'}</h3>
+                        {(teacher.specialties || []).length > 0 && (
+                          <div className="fe-specialty-tags">
+                            {teacher.specialties.map((specialty) => (
+                              <span key={specialty.id} className="fe-specialty-tag">
+                                {specialty.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         <p className="fe-bio">{teacher.bio || 'No bio added yet.'}</p>
                       </div>
                     </div>
@@ -221,18 +230,7 @@ function FindExpert() {
                         <div className="fe-stat-label">EXPERIENCE</div>
                       </div>
 
-                      <button
-                        type="button"
-                        className={`fe-fav-btn ${favorites[teacher.id] ? 'active' : ''}`}
-                        onClick={() => toggleFavorite(teacher.id)}
-                        title="Add to favorites"
-                      >
-                        <Heart
-                          size={18}
-                          fill={favorites[teacher.id] ? '#ef4444' : 'none'}
-                          color={favorites[teacher.id] ? '#ef4444' : '#94a3b8'}
-                        />
-                      </button>
+                      
                     </div>
 
                     <div className="fe-card-buttons">
