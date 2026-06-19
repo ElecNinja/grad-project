@@ -12,6 +12,7 @@ import {
   bootcampToCourseState,
   PLACEHOLDER_IMAGE,
 } from "./bootcampUtils";
+import { Search, SlidersHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
 
 function Bootcamp() {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ function Bootcamp() {
     Array.from({ length: 5 }, (_, i) => (
       <span
         key={i}
-        style={{ color: i < Math.round(rating) ? "#f5a623" : "#ccc", fontSize: "14px" }}
+        style={{ color: i < Math.round(rating) ? "#f5a623" : "#e0e0e0", fontSize: "14px" }}
       >
         ★
       </span>
@@ -79,58 +80,31 @@ function Bootcamp() {
     navigate("/course", { state: { course: bootcampToCourseState(bootcamp) } });
   };
 
+  const scrollRight = (categoryName) => {
+    if (scrollRefs.current[categoryName]) {
+      scrollRefs.current[categoryName].scrollBy({ left: 300, behavior: "smooth" });
+    }
+  };
+
+  const scrollLeft = (categoryName) => {
+    if (scrollRefs.current[categoryName]) {
+      scrollRefs.current[categoryName].scrollBy({ left: -300, behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="bootcamp-page">
       <div className="container">
-        <input
-          className="search"
-          placeholder="Find someone who makes learning easy..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        <div className="filters">
-          <button
-            type="button"
-            className="filter-btn"
-            onClick={() => {
-              setSearch("");
-              setTopic("all");
-              setLevel("all");
-            }}
-          >
-            ⚙ Reset filters
+        <div className="search-container">
+          <input
+            className="search-input"
+            placeholder="Find someone who makes learning easy..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button className="search-button">
+            <Search size={24} />
           </button>
-
-          {showTopicFilter && (
-            <select
-              className="dropdown"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-            >
-              <option value="all">All topics</option>
-              {topicOptions.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {showLevelFilter && (
-            <select
-              className="dropdown"
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-            >
-              <option value="all">All levels</option>
-              {levelOptions.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          )}
         </div>
 
         {loading && <p className="bootcamp-status">Loading bootcamps…</p>}
@@ -159,11 +133,14 @@ function Bootcamp() {
                   >
                     {category.courses.map((course) => {
                       const priceLabel = formatPrice(course.price, course.currency);
-                      // NEW: student counter — only rendered when the teacher set a capacity
                       const hasCapacity = course.capacity != null && course.capacity > 0;
                       const studentsLabel = hasCapacity
                         ? `${course.enrolledCount ?? 0}/${course.capacity} students`
                         : null;
+                      
+                      // For styling according to the image, we check badge names (e.g. Highest Rated, New)
+                      const badgeClass = course.badge === "New" ? "badge-new" : "badge-highest";
+
                       return (
                         <div
                           key={course.id}
@@ -189,17 +166,11 @@ function Bootcamp() {
                             {course.expert && (
                               <p className="expert">Expert : {course.expert}</p>
                             )}
-                            <p className="lesson-count">
-                              {course.lessons.length} lesson
-                              {course.lessons.length !== 1 ? "s" : ""}
-                              {course.hasUnpublishedLessons && (
-                                <span className="draft-badge"> · includes draft</span>
-                              )}
-                            </p>
+                            
                             {course.rating != null && course.rating > 0 && (
                               <div className="rating-row">
                                 <span className="rating-num">{course.rating}</span>
-                                {renderStars(course.rating)}
+                                <span className="stars">{renderStars(course.rating)}</span>
                                 {course.reviews != null && (
                                   <span className="reviews">({course.reviews})</span>
                                 )}
@@ -212,11 +183,7 @@ function Bootcamp() {
                               <div className="price-row">
                                 {priceLabel && <span className="price">{priceLabel}</span>}
                                 {course.badge && (
-                                  <span
-                                    className={`badge ${
-                                      course.badge === "New" ? "badge-new" : "badge-top"
-                                    }`}
-                                  >
+                                  <span className={`badge ${badgeClass}`}>
                                     {course.badge}
                                   </span>
                                 )}
@@ -227,6 +194,20 @@ function Bootcamp() {
                       );
                     })}
                   </div>
+                  <button
+                    className="scroll-arrow left"
+                    onClick={() => scrollLeft(category.name)}
+                    aria-label="Scroll left"
+                  >
+                    <ChevronLeft size={24} color="#333" />
+                  </button>
+                  <button
+                    className="scroll-arrow right"
+                    onClick={() => scrollRight(category.name)}
+                    aria-label="Scroll right"
+                  >
+                    <ChevronRight size={24} color="#333" />
+                  </button>
                 </div>
               </div>
             )
