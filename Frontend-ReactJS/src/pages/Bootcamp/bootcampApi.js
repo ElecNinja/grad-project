@@ -26,7 +26,23 @@ function normalizeBootcampRelation(row) {
 async function fetchBootcampsByIds(ids) {
   if (!ids.length) return new Map();
 
-  const { data, error } = await supabase.from("bootcamps").select("*").in("id", ids);
+  const { data, error } = await supabase
+    .from("bootcamps")
+    .select(`
+      *,
+      bootcamp_sections (
+        id,
+        title,
+        sort_order
+      ),
+      teacher_profiles:teacher_id (
+        profile_id,
+        profiles:profile_id ( full_name )
+      )
+    `)
+    .in("id", ids)
+    .eq("is_public", true)
+    .eq("status", "open_enrollment");
 
   if (error) {
     console.warn("Bootcamp catalog", error);
@@ -53,6 +69,11 @@ export async function fetchBootcampLessons() {
     normalizeBootcampRelation({
       ...lesson,
       bootcamps: lesson.bootcamp_id ? bootcampMap.get(lesson.bootcamp_id) ?? null : null,
+      bootcamp_sections: lesson.section_id
+        ? bootcampMap.get(lesson.bootcamp_id)?.bootcamp_sections?.find(
+            (s) => s.id === lesson.section_id
+          ) ?? null
+        : null,
     })
   );
 }

@@ -1,7 +1,5 @@
 const supabase = require('../config/supabase');
 
-// bootcamps.teacher_id points to teacher_profiles.id, NOT profiles.id —
-// so we always resolve the logged-in user's profile id to their teacher_profiles row first.
 async function getTeacherProfileId(profileUserId) {
   const { data, error } = await supabase
     .from('teacher_profiles')
@@ -12,10 +10,6 @@ async function getTeacherProfileId(profileUserId) {
   return data?.id;
 }
 
-// ---------------------------------------------------------------------
-// Create a bootcamp with its first section and that section's videos.
-// Structure: bootcamp -> sections -> lessons (videos)
-// ---------------------------------------------------------------------
 async function createPublicBootcamp({
   profileUserId,
   title,
@@ -23,12 +17,16 @@ async function createPublicBootcamp({
   sectionTitle,
   videos,
   capacity,
+  price,
+  tags,
+  requirements,
+  whatYouLearn,
+  studentId,
 }) {
   const teacherProfileId = await getTeacherProfileId(profileUserId);
   if (!teacherProfileId) throw new Error('Teacher profile not found for this user');
 
-  // 1) Create the bootcamp itself (still private/single-student by default;
-  //    "Make Public" is a separate, explicit step done later via make_bootcamp_public)
+  // 1) Create the bootcamp
   const { data: bootcamp, error: bcErr } = await supabase
     .from('bootcamps')
     .insert({
@@ -38,15 +36,19 @@ async function createPublicBootcamp({
       delivery_type: 'recorded',
       max_students: capacity || null,
       enrolled_count: 0,
-      is_public: false,
-      status: 'planning',
+      is_public: true,
+      status: 'open_enrollment',
+      total_price: price || 0,
+      tags: Array.isArray(tags) ? tags : [],
+      requirements: requirements || null,
+      what_you_learn: whatYouLearn || null,
     })
     .select()
     .single();
 
   if (bcErr) throw bcErr;
 
-  // 2) Create the first section under this bootcamp
+  // 2) Create the first section
   const { data: section, error: secErr } = await supabase
     .from('bootcamp_sections')
     .insert({
@@ -59,7 +61,7 @@ async function createPublicBootcamp({
 
   if (secErr) throw secErr;
 
-  // 3) Insert all videos under that section (no artificial limit)
+  // 3) Insert videos under that section
   const lessonsToInsert = (videos || []).map((v, idx) => ({
     bootcamp_id: bootcamp.id,
     section_id: section.id,
@@ -68,6 +70,7 @@ async function createPublicBootcamp({
     lesson_type: 'video',
     sort_order: idx,
     is_published: true,
+    duration_min: v.durationMin ? Number(v.durationMin) : null,
   }));
 
   if (lessonsToInsert.length > 0) {
@@ -75,18 +78,23 @@ async function createPublicBootcamp({
     if (lessonErr) throw lessonErr;
   }
 
+  // 4) Auto-enroll the target student so it appears in their Videos page
+  if (studentId) {
+    try {
+      await enrollStudentInBootcamp({ studentId, bootcampId: bootcamp.id });
+    } catch (enrollErr) {
+      console.error('Failed to auto-enroll student in bootcamp:', enrollErr);
+      throw new Error('Bootcamp created but failed to enroll the student. Please try again.');
+    }
+  }
+
   return { ...bootcamp, section };
 }
 
-// ---------------------------------------------------------------------
-// Add a new section (e.g. "CSS", "JavaScript") to an existing bootcamp.
-// sort_order is computed automatically (appended to the end).
-// ---------------------------------------------------------------------
-async function addSectionToBootcamp({ profileUserId, bootcampId, sectionTitle }) {
+async function addSectionToBootcamp({ profileUserId, bootcampId, sectionTitle, videos }) {
   const teacherProfileId = await getTeacherProfileId(profileUserId);
   if (!teacherProfileId) throw new Error('Teacher profile not found for this user');
 
-  // Confirm the teacher owns this bootcamp
   const { data: bootcamp, error: bcErr } = await supabase
     .from('bootcamps')
     .select('id, teacher_id')
@@ -97,7 +105,6 @@ async function addSectionToBootcamp({ profileUserId, bootcampId, sectionTitle })
     throw new Error('You do not own this bootcamp');
   }
 
-  // Find the current max sort_order to append the new section at the end
   const { data: existingSections, error: secListErr } = await supabase
     .from('bootcamp_sections')
     .select('sort_order')
@@ -119,13 +126,32 @@ async function addSectionToBootcamp({ profileUserId, bootcampId, sectionTitle })
     .single();
 
   if (secErr) throw secErr;
-  return section;
+
+  const lessonsToInsert = (videos || []).map((v, idx) => ({
+    bootcamp_id: bootcampId,
+    section_id: section.id,
+    title: v.title?.trim() || `Video ${idx + 1}`,
+    video_url: v.url,
+    lesson_type: 'video',
+    sort_order: idx,
+    is_published: true,
+    duration_min: v.durationMin ? Number(v.durationMin) : null,
+  }));
+
+  let lessons = [];
+  if (lessonsToInsert.length > 0) {
+    const { data: insertedLessons, error: lessonErr } = await supabase
+      .from('bootcamp_lessons')
+      .insert(lessonsToInsert)
+      .select();
+    if (lessonErr) throw lessonErr;
+    lessons = insertedLessons || [];
+  }
+
+  return { ...section, lessons };
 }
 
-// ---------------------------------------------------------------------
-// Add a video (lesson) under an existing section.
-// ---------------------------------------------------------------------
-async function addVideoToSection({ profileUserId, bootcampId, sectionId, title, url }) {
+async function addVideoToSection({ profileUserId, bootcampId, sectionId, title, url, durationMin }) {
   const teacherProfileId = await getTeacherProfileId(profileUserId);
   if (!teacherProfileId) throw new Error('Teacher profile not found for this user');
 
@@ -159,6 +185,7 @@ async function addVideoToSection({ profileUserId, bootcampId, sectionId, title, 
       lesson_type: 'video',
       sort_order: nextSortOrder,
       is_published: true,
+      duration_min: durationMin ? Number(durationMin) : null,
     })
     .select()
     .single();
@@ -167,12 +194,6 @@ async function addVideoToSection({ profileUserId, bootcampId, sectionId, title, 
   return lesson;
 }
 
-// ---------------------------------------------------------------------
-// Teacher converts a private/single-student bootcamp into a public,
-// capacity-limited, self-enroll bootcamp. Delegates the actual logic
-// (ownership check, status flip, auto-enrolling the original student)
-// to the make_bootcamp_public Postgres function for atomicity.
-// ---------------------------------------------------------------------
 async function makeBootcampPublic({ profileUserId, bootcampId, capacity }) {
   const { data, error } = await supabase.rpc('make_bootcamp_public', {
     p_bootcamp_id: bootcampId,
@@ -183,19 +204,16 @@ async function makeBootcampPublic({ profileUserId, bootcampId, capacity }) {
   return Array.isArray(data) ? data[0] : data;
 }
 
-// ---------------------------------------------------------------------
-// Student-facing: list public bootcamps open for self-enrollment,
-// with their sections and lessons nested for display.
-// ---------------------------------------------------------------------
 async function listAvailablePublicBootcamps(studentId) {
   const { data: bootcamps, error } = await supabase
     .from('bootcamps')
     .select(`
       id, title, description, max_students, enrolled_count, thumbnail_url, created_at,
+      total_price, tags, requirements, what_you_learn,
       teacher_id,
       teacher_profiles:teacher_id ( profile_id, profiles:profile_id ( full_name ) ),
       bootcamp_sections ( id, title, sort_order,
-        bootcamp_lessons ( id, title, video_url, sort_order )
+        bootcamp_lessons ( id, title, video_url, sort_order, duration_min )
       )
     `)
     .eq('is_public', true)
@@ -235,23 +253,67 @@ async function listAvailablePublicBootcamps(studentId) {
         spotsLeft: b.max_students != null ? Math.max(b.max_students - b.enrolled_count, 0) : null,
         isFull: b.max_students != null ? b.enrolled_count >= b.max_students : false,
         alreadyEnrolled: enrolledIds.has(b.id),
+        price: b.total_price || 0,
+        tags: b.tags || [],
+        requirements: b.requirements || null,
+        whatYouLearn: b.what_you_learn || null,
         sections,
         videosCount,
         createdAt: b.created_at,
       };
     })
-    // already-enrolled bootcamps show up in the normal "My Bootcamps" list (getStudentBootcamps),
-    // so we keep this list to just what the student can still join.
     .filter((b) => !b.alreadyEnrolled);
 }
 
 async function enrollStudentInBootcamp({ studentId, bootcampId }) {
-  const { data, error } = await supabase.rpc('enroll_in_public_bootcamp', {
-    p_bootcamp_id: bootcampId,
-    p_student_id: studentId,
+  // Prefer RPC (handles capacity + enrolled_count atomically)
+  try {
+    const { data, error } = await supabase.rpc('enroll_in_bootcamp_v2', {
+      p_bootcamp_id: bootcampId,
+      p_student_id: studentId,
+    });
+    if (!error) {
+      const result = Array.isArray(data) ? data[0] : data;
+      if (result?.success) return result;
+      if (result?.message) throw new Error(result.message);
+    }
+  } catch (rpcErr) {
+    console.warn('RPC enroll_in_bootcamp_v2 failed, using direct insert:', rpcErr.message);
+  }
+
+  // Fallback: direct enrollment row
+  const { data: existing, error: existingErr } = await supabase
+    .from('bootcamp_enrollments')
+    .select('id')
+    .eq('bootcamp_id', bootcampId)
+    .eq('student_id', studentId)
+    .maybeSingle();
+
+  if (existingErr) throw existingErr;
+  if (existing) return { success: true, message: 'Already enrolled' };
+
+  const { error: enrollErr } = await supabase.from('bootcamp_enrollments').insert({
+    bootcamp_id: bootcampId,
+    student_id: studentId,
+    status: 'active',
+    progress_pct: 0,
   });
-  if (error) throw error;
-  return Array.isArray(data) ? data[0] : data; // { success, message }
+  if (enrollErr) throw enrollErr;
+
+  const { data: bootcamp, error: bcErr } = await supabase
+    .from('bootcamps')
+    .select('enrolled_count')
+    .eq('id', bootcampId)
+    .single();
+  if (bcErr) throw bcErr;
+
+  const { error: countErr } = await supabase
+    .from('bootcamps')
+    .update({ enrolled_count: (bootcamp?.enrolled_count || 0) + 1 })
+    .eq('id', bootcampId);
+  if (countErr) throw countErr;
+
+  return { success: true };
 }
 
 module.exports = {

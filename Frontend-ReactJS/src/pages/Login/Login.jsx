@@ -8,6 +8,25 @@ import ErrorMessage from '../../components/ErrorMessage/ErrorMessage.jsx';
 import { Eye, EyeOff } from 'lucide-react';
 import "./Login.css";
 
+const getProfileRedirectAfterSignup = (email, role) => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.localStorage.getItem('redirect_to_profile_after_signup');
+    if (!raw) return null;
+
+    const pending = JSON.parse(raw);
+    const sameUser = pending?.email?.toLowerCase() === email?.toLowerCase();
+    if (!sameUser) return null;
+
+    window.localStorage.removeItem('redirect_to_profile_after_signup');
+    return (role || pending.role) === 'teacher' ? '/teacher-profile' : '/student-profile';
+  } catch {
+    window.localStorage.removeItem('redirect_to_profile_after_signup');
+    return null;
+  }
+};
+
 function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -51,7 +70,8 @@ function Login() {
       });
       if (isComponentMounted) {
         if (res.response) {
-          navigate('/dashboard');
+          const firstLoginProfilePath = getProfileRedirectAfterSignup(formData.email, res.role);
+          navigate(firstLoginProfilePath || '/dashboard');
         } else {
           setError(res.message || 'Login failed. Please try again.');
         }

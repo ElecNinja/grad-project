@@ -3,10 +3,6 @@
   min-height: calc(100vh - 88px);
   padding: 22px clamp(14px, 3vw, 32px) 52px;
   background: #f4f6fb;
-  box-shadow: none;
-}
-.tp-edit-page * {
-    box-shadow: none !important;
 }
 
 .tp-edit-container {
@@ -285,6 +281,15 @@
 }
 
 /* ── Buttons ─────────────────────────────────────────────────────────────  */
+.tp-edit-page button,
+.tp-edit-page .tp-btn,
+.tp-edit-page .tp-icon-btn,
+.tp-edit-page .tp-subject-item,
+.tp-edit-page .tp-tag-x,
+.tp-edit-page .tp-chip {
+  box-shadow: none !important;
+}
+
 .tp-btn {
   border: 1px solid rgba(2, 6, 23, 0.1);
   background: #fff;
@@ -301,10 +306,14 @@
   text-decoration: none;
   transition: background 0.13s, border-color 0.13s;
   white-space: nowrap;
+  box-shadow: none;
 }
 
-.tp-btn:hover {
+.tp-btn:hover,
+.tp-btn:focus,
+.tp-btn:active {
   background: #f8fafc;
+  box-shadow: none;
 }
 
 .tp-btn--primary {
@@ -313,9 +322,12 @@
   color: #fff;
 }
 
-.tp-btn--primary:hover {
+.tp-btn--primary:hover,
+.tp-btn--primary:focus,
+.tp-btn--primary:active {
   background: #4338ca;
   border-color: #4338ca;
+  box-shadow: none;
 }
 
 .tp-btn--primary:disabled {
@@ -367,6 +379,7 @@
   display: grid;
   place-items: center;
   transition: background 0.13s;
+  box-shadow: none;
 }
 
 .tp-icon-btn:hover {

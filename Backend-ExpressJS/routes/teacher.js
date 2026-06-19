@@ -47,8 +47,12 @@ router.post("/upload-video", isAuthenticated, teacherController.uploadTeacherVid
 const publicBootcampController = require("../controllers/publicBootcampController");
 
 // Create a bootcamp with its first section + that section's videos
-router.post("/public-bootcamps", isAuthenticated, publicBootcampController.createPublicBootcampController);
-
+router.post(
+  "/public-bootcamps",
+  isAuthenticated,
+  upload.single("image"),
+  publicBootcampController.createPublicBootcampController
+);
 // Add a new section (e.g. "CSS", "JavaScript") to an existing bootcamp
 router.post(
   "/public-bootcamps/:bootcampId/sections",
@@ -68,6 +72,13 @@ router.post(
   "/public-bootcamps/:bootcampId/make-public",
   isAuthenticated,
   publicBootcampController.makeBootcampPublicController
+);
+
+// Get a teacher's public bootcamps (for TeacherProfileView page - students browsing)
+router.get(
+  "/profile/:id/bootcamps",
+  isAuthenticated,
+  teacherController.getTeacherPublicBootcamps
 );
 
 module.exports = router;

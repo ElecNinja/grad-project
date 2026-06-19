@@ -218,3 +218,9 @@
 .bootcamp-status--error {
   color: #c0392b;
 }
+/* NEW: student counter on catalog cards */
+.students-count {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 6px;
+}

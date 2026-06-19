@@ -12,7 +12,6 @@ const mapProfile = (profile, extras = {}) => ({
   bio: profile.bio || "",
   photo: profile.avatar_url || profile.photo || "",
   headline: extras.headline ?? null,
-  // Backwards-compatible fields used by older frontend pages
   subject: extras.headline ?? "",
   introduction_video: extras.introduction_video ?? null,
   hourly_rate_min: extras.hourly_rate_min ?? null,
@@ -26,7 +25,6 @@ const mapProfile = (profile, extras = {}) => ({
   total_sessions: extras.total_sessions ?? 0,
   is_accepting: extras.is_accepting ?? null,
   specialties: extras.specialties ?? [],
-
 });
 
 const loadTeacherExtras = async (profileIds) => {
@@ -235,7 +233,6 @@ const getStudentRequests = async (profileId) => {
   try {
     console.log("Logged profile ID:", profileId);
 
-    // Get teacher_profiles.id from profile_id
     const { data: teacherProfile, error: profileError } = await supabase
       .from("teacher_profiles")
       .select("id")
@@ -249,7 +246,6 @@ const getStudentRequests = async (profileId) => {
 
     console.log("Teacher Profile Found:", teacherProfile);
 
-    // Get matched requests
     const { data: matches, error } = await supabase
       .from("request_matches")
       .select(`
@@ -267,14 +263,12 @@ const getStudentRequests = async (profileId) => {
       return [];
     }
 
-    // Get student IDs
     const studentIds = matches
       .map(m => m.student_requests?.student_id)
       .filter(Boolean);
 
     console.log("Student IDs:", studentIds);
 
-    // Fetch profiles separately
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, full_name, avatar_url")
@@ -282,18 +276,17 @@ const getStudentRequests = async (profileId) => {
 
     console.log("Profiles fetched:", profiles);
 
-    // Build a map for quick lookup
     const profileMap = {};
     (profiles || []).forEach(p => { profileMap[p.id] = p; });
 
     return matches.map((m) => {
-  const r = m.student_requests;
-  if (r?.status === 'in_progress') return null;
-   if (r?.student_id === profileId) return null;
-  const profile = profileMap[r?.student_id] || {};
+      const r = m.student_requests;
+      if (r?.status === 'in_progress') return null;
+      if (r?.student_id === profileId) return null;
+      const profile = profileMap[r?.student_id] || {};
 
-  return {
-    id: r?.id,
+      return {
+        id: r?.id,
         studentName: profile.full_name || "Student",
         studentPhoto: profile.avatar_url || null,
         description: r?.description || "",
@@ -302,7 +295,7 @@ const getStudentRequests = async (profileId) => {
         fileUrl: r?.request_files?.[0]?.file_url || null,
         fileName: r?.request_files?.[0]?.file_name || null,
       };
-    }) .filter(Boolean);
+    }).filter(Boolean);
 
   } catch (err) {
     console.log("getStudentRequests error:", err);
@@ -315,7 +308,6 @@ const getStudentRequests = async (profileId) => {
 // ===============================
 const getAcceptedOffersTeacher = async (profileId) => {
   try {
-    // Get teacher_profiles.id from profile_id
     const { data: teacherProfile, error: profileError } = await supabase
       .from("teacher_profiles")
       .select("id")
@@ -327,7 +319,9 @@ const getAcceptedOffersTeacher = async (profileId) => {
       return [];
     }
 
-    // Get all bids for this teacher (their accepted offers)
+    // ── FIX: removed the broken/redundant duplicate embed of student_requests
+    //         (previously aliased as `student_profiles`), which caused this
+    //         query to throw and silently return [] every time. ──
     const { data: bids, error: bidsError } = await supabase
       .from("bids")
       .select(`
@@ -346,9 +340,6 @@ const getAcceptedOffersTeacher = async (profileId) => {
           status,
           created_at,
           request_files ( file_name, file_url, mime_type )
-        ),
-        student_profiles:student_requests!bids_request_id_fkey(student_id) (
-          student_id
         )
       `)
       .eq("teacher_id", teacherProfile.id)
@@ -359,26 +350,21 @@ const getAcceptedOffersTeacher = async (profileId) => {
       return [];
     }
 
-    // Get student IDs
     const studentIds = bids
       .map(b => b.student_requests?.student_id)
       .filter(Boolean);
 
-    // Fetch student profiles
     const { data: studentProfiles } = await supabase
       .from("profiles")
       .select("id, full_name, avatar_url")
       .in("id", studentIds);
 
-    // Build a map for quick lookup
     const studentProfileMap = {};
     (studentProfiles || []).forEach(p => { studentProfileMap[p.id] = p; });
 
     return bids.map((bid) => {
       const req = bid.student_requests;
       const studentProfile = studentProfileMap[req?.student_id] || {};
-      // A request can have multiple uploaded files; use the first one as
-      // the "student PDF" shown in the teacher's My Lists view.
       const file = req?.request_files?.[0] || null;
 
       return {
@@ -476,25 +462,6 @@ const getStudentUploadedVideos = async (studentId) => {
   }));
 };
 
-module.exports = {
-  uploadMaterial,
-  getOffers,
-  acceptOffer,
-  summarizePdf,
-  getStudentRequests,
-  getAcceptedOffersTeacher,
-  uploadTeacherVideo,
-  getStudentUploadedVideos,
-  getTeacherProfile,
-  listTeachers,
-  listSubjects,
-  updateTeacherProfile,
-  getStudentProfile,
-  updateStudentProfile,
-  getTeacherReviews,
-  getRecommendedTeachers,
-};
-
 // ===============================
 // Get teacher profile by ID
 // ===============================
@@ -572,7 +539,6 @@ async function updateTeacherProfile(teacherId, updates) {
     throw new Error("No valid fields to update.");
   }
 
-  // Parse JSON fields if they come as strings (multipart/form-data)
   const parseJsonMaybe = (val) => {
     if (val === undefined || val === null) return val;
     if (typeof val !== "string") return val;
@@ -611,7 +577,6 @@ async function updateTeacherProfile(teacherId, updates) {
 
   if (error) throw error;
 
-  // Upsert teacher_profiles details
   const tpPayload = {
     profile_id: teacherId,
     ...(safeUpdates.headline !== undefined ? { headline: safeUpdates.headline } : {}),
@@ -632,13 +597,11 @@ async function updateTeacherProfile(teacherId, updates) {
       : {}),
   };
 
-  // Only upsert if any teacher_profiles fields were provided
   const tpHasExtras = Object.keys(tpPayload).length > 1;
   if (tpHasExtras) {
     await supabase.from("teacher_profiles").upsert(tpPayload, { onConflict: "profile_id" });
   }
 
-  // Resolve teacher_profiles.id for specialties update and final response
   const { data: tpRow, error: tpError } = await supabase
     .from("teacher_profiles")
     .select("id")
@@ -646,14 +609,12 @@ async function updateTeacherProfile(teacherId, updates) {
     .single();
   if (tpError) throw tpError;
 
-  // Specialties update: accept either specialty_subject_ids: uuid[] or specialties: [{subject_id, proficiency}]
   const subjectIds = Array.isArray(safeUpdates.specialty_subject_ids)
     ? safeUpdates.specialty_subject_ids
     : null;
   const specialties = Array.isArray(safeUpdates.specialties) ? safeUpdates.specialties : null;
 
   if (subjectIds || specialties) {
-    // Clear existing then insert new
     await supabase.from("teacher_subjects").delete().eq("teacher_id", tpRow.id);
 
     let insertRows = [];
@@ -772,7 +733,6 @@ async function updateStudentProfile(studentId, updates) {
 // Get paginated reviews for a teacher
 // ===============================
 async function getTeacherReviews(teacherId, page = 0, limit = 6) {
-  // Resolve teacher_profiles.id from the profiles UUID
   const { data: tpRow } = await supabase
     .from("teacher_profiles")
     .select("id")
@@ -783,7 +743,6 @@ async function getTeacherReviews(teacherId, page = 0, limit = 6) {
 
   const offset = page * limit;
 
-  // Fetch paginated reviews
   const { data: rows, error, count } = await supabase
     .from("reviews")
     .select(
@@ -816,7 +775,6 @@ async function getTeacherReviews(teacherId, page = 0, limit = 6) {
     avatar: r.profiles?.avatar_url || null,
   }));
 
-  // Compute per-star breakdown from ALL reviews (not just this page)
   const { data: allRows } = await supabase
     .from("reviews")
     .select("rating")
@@ -841,7 +799,6 @@ async function getTeacherReviews(teacherId, page = 0, limit = 6) {
 // Get recommended teachers (same subject, sorted by avg_rating)
 // ===============================
 async function getRecommendedTeachers(teacherId) {
-  // Get this teacher's teacher_profiles.id
   const { data: tpRow } = await supabase
     .from("teacher_profiles")
     .select("id")
@@ -850,7 +807,6 @@ async function getRecommendedTeachers(teacherId) {
 
   if (!tpRow) return [];
 
-  // Get all subject IDs for this teacher
   const { data: mySubjects } = await supabase
     .from("teacher_subjects")
     .select("subject_id")
@@ -858,10 +814,8 @@ async function getRecommendedTeachers(teacherId) {
 
   const subjectIds = (mySubjects || []).map((s) => s.subject_id).filter(Boolean);
 
-  // If teacher has no specialties yet, return empty — no random fallback
   if (subjectIds.length === 0) return [];
 
-  // Find other teacher_profiles that share at least one subject
   const { data: matchRows } = await supabase
     .from("teacher_subjects")
     .select("teacher_id")
@@ -896,3 +850,22 @@ async function getRecommendedTeachers(teacherId) {
     avg_rating: t.avg_rating || null,
   }));
 }
+
+module.exports = {
+  uploadMaterial,
+  getOffers,
+  acceptOffer,
+  summarizePdf,
+  getStudentRequests,
+  getAcceptedOffersTeacher,
+  uploadTeacherVideo,
+  getStudentUploadedVideos,
+  getTeacherProfile,
+  listTeachers,
+  listSubjects,
+  updateTeacherProfile,
+  getStudentProfile,
+  updateStudentProfile,
+  getTeacherReviews,
+  getRecommendedTeachers,
+};
