@@ -36,8 +36,8 @@ async function createPublicBootcamp({
       delivery_type: 'recorded',
       max_students: capacity || null,
       enrolled_count: 0,
-      is_public: false,
-      status: 'planning',
+      is_public: true,
+      status: 'open_enrollment',
       total_price: price || 0,
       tags: Array.isArray(tags) ? tags : [],
       requirements: requirements || null,
@@ -78,18 +78,13 @@ async function createPublicBootcamp({
     if (lessonErr) throw lessonErr;
   }
 
-  // 4) Auto-enroll the student if provided
+  // 4) Auto-enroll the target student so it appears in their Videos page
   if (studentId) {
-    const { error: enrollErr } = await supabase
-      .from('bootcamp_enrollments')
-      .insert({
-        bootcamp_id: bootcamp.id,
-        student_id: studentId,
-        status: 'active',
-        progress_pct: 0,
-      });
-    if (enrollErr) {
+    try {
+      await enrollStudentInBootcamp({ studentId, bootcampId: bootcamp.id });
+    } catch (enrollErr) {
       console.error('Failed to auto-enroll student in bootcamp:', enrollErr);
+      throw new Error('Bootcamp created but failed to enroll the student. Please try again.');
     }
   }
 

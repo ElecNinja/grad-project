@@ -11,6 +11,7 @@ export async function createPublicBootcamp({
   tags,
   requirements,
   whatYouLearn,
+  studentId,
 }) {
   try {
     const formData = new FormData();
@@ -21,6 +22,7 @@ export async function createPublicBootcamp({
     if (capacity != null && capacity !== "") formData.append("capacity", capacity);
     if (price != null && price !== "")       formData.append("price", price);
     if (image)                               formData.append("image", image);
+    if (studentId)                           formData.append("studentId", studentId);
 
     if (tags && String(tags).trim()) {
       const tagsArray = String(tags)

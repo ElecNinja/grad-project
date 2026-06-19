@@ -8,6 +8,7 @@ import {
   formatPrice,
   PLACEHOLDER_IMAGE,
 } from "../Bootcamp/bootcampUtils";
+import { enrollPublicBootcamp } from "../../apis/handlers/Publicbootcamphandlers";
 
 function CourseDetails() {
   const navigate = useNavigate();
@@ -108,9 +109,13 @@ function CourseDetails() {
     setEnrolling(true);
     try {
       // 👇 TODO: replace with the real API call, e.g.:
-      // await enrollInBootcamp({ bootcampId: course.id });
+      const result = await enrollPublicBootcamp(course.id);
+      if (!result.response) {
+        throw new Error(result.message || "Could not enroll");
+      }
       setEnrolledCount((prev) => prev + 1);
       setAlreadyEnrolled(true);
+      navigate("/videos");
     } catch (err) {
       console.error("Enrollment failed:", err);
     } finally {

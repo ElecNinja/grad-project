@@ -34,7 +34,8 @@ async function createPublicBootcampController(req, res) {
     const capacity     = req.body?.capacity;
     const price        = req.body?.price;
     const requirements = req.body?.requirements;
-    const whatYouLearn = req.body?.whatYouLearn ?? null;   // ← الجديد
+    const whatYouLearn = req.body?.whatYouLearn ?? null;
+    const studentId    = req.body?.studentId ?? null;
 
     let tags = req.body?.tags;
     if (typeof tags === 'string') {
@@ -65,7 +66,8 @@ async function createPublicBootcampController(req, res) {
       price:    price    ? Number(price)    : 0,
       tags,
       requirements: requirements ? String(requirements).trim() : null,
-      whatYouLearn: whatYouLearn ? String(whatYouLearn).trim() : null,   // ← الجديد
+      whatYouLearn: whatYouLearn ? String(whatYouLearn).trim() : null,
+      studentId: studentId ? String(studentId).trim() : null,
     });
 
     // Upload cover image if provided (non-fatal if it fails)

@@ -40,7 +40,9 @@ async function fetchBootcampsByIds(ids) {
         profiles:profile_id ( full_name )
       )
     `)
-    .in("id", ids);
+    .in("id", ids)
+    .eq("is_public", true)
+    .eq("status", "open_enrollment");
 
   if (error) {
     console.warn("Bootcamp catalog", error);

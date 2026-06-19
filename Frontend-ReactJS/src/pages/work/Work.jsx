@@ -598,8 +598,12 @@ export default function Work({ onNavigateToStudentVideos }) {
     setBootcampError('');
     setBootcampSuccess('');
 
+    const selectedOffer = listOffers.find((o) => o.id === selectedOfferId);
+    const studentIdToUpload = selectedOffer?.studentId;
+
     if (!bootcampTitle.trim()) { setBootcampError('Please add a bootcamp title.'); return; }
     if (!bootcampSections[0]?.title.trim()) { setBootcampError('Please add a title for the first section.'); return; }
+    if (!studentIdToUpload) { setBootcampError('Please select a student from My Lists first.'); return; }
 
     const firstValidVideos = bootcampSections[0].videos
       .filter((v) => v.url.trim() && extractYouTubeId(v.url))
@@ -625,6 +629,7 @@ export default function Work({ onNavigateToStudentVideos }) {
         tags: bootcampTags,
         requirements: bootcampRequirements,
         whatYouLearn: bootcampLearn,
+        studentId: studentIdToUpload,
       });
 
       if (!result.response) {
@@ -668,21 +673,31 @@ export default function Work({ onNavigateToStudentVideos }) {
         createdAt: result.data?.created_at || new Date().toISOString(),
         videos: firstValidVideos,
         sections: createdSections,
-        isPublic: false,
+        isPublic: true,
         capacity: bootcampCapacity ? Number(bootcampCapacity) : null,
         price: bootcampPrice ? Number(bootcampPrice) : 0,
-        enrolledCount: 0,
+        enrolledCount: 1,
         tags: bootcampTags ? bootcampTags.split(',').map((t) => t.trim()).filter(Boolean) : [],
         requirements: bootcampRequirements || '',
         whatYouLearn: bootcampLearn || '',
         thumbnailUrl: bootcampImagePreview || null,
+        _studentId: studentIdToUpload,
       }]);
+
+      notifyStudent(studentIdToUpload, {
+        teacherName: userName,
+        type: 'bootcamp',
+        title: bootcampTitle,
+      });
 
       setBootcampTitle(''); setBootcampDesc(''); setBootcampTags(''); setBootcampRequirements('');
       setBootcampLearn(''); setBootcampPrice(''); setBootcampCapacity('');
       setBootcampImage(null); setBootcampImagePreview('');
       setBootcampSections([{ title: '', videos: [{ url: '', title: '', durationMin: '' }] }]);
-      setBootcampSuccess('Bootcamp created successfully!');
+      setSelectedOfferId(null);
+      setBootcampSuccess(
+        `Bootcamp published on the Bootcamp page and added to ${selectedOffer.studentName}'s Videos.`
+      );
     } catch (err) {
       setBootcampError(err?.response?.data?.error || 'Failed to create bootcamp. Please try again.');
     } finally {
@@ -1230,8 +1245,10 @@ export default function Work({ onNavigateToStudentVideos }) {
                 borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>{bootcampSuccess}</div>
             )}
 
-            <button className="btn-publish" disabled={uploading}
-              style={{ opacity: uploading ? 0.5 : 1 }} onClick={handleUploadBootcamp}>
+            <button className="btn-publish"
+              disabled={uploading || (listOffers.length > 0 && !selectedOfferId)}
+              style={{ opacity: uploading || (listOffers.length > 0 && !selectedOfferId) ? 0.5 : 1 }}
+              onClick={handleUploadBootcamp}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
                 <path d="M5 21h14" />
