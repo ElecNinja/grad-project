@@ -6,13 +6,13 @@ import {
   formatPrice,
   groupBootcamps,
   filterBootcamps,
-  getTopicOptions,
-  getLevelOptions,
   lessonsToBootcamps,
   bootcampToCourseState,
   PLACEHOLDER_IMAGE,
+  getLocalWorkBootcamps,
+  mergeBootcampCatalogs,
 } from "./bootcampUtils";
-import { Search, SlidersHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
+import { Search, ChevronRight, ChevronLeft } from "lucide-react";
 
 function Bootcamp() {
   const navigate = useNavigate();
@@ -26,18 +26,21 @@ function Bootcamp() {
   const [topic, setTopic] = useState("all");
   const [level, setLevel] = useState("all");
 
-  const loadCatalog = useCallback(() => {
+  const loadCatalog = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    fetchBootcampLessons()
-      .then((rows) => {
-        console.info("Bootcamp lessons loaded:", rows.length);
-        setBootcamps(lessonsToBootcamps(rows));
-      })
-      .catch((err) => {
-        console.error("Bootcamp catalog:", err);
-        setBootcamps([]);
+    const localBootcamps = getLocalWorkBootcamps();
+
+    try {
+      const rows = await fetchBootcampLessons();
+      const remoteBootcamps = lessonsToBootcamps(rows);
+      setBootcamps(mergeBootcampCatalogs(remoteBootcamps, localBootcamps));
+    } catch (err) {
+      console.error("Bootcamp catalog:", err);
+      setBootcamps(localBootcamps);
+
+      if (localBootcamps.length === 0) {
         const msg = err.message || "";
         setError(
           msg.includes("JWT") || err.code === "PGRST301"
@@ -46,18 +49,15 @@ function Bootcamp() {
               ? "Database policy blocked read access."
               : `Could not load bootcamps: ${msg || "unknown error"}`
         );
-      })
-      .finally(() => setLoading(false));
+      }
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     loadCatalog();
   }, [loadCatalog]);
-
-  const topicOptions = useMemo(() => getTopicOptions(bootcamps), [bootcamps]);
-  const levelOptions = useMemo(() => getLevelOptions(bootcamps), [bootcamps]);
-  const showTopicFilter = topicOptions.length > 0;
-  const showLevelFilter = levelOptions.length > 0;
 
   const filtered = useMemo(
     () => filterBootcamps(bootcamps, { search, topic, level }),
@@ -137,8 +137,6 @@ function Bootcamp() {
                       const studentsLabel = hasCapacity
                         ? `${course.enrolledCount ?? 0}/${course.capacity} students`
                         : null;
-                      
-                      // For styling according to the image, we check badge names (e.g. Highest Rated, New)
                       const badgeClass = course.badge === "New" ? "badge-new" : "badge-highest";
 
                       return (
@@ -166,7 +164,7 @@ function Bootcamp() {
                             {course.expert && (
                               <p className="expert">Expert : {course.expert}</p>
                             )}
-                            
+
                             {course.rating != null && course.rating > 0 && (
                               <div className="rating-row">
                                 <span className="rating-num">{course.rating}</span>

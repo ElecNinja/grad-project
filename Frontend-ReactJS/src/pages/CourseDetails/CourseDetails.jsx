@@ -5,39 +5,149 @@ import { fetchBootcampLessons } from "../Bootcamp/bootcampApi";
 import {
   lessonsToBootcamps,
   bootcampToCourseState,
-  formatPrice,
   PLACEHOLDER_IMAGE,
+  getLocalWorkBootcamps,
+  mergeBootcampCatalogs,
 } from "../Bootcamp/bootcampUtils";
 import { enrollPublicBootcamp } from "../../apis/handlers/Publicbootcamphandlers";
 
 function CourseDetails() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [openSections, setOpenSections] = useState({ 0: true }); // first section open by default
+  const initialCourse = location.state?.course || null;
+
+  const [openSections, setOpenSections] = useState({ 0: true });
   const [showMore, setShowMore] = useState(false);
   const [otherBootcamps, setOtherBootcamps] = useState([]);
+  const [course, setCourse] = useState(initialCourse);
 
-  const course = location.state?.course;
-
-  // ── Buy Now / enrollment ──
   const [enrolling, setEnrolling] = useState(false);
-  const [enrolledCount, setEnrolledCount] = useState(course?.enrolledCount ?? 0);
+  const [enrolledCount, setEnrolledCount] = useState(initialCourse?.enrolledCount ?? 0);
   const [alreadyEnrolled, setAlreadyEnrolled] = useState(false);
 
   useEffect(() => {
-    fetchBootcampLessons()
-      .then((rows) => {
-        const all = lessonsToBootcamps(rows);
-        const others = all
-          .filter((b) => b.id !== course?.id)
-          .map((b) => bootcampToCourseState(b));
+    setCourse(initialCourse);
+    setEnrolledCount(initialCourse?.enrolledCount ?? 0);
+    setOpenSections({ 0: true });
+    setShowMore(false);
+  }, [initialCourse]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCatalog = async () => {
+      const localBootcamps = getLocalWorkBootcamps();
+
+      try {
+        const rows = await fetchBootcampLessons();
+        const catalog = mergeBootcampCatalogs(lessonsToBootcamps(rows), localBootcamps);
+        if (!isMounted) return;
+
+        const activeCourseId = initialCourse?.id;
+        if (activeCourseId != null) {
+          const matched = catalog.find((bootcamp) => String(bootcamp.id) === String(activeCourseId));
+          if (matched) {
+            const resolvedCourse = bootcampToCourseState(matched);
+            setCourse((prev) => ({
+              ...(prev || {}),
+              ...resolvedCourse,
+              image: resolvedCourse.image || prev?.image || PLACEHOLDER_IMAGE,
+            }));
+            setEnrolledCount(matched.enrolledCount ?? resolvedCourse.enrolledCount ?? 0);
+          }
+        }
+
+        const others = catalog
+          .filter((bootcamp) => String(bootcamp.id) !== String(activeCourseId))
+          .map((bootcamp) => bootcampToCourseState(bootcamp));
         setOtherBootcamps(others);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Could not load related bootcamps:", err);
-        setOtherBootcamps([]);
-      });
-  }, [course?.id]);
+        if (!isMounted) return;
+
+        const fallbackCatalog = getLocalWorkBootcamps();
+        const activeCourseId = initialCourse?.id;
+        if (activeCourseId != null) {
+          const matched = fallbackCatalog.find((bootcamp) => String(bootcamp.id) === String(activeCourseId));
+          if (matched) {
+            const resolvedCourse = bootcampToCourseState(matched);
+            setCourse((prev) => ({ ...(prev || {}), ...resolvedCourse }));
+            setEnrolledCount(matched.enrolledCount ?? resolvedCourse.enrolledCount ?? 0);
+          }
+        }
+
+        setOtherBootcamps(
+          fallbackCatalog
+            .filter((bootcamp) => String(bootcamp.id) !== String(activeCourseId))
+            .map((bootcamp) => bootcampToCourseState(bootcamp))
+        );
+      }
+    };
+
+    loadCatalog();
+    return () => {
+      isMounted = false;
+    };
+  }, [initialCourse?.id]);
+
+  const renderStars = (rating) =>
+    Array.from({ length: 5 }, (_, i) => (
+      <span
+        key={i}
+        style={{ color: i < Math.round(rating || 0) ? "#f5a623" : "#ccc", fontSize: "14px" }}
+      >
+        ★
+      </span>
+    ));
+
+  const whatYouLearn = useMemo(() => {
+    if (!course?.whatYouLearn) {
+      return (course?.lessons || []).map((lesson) => lesson.title).filter(Boolean);
+    }
+
+    if (Array.isArray(course.whatYouLearn)) {
+      return course.whatYouLearn.filter(Boolean);
+    }
+
+    return String(course.whatYouLearn)
+      .split(/\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }, [course?.whatYouLearn, course?.lessons]);
+
+  const sections = course?.sections || [];
+  const visibleLearn = showMore ? whatYouLearn : whatYouLearn.slice(0, 8);
+
+  const hasCapacity = course?.capacity != null && course.capacity > 0;
+  const studentsLabel = hasCapacity
+    ? `Students: (${enrolledCount}/${course.capacity})`
+    : enrolledCount > 0
+      ? `Students: ${enrolledCount}`
+      : null;
+
+  const atCapacity = hasCapacity && enrolledCount >= course.capacity;
+
+  const toggleSection = (index) =>
+    setOpenSections((prev) => ({ ...prev, [index]: !prev[index] }));
+
+  const handleBuyNow = async () => {
+    if (!course || enrolling || alreadyEnrolled || atCapacity) return;
+
+    setEnrolling(true);
+    try {
+      const result = await enrollPublicBootcamp(course.id);
+      if (!result.response) {
+        throw new Error(result.message || "Could not enroll");
+      }
+      setEnrolledCount((prev) => prev + 1);
+      setAlreadyEnrolled(true);
+      navigate("/videos");
+    } catch (err) {
+      console.error("Enrollment failed:", err);
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   if (!course) {
     return (
@@ -61,79 +171,16 @@ function CourseDetails() {
     );
   }
 
-  const renderStars = (rating) =>
-    Array.from({ length: 5 }, (_, i) => (
-      <span
-        key={i}
-        style={{ color: i < Math.round(rating || 0) ? "#f5a623" : "#ccc", fontSize: "14px" }}
-      >
-        ★
-      </span>
-    ));
-
-  // ── What You'll Learn ──
-  // Priority: course.whatYouLearn (from DB field) → fallback: lesson titles
-  const whatYouLearn = useMemo(() => {
-    if (course.whatYouLearn) {
-      // Could be a string (newline-separated) or an array
-      if (Array.isArray(course.whatYouLearn)) return course.whatYouLearn.filter(Boolean);
-      return course.whatYouLearn
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
-    // fallback: lesson titles
-    return (course.lessons || []).map((l) => l.title).filter(Boolean);
-  }, [course.whatYouLearn, course.lessons]);
-
-  const visibleLearn = showMore ? whatYouLearn : whatYouLearn.slice(0, 8);
-  const sections = course.sections || [];
-
-  // ── Student counter ──
-  const hasCapacity = course.capacity != null && course.capacity > 0;
-  const studentsLabel = hasCapacity
-    ? `Students: (${enrolledCount}/${course.capacity})`
-    : enrolledCount > 0
-    ? `Students: ${enrolledCount}`
-    : null;
-
-  const atCapacity = hasCapacity && enrolledCount >= course.capacity;
-
-  // ── Toggle section open/close ──
-  const toggleSection = (i) =>
-    setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
-
-  // ── Buy Now handler ──
-  const handleBuyNow = async () => {
-    if (enrolling || alreadyEnrolled || atCapacity) return;
-    setEnrolling(true);
-    try {
-      // 👇 TODO: replace with the real API call, e.g.:
-      const result = await enrollPublicBootcamp(course.id);
-      if (!result.response) {
-        throw new Error(result.message || "Could not enroll");
-      }
-      setEnrolledCount((prev) => prev + 1);
-      setAlreadyEnrolled(true);
-      navigate("/videos");
-    } catch (err) {
-      console.error("Enrollment failed:", err);
-    } finally {
-      setEnrolling(false);
-    }
-  };
-
   const buyBtnLabel = atCapacity
     ? "Full"
     : alreadyEnrolled
-    ? "Enrolled ✓"
-    : enrolling
-    ? "Processing..."
-    : "Buy Now";
+      ? "Enrolled ✓"
+      : enrolling
+        ? "Processing..."
+        : "Buy Now";
 
   return (
     <div className="cd-page">
-      {/* ── Banner ── */}
       <div className="cd-banner">
         <div className="cd-banner-left">
           <h1>{course.title}</h1>
@@ -153,22 +200,21 @@ function CourseDetails() {
           <img
             src={course.image || PLACEHOLDER_IMAGE}
             alt={course.title}
-            onError={(e) => { e.currentTarget.src = PLACEHOLDER_IMAGE; }}
+            onError={(e) => {
+              e.currentTarget.src = PLACEHOLDER_IMAGE;
+            }}
           />
         </div>
       </div>
 
-      {/* ── Body ── */}
       <div className="cd-body">
         <div className="cd-main">
-
-          {/* What You'll Learn */}
           {whatYouLearn.length > 0 && (
             <div className="cd-box">
               <h2>What you'll learn</h2>
               <div className="cd-learn-grid">
-                {visibleLearn.map((item, i) => (
-                  <div key={i} className="cd-learn-item">✓ {item}</div>
+                {visibleLearn.map((item, index) => (
+                  <div key={index} className="cd-learn-item">✓ {item}</div>
                 ))}
               </div>
               {whatYouLearn.length > 8 && (
@@ -180,7 +226,6 @@ function CourseDetails() {
           )}
         </div>
 
-        {/* ── Sidebar ── */}
         <div className="cd-sidebar">
           {course.price && <p className="cd-price">{course.price}</p>}
           <button
@@ -201,57 +246,48 @@ function CourseDetails() {
         </div>
       </div>
 
-      {/* ── Full Width ── */}
       <div className="cd-full-width">
-
-        {/* Related Topics — now shown above Course Content */}
         {course.relatedTopics?.length > 0 && (
           <div className="cd-related">
             <h2>Explore related topics</h2>
             <div className="cd-topics-row">
-              {course.relatedTopics.map((t, i) => (
-                <span key={i} className="cd-topic-tag">{t}</span>
+              {course.relatedTopics.map((topic, index) => (
+                <span key={index} className="cd-topic-tag">{topic}</span>
               ))}
             </div>
           </div>
         )}
 
-        {/* Course Content — sections with collapse/expand */}
         {sections.length > 0 && (
           <div className="cd-content-section">
             <h2>Course content</h2>
             <p className="cd-content-meta">
-              {sections.length} section{sections.length !== 1 ? "s" : ""} •{" "}
-              {course.totalLectures || 0} lecture{course.totalLectures !== 1 ? "s" : ""} •{" "}
+              {sections.length} section{sections.length !== 1 ? "s" : ""} • {" "}
+              {course.totalLectures || 0} lecture{course.totalLectures !== 1 ? "s" : ""} • {" "}
               {course.totalDuration || "—"} total length
             </p>
             <div className="cd-accordion">
-              {sections.map((sec, i) => {
-                const isOpen = !!openSections[i];
+              {sections.map((section, index) => {
+                const isOpen = !!openSections[index];
                 return (
-                  <div key={i} className="cd-acc-item">
-                    <div
-                      className="cd-acc-header"
-                      onClick={() => toggleSection(i)}
-                    >
-                      {/* Section name — NOT video titles */}
+                  <div key={index} className="cd-acc-item">
+                    <div className="cd-acc-header" onClick={() => toggleSection(index)}>
                       <span className="cd-acc-title">
                         <span className="cd-acc-arrow">{isOpen ? "▲" : "▼"}</span>
-                        {sec.title}
+                        {section.title}
                       </span>
                       <span className="cd-sec-meta">
-                        {sec.lectures} lecture{sec.lectures > 1 ? "s" : ""} • {sec.duration}
+                        {section.lectures} lecture{section.lectures > 1 ? "s" : ""} • {section.duration}
                       </span>
                     </div>
 
-                    {/* Video titles inside the section — only shown when open */}
-                    {isOpen && sec.items?.length > 0 && (
+                    {isOpen && section.items?.length > 0 && (
                       <div className="cd-acc-body">
-                        {sec.items.map((videoTitle, j) => (
-                          <div key={j} className="cd-lecture-row">
+                        {section.items.map((videoTitle, lessonIndex) => (
+                          <div key={lessonIndex} className="cd-lecture-row">
                             <span className="cd-lecture-icon">▶</span>
                             <span className="cd-lecture-title">{videoTitle}</span>
-                            <span className="cd-lecture-dur">{sec.durations?.[j] || "—"}</span>
+                            <span className="cd-lecture-dur">{section.durations?.[lessonIndex] || "—"}</span>
                           </div>
                         ))}
                       </div>
@@ -263,7 +299,6 @@ function CourseDetails() {
           </div>
         )}
 
-        {/* Requirements */}
         {course.requirements && (
           <div className="cd-requirements">
             <h2>Requirements</h2>
@@ -271,31 +306,32 @@ function CourseDetails() {
           </div>
         )}
 
-        {/* Other Bootcamps */}
         {otherBootcamps.length > 0 && (
           <div className="cd-bootcamps">
             <h2>Bootcamps</h2>
             <div className="cd-bootcamps-row">
-              {otherBootcamps.map((b) => (
+              {otherBootcamps.map((bootcamp) => (
                 <div
-                  key={b.id}
+                  key={bootcamp.id}
                   className="cd-bc-card"
-                  onClick={() => navigate("/course", { state: { course: b } })}
+                  onClick={() => navigate("/course", { state: { course: bootcamp } })}
                 >
                   <img
-                    src={b.image || PLACEHOLDER_IMAGE}
-                    alt={b.title}
-                    onError={(e) => { e.currentTarget.src = PLACEHOLDER_IMAGE; }}
+                    src={bootcamp.image || PLACEHOLDER_IMAGE}
+                    alt={bootcamp.title}
+                    onError={(e) => {
+                      e.currentTarget.src = PLACEHOLDER_IMAGE;
+                    }}
                   />
                   <div className="cd-bc-info">
-                    <p className="cd-bc-title">{b.title}</p>
-                    {b.expert && <p className="cd-bc-expert">Expert: {b.expert}</p>}
-                    {b.rating != null && b.rating > 0 && (
+                    <p className="cd-bc-title">{bootcamp.title}</p>
+                    {bootcamp.expert && <p className="cd-bc-expert">Expert: {bootcamp.expert}</p>}
+                    {bootcamp.rating != null && bootcamp.rating > 0 && (
                       <div className="cd-bc-rating">
-                        {renderStars(b.rating)} <span>{b.rating}</span>
+                        {renderStars(bootcamp.rating)} <span>{bootcamp.rating}</span>
                       </div>
                     )}
-                    {b.price && <p className="cd-bc-price">{b.price}</p>}
+                    {bootcamp.price && <p className="cd-bc-price">{bootcamp.price}</p>}
                   </div>
                 </div>
               ))}

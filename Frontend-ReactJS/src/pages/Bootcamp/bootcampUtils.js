@@ -1,6 +1,21 @@
 export const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=240&fit=crop";
 
+const WORK_BOOTCAMPS_STORAGE_KEY = "work_uploadedRows";
+
+export function extractYouTubeId(url) {
+  if (!url) return "";
+  const match = String(url).match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/i
+  );
+  return match ? match[1] : "";
+}
+
+function getYouTubeThumbnail(url) {
+  const id = extractYouTubeId(url);
+  return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+}
+
 function mapLesson(row) {
   return {
     id: row.id,
@@ -24,6 +39,21 @@ function extractTeacherName(bc) {
   return prof?.full_name ?? null;
 }
 
+function toArray(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(/\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
 function pickBootcampFields(bc) {
   if (!bc) return {};
   return {
@@ -41,6 +71,7 @@ function pickBootcampFields(bc) {
     whatYouLearn: bc.what_you_learn ?? bc.whatYouLearn ?? null,
     capacity: bc.max_students ?? null,
     enrolledCount: bc.enrolled_count ?? 0,
+    createdAt: bc.created_at ?? null,
   };
 }
 
@@ -78,6 +109,7 @@ function resolveBootcamp(row) {
     whatYouLearn: null,
     capacity: null,
     enrolledCount: 0,
+    createdAt: null,
   };
 }
 
@@ -108,6 +140,7 @@ export function lessonsToBootcamps(lessons) {
         whatYouLearn: meta.whatYouLearn || null,
         capacity: meta.capacity,
         enrolledCount: meta.enrolledCount,
+        createdAt: meta.createdAt,
         hasUnpublishedLessons: false,
         lessons: [],
         sectionsMap: new Map(),
@@ -149,6 +182,139 @@ export function lessonsToBootcamps(lessons) {
     sections: [...b.sectionsMap.values()].sort((a, z) => a.sortOrder - z.sortOrder),
     sectionsMap: undefined,
   }));
+}
+
+function mapLocalBootcampLesson(video, index, sectionId) {
+  return {
+    id: video.id || `${sectionId}_${index}`,
+    title: video.title?.trim() || `Video ${index + 1}`,
+    description: "",
+    videoUrl: video.url || "",
+    playbackId: null,
+    thumbnail: getYouTubeThumbnail(video.url),
+    lessonType: "video",
+    durationMin: video.durationMin ? Number(video.durationMin) : null,
+    sortOrder: index,
+    isFreePreview: false,
+    isPublished: true,
+    sectionId,
+  };
+}
+
+function mapLocalBootcamp(row, index) {
+  const rawSections = Array.isArray(row.sections) && row.sections.length > 0
+    ? row.sections
+    : [{ id: `${row.id || `local_bootcamp_${index}`}_section_0`, title: row.title || "Course content", lessons: row.videos || [] }];
+
+  const sections = rawSections.map((section, sectionIndex) => {
+    const sectionId = section.id || `${row.id || `local_bootcamp_${index}`}_section_${sectionIndex}`;
+    const lessonSource = Array.isArray(section.lessons) && section.lessons.length > 0
+      ? section.lessons
+      : section.videos || [];
+    const lessons = lessonSource.map((video, videoIndex) =>
+      mapLocalBootcampLesson(video, videoIndex, sectionId)
+    );
+
+    return {
+      id: sectionId,
+      title: section.title || `Section ${sectionIndex + 1}`,
+      sortOrder: section.sortOrder ?? sectionIndex,
+      lessons,
+    };
+  });
+
+  const flatLessons = sections.flatMap((section) => section.lessons);
+  const fallbackImage = row.thumbnailUrl || row.thumbnail || getYouTubeThumbnail(flatLessons[0]?.videoUrl);
+
+  return {
+    id: row.id || `local_bootcamp_${index}`,
+    title: row.title || "Untitled bootcamp",
+    description: row.description || "",
+    category: row.category || null,
+    level: row.level || null,
+    expert: row.teacherName || row.expert || "Your Teacher",
+    price: row.price != null && row.price !== "" ? Number(row.price) : null,
+    currency: row.currency || "GBP",
+    rating: row.rating != null ? Number(row.rating) : null,
+    reviews: row.reviews != null ? Number(row.reviews) : null,
+    badge: row.badge || null,
+    image: fallbackImage || null,
+    tags: toArray(row.tags),
+    requirements: row.requirements || null,
+    whatYouLearn: row.whatYouLearn || null,
+    capacity: row.capacity != null && row.capacity !== "" ? Number(row.capacity) : null,
+    enrolledCount: row.enrolledCount != null ? Number(row.enrolledCount) : 0,
+    createdAt: row.createdAt || null,
+    hasUnpublishedLessons: false,
+    lessons: flatLessons,
+    sections,
+    isLocalDraft: true,
+  };
+}
+
+export function getLocalWorkBootcamps() {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.localStorage.getItem(WORK_BOOTCAMPS_STORAGE_KEY);
+    const rows = raw ? JSON.parse(raw) : [];
+
+    return rows
+      .filter((row) => row?.type === "bootcamp")
+      .map((row, index) => mapLocalBootcamp(row, index));
+  } catch (error) {
+    console.warn("Could not read local bootcamp drafts:", error);
+    return [];
+  }
+}
+
+function mergeBootcampItem(primary = {}, fallback = {}) {
+  return {
+    ...fallback,
+    ...primary,
+    title: primary.title || fallback.title || "Untitled bootcamp",
+    description: primary.description || fallback.description || "",
+    category: primary.category || fallback.category || null,
+    level: primary.level || fallback.level || null,
+    expert: primary.expert || fallback.expert || null,
+    price: primary.price ?? fallback.price ?? null,
+    currency: primary.currency || fallback.currency || "GBP",
+    rating: primary.rating ?? fallback.rating ?? null,
+    reviews: primary.reviews ?? fallback.reviews ?? null,
+    badge: primary.badge || fallback.badge || null,
+    image: primary.image || fallback.image || null,
+    tags: (primary.tags && primary.tags.length ? primary.tags : fallback.tags) || [],
+    requirements: primary.requirements || fallback.requirements || null,
+    whatYouLearn: primary.whatYouLearn || fallback.whatYouLearn || null,
+    capacity: primary.capacity ?? fallback.capacity ?? null,
+    enrolledCount: primary.enrolledCount ?? fallback.enrolledCount ?? 0,
+    createdAt: primary.createdAt || fallback.createdAt || null,
+    lessons: (primary.lessons && primary.lessons.length ? primary.lessons : fallback.lessons) || [],
+    sections: (primary.sections && primary.sections.length ? primary.sections : fallback.sections) || [],
+    hasUnpublishedLessons: primary.hasUnpublishedLessons || fallback.hasUnpublishedLessons || false,
+    isLocalDraft: primary.isLocalDraft || fallback.isLocalDraft || false,
+  };
+}
+
+export function mergeBootcampCatalogs(primaryBootcamps = [], fallbackBootcamps = []) {
+  const byKey = new Map();
+
+  fallbackBootcamps.forEach((bootcamp) => {
+    const key = String(bootcamp.id || bootcamp.title).toLowerCase();
+    byKey.set(key, bootcamp);
+  });
+
+  primaryBootcamps.forEach((bootcamp) => {
+    const key = String(bootcamp.id || bootcamp.title).toLowerCase();
+    const existing = byKey.get(key);
+    byKey.set(key, existing ? mergeBootcampItem(bootcamp, existing) : bootcamp);
+  });
+
+  return Array.from(byKey.values()).sort((a, b) => {
+    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return bTime - aTime;
+  });
 }
 
 export function formatPrice(price, currency = "GBP") {
