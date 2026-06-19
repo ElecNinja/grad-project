@@ -383,6 +383,7 @@ const getMyRequests = async (req, res) => {
           id,
           price,
           currency,
+          notes,
           teaching_mode,
           num_sessions,
           status,

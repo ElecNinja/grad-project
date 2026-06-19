@@ -213,7 +213,7 @@ const getRequestsController = async (req, res) => {
 // ===============================
 const acceptRequestController = async (req, res) => {
   try {
-    const { requestId, price, sessionDuration, teachingMode, numSessions } = req.body;
+    const { requestId, price, sessionDuration, teachingMode, numSessions, comment } = req.body;
     const teacherId = req.user.id;
 
     if (!requestId || !price) {
@@ -240,19 +240,22 @@ const { data: existingBid } = await supabase
 if (existingBid) {
   return res.status(200).json({ message: "Already accepted.", bid: existingBid });
 }
-    // Insert into bids table
+    // Store the teacher's comment in the existing bids.notes column.
+    const bidPayload = {
+      request_id: requestId,
+      teacher_id: teacherProfile.id,
+      price: parseFloat(price),
+      currency: 'USD',
+      session_duration_hr: sessionDuration || 1,
+      teaching_mode: teachingMode || 'recorded',
+      num_sessions: numSessions || 1,
+      notes: comment || '',
+      status: 'pending',
+    };
+
     const { data: bid, error: bidError } = await supabase
       .from("bids")
-      .insert([{
-        request_id: requestId,
-        teacher_id: teacherProfile.id,
-        price: parseFloat(price),
-        currency: 'USD',
-        session_duration_hr: sessionDuration || 1,
-        teaching_mode: teachingMode || 'recorded',
-        num_sessions: numSessions || 1,
-        status: 'pending',
-      }])
+      .insert([bidPayload])
       .select()
       .single();
 

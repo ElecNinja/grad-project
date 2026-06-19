@@ -9,7 +9,7 @@ import "./offers.css";
 const TypeMode = [
   { label: "All", value: "all" },
   { label: "Recorded", value: "recorded" },
-  { label: "Live", value: "live" },
+  { label: "Live", value: "live_1on1" },
   { label: "Bootcamp", value: "bootcamp" },
 ];
 function Offers() {
@@ -22,6 +22,7 @@ function Offers() {
   const [acceptedOffers, setAcceptedOffers] = useState({});
   const [acceptError, setAcceptError] = useState("");
   const [selectedType, setSelectedType] = useState("all");
+  const [comments, setComments] = useState({});
 
   useEffect(() => {
     getStudentRequests()
@@ -62,7 +63,7 @@ function Offers() {
     }
 
     try {
-      await acceptRequest(offerId, price, offer.preferred_mode);
+      await acceptRequest(offerId, price, offer.preferred_mode, comments[offerId] || "");
 
       setAcceptedOffers((prev) => ({
         ...prev,
@@ -195,24 +196,22 @@ function Offers() {
                       ? "Accepted ✓"
                       : "Accept"}
                   </button>
+{/* COMMENT */}
+<div className="comment-wrapper">
+  <textarea
+    className="comment-input"
+    placeholder="Add a comment for the student..."
+    value={comments[offer.id] || ""}
+    onChange={(e) =>
+      setComments({
+        ...comments,
+        [offer.id]: e.target.value,
+      })
+    }
+    rows={2}
+  />
+</div>
 
-                  {/* MESSAGE */}
-                  <button className="message-btn">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      width="14"
-                      height="14"
-                    >
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-
-                    Send Message
-                  </button>
                 </div>
               </div>
             </div>

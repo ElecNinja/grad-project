@@ -54,6 +54,32 @@
   font-size: 14px;
   padding: 40px 0;
 }
+.comment-wrapper {
+  margin-top: 12px;
+}
+
+.comment-input {
+  width: 100%;
+  max-width: 480px;
+  min-height: 60px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+  font-family: inherit;
+  color: #374151;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.comment-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.comment-input::placeholder {
+  color: #9ca3af;
+}
 
 .offers-title {
   text-align: center;

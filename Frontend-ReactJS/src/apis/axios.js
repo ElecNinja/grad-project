@@ -69,13 +69,14 @@ export const createStudentRequest = (file, description, materialType, subject) =
   }).then((r) => r.data);
 };
 
-export const acceptRequest = (requestId, price, teachingMode) =>
+export const acceptRequest = (requestId, price, teachingMode, comment = "") =>
   api.post(`/api/teacher/accept-request`, {
     requestId,
     price,
     sessionDuration: 1,
     teachingMode: teachingMode || 'recorded',
     numSessions: 1,
+    comment,
   }).then((r) => r.data);
 
   

@@ -22,7 +22,7 @@ const PER_PAGE = 3;
 
 function getYouTubeId(url) {
   if (!url) return null;
-  const match = url.match(/(?:youtu\.be\/|watch\?v=|embed\/)([^#&?]*)/);
+  const match = url.match(/(?:youtu\.be\/|watch\?v=|embed\/|shorts\/)([^#&?/]*)/);
   return match ? match[1] : null;
 }
 
@@ -42,6 +42,7 @@ function normalise(raw) {
           teacherName: teacherProfile?.full_name || "Unknown Teacher",
           teacherId: bid.teacher_profiles?.profile_id || null,
           teacherBio: request.description || "",
+          teacherComment: bid.notes || "",
           teacherAvatar: teacherProfile?.avatar_url || null,
           teacherVideo: bid.teacher_profiles?.introduction_video || null,
           subject: request.preferred_language || "General",
@@ -242,7 +243,10 @@ function RequestCard({ offer, onAccepted  }) {
 
         <div className="rq-card__body">
           <h2 className="rq-card__name">{offer.teacherName}</h2>
-          <p className="rq-card__bio">{offer.teacherBio}</p>
+          {offer.teacherComment && (
+            <p className="rq-card__comment">{offer.teacherComment}</p>
+          )}
+          
 
           <div className="rq-card__stats">
             <div className="rq-stat">
@@ -303,38 +307,18 @@ function RequestCard({ offer, onAccepted  }) {
         </div>
       </div>
 
-      {/* RIGHT: video thumbnail */}
-      <div
-        className={`rq-card__cover ${!offer.teacherVideo ? "rq-card__cover--placeholder" : ""}`}
-        onClick={() => offer.teacherVideo && setVideoOpen(true)}
-        style={{ cursor: offer.teacherVideo ? 'pointer' : 'default' }}
-      >
+      {/* RIGHT: playable teacher video */}
+      <div className={`rq-card__cover ${offer.teacherVideo ? "rq-card__cover--video" : "rq-card__cover--placeholder"}`}>
         {offer.teacherVideo ? (
           videoId ? (
-            <>
-              <img
-                src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
-                alt="Video thumbnail"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-              {/* Play button overlay */}
-              <div style={{
-                position: 'absolute', top: '50%', left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '54px', height: '54px', borderRadius: '50%',
-                background: 'rgba(29, 78, 216, 0.9)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '3px solid #fff',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
-                zIndex: 2,
-              }}>
-                <svg viewBox="0 0 24 24" fill="white" width="22" height="22" style={{ marginLeft: '3px' }}>
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </div>
-            </>
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+              title={`${offer.teacherName} introduction video`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
           ) : (
-            <video src={offer.teacherVideo} className="rq-card__cover-img" />
+            <video src={offer.teacherVideo} className="rq-card__cover-img" controls />
           )
         ) : (
           <div className="rq-card__cover-fallback">

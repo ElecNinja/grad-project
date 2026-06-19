@@ -180,6 +180,15 @@
   line-height: 1.2;
 }
 
+.rq-card__comment {
+  margin: 0 0 8px;
+  max-width: 440px;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .rq-card__bio {
   font-size: 13.5px;
   color: #64748b;
@@ -396,7 +405,13 @@
   height: 100%;
   border: none;
 }
-.rq-card:hover .rq-card__cover-img { transform: scale(1.05); }
+.rq-card__cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.rq-card:hover .rq-card__cover-img { transform: scale(1.02); }
 
 /* dark overlay on cover */
 .rq-card__cover::before {
@@ -408,6 +423,10 @@
     rgba(0, 0, 0, 0.22) 100%);
   z-index: 1;
   pointer-events: none;
+}
+
+.rq-card__cover--video::before {
+  display: none;
 }
 
 /* play button – use !important to beat global main.css button rules */

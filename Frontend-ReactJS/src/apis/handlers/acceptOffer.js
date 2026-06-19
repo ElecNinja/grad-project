@@ -1,11 +1,12 @@
 import { api } from "../axios";
 import { apiEndpoints } from "../apiEndpoints";
 
-export async function acceptOffer(offerId, price) {
+export async function acceptOffer(offerId, price,comment) {
   try {
     const response = await api.post("/api/teacher/accept-offer", {
       offerId,
-      price
+      price,
+      comment
     }, { validateStatus: () => true });
 
     const status = response.status;
