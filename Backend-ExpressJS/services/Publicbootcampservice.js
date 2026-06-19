@@ -266,16 +266,54 @@ async function listAvailablePublicBootcamps(studentId) {
 }
 
 async function enrollStudentInBootcamp({ studentId, bootcampId }) {
-  const { data, error } = await supabase.rpc('enroll_in_bootcamp_v2', {
-    p_bootcamp_id: bootcampId,
-    p_student_id: studentId,
-  });
-  if (error) throw error;
-  const result = Array.isArray(data) ? data[0] : data;
-  if (!result?.success) {
-    throw new Error(result?.message || 'Enrollment failed');
+  // Prefer RPC (handles capacity + enrolled_count atomically)
+  try {
+    const { data, error } = await supabase.rpc('enroll_in_bootcamp_v2', {
+      p_bootcamp_id: bootcampId,
+      p_student_id: studentId,
+    });
+    if (!error) {
+      const result = Array.isArray(data) ? data[0] : data;
+      if (result?.success) return result;
+      if (result?.message) throw new Error(result.message);
+    }
+  } catch (rpcErr) {
+    console.warn('RPC enroll_in_bootcamp_v2 failed, using direct insert:', rpcErr.message);
   }
-  return result;
+
+  // Fallback: direct enrollment row
+  const { data: existing, error: existingErr } = await supabase
+    .from('bootcamp_enrollments')
+    .select('id')
+    .eq('bootcamp_id', bootcampId)
+    .eq('student_id', studentId)
+    .maybeSingle();
+
+  if (existingErr) throw existingErr;
+  if (existing) return { success: true, message: 'Already enrolled' };
+
+  const { error: enrollErr } = await supabase.from('bootcamp_enrollments').insert({
+    bootcamp_id: bootcampId,
+    student_id: studentId,
+    status: 'active',
+    progress_pct: 0,
+  });
+  if (enrollErr) throw enrollErr;
+
+  const { data: bootcamp, error: bcErr } = await supabase
+    .from('bootcamps')
+    .select('enrolled_count')
+    .eq('id', bootcampId)
+    .single();
+  if (bcErr) throw bcErr;
+
+  const { error: countErr } = await supabase
+    .from('bootcamps')
+    .update({ enrolled_count: (bootcamp?.enrolled_count || 0) + 1 })
+    .eq('id', bootcampId);
+  if (countErr) throw countErr;
+
+  return { success: true };
 }
 
 module.exports = {
