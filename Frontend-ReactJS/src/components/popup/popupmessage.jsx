@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useDispatch } from 'react-redux';
+import { openChat, setActiveConversation, getOrCreateConversation } from '../../redux/chatSlice';
 import {
   Bell,
   CheckCheck,
@@ -86,6 +88,7 @@ function PopupMessage({
   onUnreadCountChange,
 }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const userRole = useSelector((state) => state.user?.role);
   const panelRef = useRef(null);
 
@@ -179,30 +182,57 @@ function PopupMessage({
   }, [anchorRef, isOpen, onClose]);
 
   const handleNotificationClick = async (notification) => {
-    if (!notification.is_read) {
-      const updated = await markNotificationRead(notification.id);
-      if (updated) {
-        setNotifications((prev) =>
-          prev.map((item) =>
-            item.id === notification.id
-              ? { ...item, is_read: true, read_at: new Date().toISOString() }
-              : item
-          )
-        );
-        await syncUnreadCount(
-          notifications.map((item) =>
-            item.id === notification.id ? { ...item, is_read: true } : item
-          )
-        );
-      }
+  // Mark as read if unread
+  if (!notification.is_read) {
+    const updated = await markNotificationRead(notification.id);
+    if (updated) {
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.id === notification.id
+            ? { ...item, is_read: true, read_at: new Date().toISOString() }
+            : item
+        )
+      );
+      await syncUnreadCount(
+        notifications.map((item) =>
+          item.id === notification.id ? { ...item, is_read: true } : item
+        )
+      );
     }
+  }
 
-    const route = getNotificationRoute(notification, userRole);
-    if (route) {
-      navigate(route);
-      onClose();
+  // ─── NEW: handle new_message notifications ──────────────────────────
+  if (notification.type === 'new_message') {
+    const data = notification.data || {};
+    const conversationId = data.conversation_id;
+    const senderId = data.sender_id;
+
+    try {
+      if (conversationId) {
+        dispatch(setActiveConversation(conversationId));
+      } else if (senderId) {
+        const convId = await dispatch(getOrCreateConversation(senderId)).unwrap();
+        dispatch(setActiveConversation(convId));
+      } else {
+        // fallback: cannot open chat
+        return;
+      }
+      dispatch(openChat());
+    } catch (error) {
+      console.error('Failed to open chat from notification:', error);
+    } finally {
+      onClose(); // close notification dropdown
     }
-  };
+    return; // don't navigate
+  }
+
+  // ─── Existing navigation logic ──────────────────────────────────────
+  const route = getNotificationRoute(notification, userRole);
+  if (route) {
+    navigate(route);
+    onClose();
+  }
+};
 
   const handleMarkAllRead = async () => {
     if (!recipientId || markingAll) return;

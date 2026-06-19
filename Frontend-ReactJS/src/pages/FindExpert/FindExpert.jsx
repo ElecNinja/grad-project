@@ -3,6 +3,12 @@ import { Link } from 'react-router-dom';
 import { Search, Star, AlertCircle, Users, Heart, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getTeachers } from '../../apis/handlers/getTeachers';
 import './FindExpert.css';
+import { useDispatch } from 'react-redux';
+import { openChat, getOrCreateConversation, setActiveConversation } from '../../redux/chatSlice';
+
+
+
+
 
 const getYouTubeId = (url) => {
   if (!url) return null;
@@ -21,6 +27,17 @@ function FindExpert() {
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState({});
   const [playingTeacherId, setPlayingTeacherId] = useState(null);
+
+const dispatch = useDispatch();
+  const handleMessage = async (teacherId) => {
+  try {
+    const conversationId = await dispatch(getOrCreateConversation(teacherId)).unwrap();
+    dispatch(setActiveConversation(conversationId));
+    dispatch(openChat());
+  } catch (error) {
+    console.error('Failed to open chat:', error);
+  }
+};
 
   useEffect(() => {
     const load = async () => {
@@ -234,7 +251,7 @@ function FindExpert() {
                     </div>
 
                     <div className="fe-card-buttons">
-                      <button className="fe-btn fe-btn--primary" type="button">
+                      <button className="fe-btn fe-btn--primary" type="button" onClick={() => handleMessage(teacher.id)}>
                         Send Message
                       </button>
                       <Link className="fe-btn fe-btn--secondary" to={`/teacher-profile/${teacher.id}`}>

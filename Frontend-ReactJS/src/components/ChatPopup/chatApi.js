@@ -21,6 +21,7 @@ export async function getOrCreateConversation(currentProfileId, otherProfileId) 
   if (!currentProfileId || !otherProfileId || currentProfileId === otherProfileId) {
     return null;
   }
+  
 
   const { data: currentMemberships, error: currentError } = await supabase
     .from("conversation_members")
@@ -133,23 +134,40 @@ export async function sendChatMessage(conversationId, senderId, recipientId, bod
 export function subscribeToConversation(conversationId, onInsert) {
   if (!conversationId) return () => {};
 
+  // Use a unique channel name to avoid conflicts
+  const channelName = `chat-${conversationId}`;
+
   const channel = supabase
-    .channel(`public:messages:conversation_id=eq.${conversationId}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-        filter: `conversation_id=eq.${conversationId}`,
-      },
-      (payload) => {
-        if (payload.new) onInsert(payload.new);
+    .channel(channelName)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'messages',
+    }, (payload) => {
+      const newMsg = payload.new;
+      // Manual filter – only forward messages for this conversation
+      if (newMsg && newMsg.conversation_id === conversationId) {
+        onInsert(newMsg);
       }
-    )
-    .subscribe();
+    })
+    .subscribe((status) => {
+      console.log(`📡 Subscription status for ${conversationId}:`, status);
+    });
 
   return () => {
+    console.log(`🔴 Removing channel for ${conversationId}`);
     supabase.removeChannel(channel);
   };
+}
+
+export async function markNotificationsAsRead(conversationId, userId) {
+  // Mark all notifications of type 'new_message' for this conversation as read
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true, read_at: new Date().toISOString() })
+    .eq('recipient_id', userId)
+    .eq('type', 'new_message')
+    .eq('data->>conversation_id', conversationId)
+    .eq('is_read', false);
+  if (error) console.error('Error marking notifications as read:', error);
 }

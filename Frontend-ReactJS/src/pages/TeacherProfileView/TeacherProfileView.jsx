@@ -21,8 +21,11 @@ import { getTeacherReviews } from '../../apis/handlers/getTeacherReviews';
 import { getRecommendedTeachers } from '../../apis/handlers/getRecommendedTeachers';
 import { useOnlineIds } from '../../context/PresenceContext';
 import './TeacherProfileView.css';
-
+import { useDispatch } from 'react-redux';
+import { openChat, getOrCreateConversation, setActiveConversation } from '../../redux/chatSlice';
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+
 
 const getYouTubeId = (url) => {
   if (!url) return null;
@@ -214,6 +217,19 @@ function TeacherProfileView() {
   const [langFilter, setLangFilter] = useState('All');
   const [bioExpanded, setBioExpanded] = useState(false);
 
+
+
+  const dispatch = useDispatch();
+
+const handleMessage = async () => {
+  try {
+    const conversationId = await dispatch(getOrCreateConversation(id)).unwrap();
+    dispatch(setActiveConversation(conversationId));
+    dispatch(openChat());
+  } catch (error) {
+    console.error('Failed to open chat:', error);
+  }
+};
   // ── Load profile ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!id) { setProfileError('Teacher ID is missing.'); setProfileLoading(false); return; }
@@ -554,7 +570,7 @@ function TeacherProfileView() {
 
             {/* Buttons */}
             <div className="tpv-action-buttons">
-              <button className="tpv-btn tpv-btn--primary tpv-btn--full">
+              <button className="tpv-btn tpv-btn--primary tpv-btn--full" onClick={handleMessage}>
                 <MessageCircle size={16} /> Send a Message
               </button>
               <button
