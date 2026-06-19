@@ -1,7 +1,7 @@
 // Frontend-ReactJS/src/components/ChatPopup/ChatPopup.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { ArrowLeft, Loader2, Send, X, Paperclip } from 'lucide-react';
+import { ArrowLeft, Loader2, Send, X, Paperclip, Image } from 'lucide-react';
 import {
   fetchConversations,
   fetchMessages,
@@ -47,6 +47,10 @@ const ChatPopup = () => {
   const inputRef = useRef(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef(null);
+
+  // ─── State for paste preview ──────────────────────────────────────────
+  const [pendingFile, setPendingFile] = useState(null);
+  const [pendingPreview, setPendingPreview] = useState(null);
 
   // When a conversation is selected
   useEffect(() => {
@@ -94,8 +98,8 @@ const ChatPopup = () => {
     };
   }, [activeConversationId, dispatch, currentUser?.id]);
 
-  // ─── File upload logic (reusable) ────────────────────────────────────
-  const handleFileUpload = async (file) => {
+  // ─── File upload logic (core) ────────────────────────────────────────
+  const uploadAndSendFile = async (file) => {
     if (!file || !activeConversationId) return;
     if (file.size > 5 * 1024 * 1024) {
       alert('File size must be less than 5MB');
@@ -118,6 +122,32 @@ const ChatPopup = () => {
       alert('Failed to upload file. Please try again.');
     } finally {
       setUploadingFile(false);
+      setPendingFile(null);
+      setPendingPreview(null);
+    }
+  };
+
+  // ─── Paste handler (with confirmation) ──────────────────────────────
+  const handlePaste = async (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          // Show preview instead of sending immediately
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            setPendingFile(file);
+            setPendingPreview(ev.target?.result);
+          };
+          reader.readAsDataURL(file);
+        }
+        return;
+      }
+      // Text pastes are handled by default
     }
   };
 
@@ -167,26 +197,23 @@ const ChatPopup = () => {
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      await handleFileUpload(file);
+      // For intentional file selection, we can also show preview but it's optional
+      // For simplicity, we send directly because the user consciously clicked "Attach"
+      await uploadAndSendFile(file);
       e.target.value = '';
     }
   };
 
-  // ─── Paste handler ──────────────────────────────────────────────────
-  const handlePaste = async (e) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
+  // ─── Cancel paste preview ───────────────────────────────────────────
+  const handleCancelPaste = () => {
+    setPendingFile(null);
+    setPendingPreview(null);
+  };
 
-    for (const item of items) {
-      if (item.type.startsWith('image/')) {
-        e.preventDefault();
-        const file = item.getAsFile();
-        if (file) {
-          await handleFileUpload(file);
-        }
-        return;
-      }
-      // Text pastes are handled by default
+  // ─── Confirm paste preview ──────────────────────────────────────────
+  const handleConfirmPaste = async () => {
+    if (pendingFile) {
+      await uploadAndSendFile(pendingFile);
     }
   };
 
@@ -316,6 +343,37 @@ const ChatPopup = () => {
           </>
         )}
       </div>
+
+      {/* ─── Paste preview bar ──────────────────────────────────────────── */}
+{pendingPreview && pendingFile && (
+  <div className="chat-paste-preview">
+    <div className="chat-paste-preview-content">
+      {pendingFile.type.startsWith('image/') ? (
+        <img src={pendingPreview} alt="Pasted" className="chat-paste-preview-image" />
+      ) : (
+        <span className="chat-paste-preview-icon">📎</span>
+      )}
+      <span className="chat-paste-preview-name">{pendingFile.name}</span>
+    </div>
+    <div className="chat-paste-preview-actions">
+      <button 
+        className="chat-paste-preview-btn chat-paste-preview-btn--cancel" 
+        onClick={handleCancelPaste}
+        aria-label="Cancel"
+      >
+        <X size={18} stroke="currentColor" strokeWidth={2.5} />
+      </button>
+      <button
+        className="chat-paste-preview-btn chat-paste-preview-btn--send"
+        onClick={handleConfirmPaste}
+        disabled={uploadingFile}
+        aria-label="Send"
+      >
+        {uploadingFile ? <Loader2 size={18} className="chat-popup__spin" /> : <Send size={18} stroke="currentColor" strokeWidth={2.5} />}
+      </button>
+    </div>
+  </div>
+)}
 
       <footer className="chat-popup__composer">
         <textarea
