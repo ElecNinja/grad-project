@@ -6,7 +6,12 @@ import {
 } from "../../apis/axios";
 
 import "./offers.css";
-
+const TypeMode = [
+  { label: "All", value: "all" },
+  { label: "Recorded", value: "recorded" },
+  { label: "Live", value: "live" },
+  { label: "Bootcamp", value: "bootcamp" },
+];
 function Offers() {
   const [offers, setOffers] = useState([]);
   const [selectedOffer, setSelectedOffer] = useState(null);
@@ -16,6 +21,7 @@ function Offers() {
   const [summarizing, setSummarizing] = useState(false);
   const [acceptedOffers, setAcceptedOffers] = useState({});
   const [acceptError, setAcceptError] = useState("");
+  const [selectedType, setSelectedType] = useState("all");
 
   useEffect(() => {
     getStudentRequests()
@@ -85,6 +91,14 @@ function Offers() {
       </div>
     );
   }
+  const filteredOffers =
+  selectedType === "all"
+    ? offers
+    : offers.filter(
+        (offer) =>
+          offer.preferred_mode?.toLowerCase() ===
+          selectedType.toLowerCase()
+      );
 
   return (
     <div className="offers-page">
@@ -93,6 +107,18 @@ function Offers() {
       <p className="offers-subtitle">
         Manage incoming learning requests and review student materials.
       </p>
+      <div className="offers-filter">
+  <select
+    value={selectedType}
+    onChange={(e) => setSelectedType(e.target.value)}
+  >
+    {TypeMode.map((type) => (
+      <option key={type.value} value={type.value}>
+        {type.label}
+      </option>
+    ))}
+  </select>
+</div>
 
       {acceptError && (
         <p style={{ color: "red", textAlign: "center" }}>
@@ -101,9 +127,11 @@ function Offers() {
       )}
 
       <div className="offers-list">
-        {offers.length === 0 && <p>No offers yet.</p>}
+        {filteredOffers.length === 0 && (
+  <p className="no-offers">No offers found.</p>
+)}
 
-        {offers.map((offer) => (
+        {filteredOffers.map((offer) => (
           <div key={offer.id} className="offer-card">
 
             {/* LEFT */}
