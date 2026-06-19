@@ -187,6 +187,12 @@ function Signup() {
       dispatch(setLoader(false));
 
       if (result.response) {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(
+            'redirect_to_profile_after_signup',
+            JSON.stringify({ email: formData.email, role: submitRole })
+          );
+        }
         navigate('/login');
       } else {
         setError(result.message);

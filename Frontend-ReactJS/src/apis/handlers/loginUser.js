@@ -73,6 +73,8 @@ export function loginUser(data) {
 
           res.response = userIsLoggedIn;
           res.message = userIsLoggedIn ? "" : "Error: Login failed.";
+          res.role = roleResp;
+          res.email = emailResp;
           break;
         }
         case 400:
