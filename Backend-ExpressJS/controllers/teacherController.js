@@ -454,6 +454,77 @@ const uploadTeacherVideoController = async (req, res) => {
   }
 };
 
+// ===============================
+// GET TEACHER'S PUBLIC BOOTCAMPS (for TeacherProfileView - students browsing)
+// ===============================
+const getTeacherPublicBootcamps = async (req, res) => {
+  try {
+    const teacherId = req.params.id; // profile UUID
+    if (!teacherId) return res.status(400).json({ error: "Teacher ID is required." });
+
+    // 1) حوّل الـ profile UUID لـ teacher_profiles.id
+    const { data: tp, error: tpErr } = await supabase
+      .from("teacher_profiles")
+      .select("id")
+      .eq("profile_id", teacherId)
+      .single();
+
+    if (tpErr || !tp) return res.status(200).json({ bootcamps: [] });
+
+    // 2) جيب الـ public bootcamps مع sections وعدد الفيديوهات
+    const { data: bootcamps, error: bcErr } = await supabase
+      .from("bootcamps")
+      .select(`
+        id, title, description, thumbnail_url, max_students, enrolled_count,
+        price, created_at, status,
+        bootcamp_sections (
+          id, title, sort_order,
+          bootcamp_lessons ( id, title, sort_order )
+        )
+      `)
+      .eq("teacher_id", tp.id)
+      .eq("is_public", true)
+      .order("created_at", { ascending: false });
+
+    if (bcErr) throw bcErr;
+
+    const mapped = (bootcamps || []).map((b) => {
+      const sections = (b.bootcamp_sections || [])
+        .sort((a, c) => a.sort_order - c.sort_order)
+        .map((s) => ({
+          id: s.id,
+          title: s.title,
+          lessonsCount: (s.bootcamp_lessons || []).length,
+        }));
+      const totalVideos = sections.reduce((sum, s) => sum + s.lessonsCount, 0);
+      return {
+        id: b.id,
+        title: b.title,
+        description: b.description,
+        thumbnail: b.thumbnail_url || null,
+        price: b.price || 0,
+        capacity: b.max_students,
+        enrolledCount: b.enrolled_count || 0,
+        spotsLeft: b.max_students != null
+          ? Math.max(b.max_students - (b.enrolled_count || 0), 0)
+          : null,
+        isFull: b.max_students != null
+          ? (b.enrolled_count || 0) >= b.max_students
+          : false,
+        sections,
+        totalVideos,
+        createdAt: b.created_at,
+        status: b.status,
+      };
+    });
+
+    return res.status(200).json({ bootcamps: mapped });
+  } catch (err) {
+    console.error("getTeacherPublicBootcamps error:", err);
+    return res.status(500).json({ error: err.message || "Failed to fetch bootcamps" });
+  }
+};
+
 module.exports = {
   uploadMaterial,
   getOffers,
@@ -473,4 +544,5 @@ module.exports = {
   uploadCourseContent,
   getCourseContent,
   uploadTeacherVideoController,
+  getTeacherPublicBootcamps,
 };
