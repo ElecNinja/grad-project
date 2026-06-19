@@ -1,7 +1,7 @@
 // Frontend-ReactJS/src/components/ChatPopup/ChatPopup.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { ArrowLeft, Loader2, Send, X, Paperclip, Image } from 'lucide-react';
+import { ArrowLeft, Loader2, Send, X, Paperclip } from 'lucide-react';
 import {
   fetchConversations,
   fetchMessages,
@@ -47,8 +47,9 @@ const ChatPopup = () => {
   const inputRef = useRef(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef(null);
-
-  // ─── State for paste preview ──────────────────────────────────────────
+  // ─── Image preview state ──────────────────────────────────────────────
+  const [previewImageUrl, setPreviewImageUrl] = useState(null);
+  // ─── Paste preview state ──────────────────────────────────────────────
   const [pendingFile, setPendingFile] = useState(null);
   const [pendingPreview, setPendingPreview] = useState(null);
 
@@ -137,7 +138,6 @@ const ChatPopup = () => {
         e.preventDefault();
         const file = item.getAsFile();
         if (file) {
-          // Show preview instead of sending immediately
           const reader = new FileReader();
           reader.onload = (ev) => {
             setPendingFile(file);
@@ -197,8 +197,6 @@ const ChatPopup = () => {
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      // For intentional file selection, we can also show preview but it's optional
-      // For simplicity, we send directly because the user consciously clicked "Attach"
       await uploadAndSendFile(file);
       e.target.value = '';
     }
@@ -215,6 +213,15 @@ const ChatPopup = () => {
     if (pendingFile) {
       await uploadAndSendFile(pendingFile);
     }
+  };
+
+  // ─── Image preview handlers ──────────────────────────────────────────
+  const openImagePreview = (url) => {
+    setPreviewImageUrl(url);
+  };
+
+  const closeImagePreview = () => {
+    setPreviewImageUrl(null);
   };
 
   // Find active conversation peer
@@ -324,7 +331,12 @@ const ChatPopup = () => {
                   <div className="chat-popup__bubble">
                     {isFile ? (
                       isImage ? (
-                        <img src={msg.file_url} alt={msg.file_name} style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8 }} />
+                        <img
+                          src={msg.file_url}
+                          alt={msg.file_name}
+                          style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, cursor: 'pointer' }}
+                          onClick={() => openImagePreview(msg.file_url)}
+                        />
                       ) : (
                         <a href={msg.file_url} target="_blank" rel="noopener noreferrer" className="chat-file-link">
                           <span className="chat-file-icon">📎</span>
@@ -345,35 +357,35 @@ const ChatPopup = () => {
       </div>
 
       {/* ─── Paste preview bar ──────────────────────────────────────────── */}
-{pendingPreview && pendingFile && (
-  <div className="chat-paste-preview">
-    <div className="chat-paste-preview-content">
-      {pendingFile.type.startsWith('image/') ? (
-        <img src={pendingPreview} alt="Pasted" className="chat-paste-preview-image" />
-      ) : (
-        <span className="chat-paste-preview-icon">📎</span>
+      {pendingPreview && pendingFile && (
+        <div className="chat-paste-preview">
+          <div className="chat-paste-preview-content">
+            {pendingFile.type.startsWith('image/') ? (
+              <img src={pendingPreview} alt="Pasted" className="chat-paste-preview-image" />
+            ) : (
+              <span className="chat-paste-preview-icon">📎</span>
+            )}
+            <span className="chat-paste-preview-name">{pendingFile.name}</span>
+          </div>
+          <div className="chat-paste-preview-actions">
+            <button
+              className="chat-paste-preview-btn chat-paste-preview-btn--cancel"
+              onClick={handleCancelPaste}
+              aria-label="Cancel"
+            >
+              <X size={18} stroke="currentColor" strokeWidth={2.5} />
+            </button>
+            <button
+              className="chat-paste-preview-btn chat-paste-preview-btn--send"
+              onClick={handleConfirmPaste}
+              disabled={uploadingFile}
+              aria-label="Send"
+            >
+              {uploadingFile ? <Loader2 size={18} className="chat-popup__spin" /> : <Send size={18} stroke="currentColor" strokeWidth={2.5} />}
+            </button>
+          </div>
+        </div>
       )}
-      <span className="chat-paste-preview-name">{pendingFile.name}</span>
-    </div>
-    <div className="chat-paste-preview-actions">
-      <button 
-        className="chat-paste-preview-btn chat-paste-preview-btn--cancel" 
-        onClick={handleCancelPaste}
-        aria-label="Cancel"
-      >
-        <X size={18} stroke="currentColor" strokeWidth={2.5} />
-      </button>
-      <button
-        className="chat-paste-preview-btn chat-paste-preview-btn--send"
-        onClick={handleConfirmPaste}
-        disabled={uploadingFile}
-        aria-label="Send"
-      >
-        {uploadingFile ? <Loader2 size={18} className="chat-popup__spin" /> : <Send size={18} stroke="currentColor" strokeWidth={2.5} />}
-      </button>
-    </div>
-  </div>
-)}
 
       <footer className="chat-popup__composer">
         <textarea
@@ -417,6 +429,23 @@ const ChatPopup = () => {
       <div className="chat-popup" onClick={(e) => e.stopPropagation()}>
         {viewMode === 'list' ? renderList() : renderChat()}
       </div>
+      {/* ─── Image Preview Modal ────────────────────────────────────────── */}
+      {previewImageUrl && (
+  <div className="chat-image-preview-overlay" onClick={(e) => {
+    e.stopPropagation(); // Prevent closing chat
+    closeImagePreview();
+  }}>
+    <div className="chat-image-preview-container" onClick={(e) => e.stopPropagation()}>
+      <button className="chat-image-preview-close" onClick={(e) => {
+        e.stopPropagation();
+        closeImagePreview();
+      }} aria-label="Close preview">
+        <X size={28} stroke="white" strokeWidth={2.5} />
+      </button>
+      <img src={previewImageUrl} alt="Preview" className="chat-image-preview-img" />
+    </div>
+  </div>
+)}
     </div>
   );
 };

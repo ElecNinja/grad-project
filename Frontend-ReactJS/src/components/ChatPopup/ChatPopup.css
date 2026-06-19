@@ -510,3 +510,64 @@
   stroke-width: 2.5;
   display: block;
 }
+
+/* ─── Image Preview Modal ──────────────────────────────────────────────── */
+.chat-image-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  cursor: pointer;
+  animation: fadeIn 0.2s ease;
+}
+
+.chat-image-preview-container {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.chat-image-preview-img {
+  max-width: 80vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.chat-image-preview-close {
+  position: absolute;
+  top: -48px;
+  right: 0;
+  
+
+ 
+  cursor: pointer;
+  transition: background 0.2s;
+  backdrop-filter: blur(4px);
+}
+.chat-image-preview-close svg {
+  stroke: white !important;
+  stroke-width: 2.5;
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+.chat-image-preview-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
