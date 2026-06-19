@@ -1,6 +1,8 @@
 import { api } from "../axios"
 import { setReduxLogOutUser } from "../../redux/reduxUtils";
 import { apiEndpoints } from "../apiEndpoints";
+import { store } from "../../redux/store";         // add this
+import { clearChatState } from "../../redux/chatSlice"; // add this
 
 const clearAuthToken = () => {
     if (typeof window === "undefined") {
@@ -62,6 +64,8 @@ export function logoutUser() {
         } finally {
             // Always clear client auth state, even if backend request fails.
             setReduxLogOutUser();
+            // Clear the chat state
+            store.dispatch(clearChatState());
             clearAuthToken();
         }
         return res;

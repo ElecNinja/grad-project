@@ -30,6 +30,9 @@ import { getUser } from "../apis/handlers/getUser";
 import { PresenceProvider } from "../context/PresenceContext";
 import CoursePlayer from "../pages/Courseplayer/Courseplayer";
 
+// ─── NEW CHAT IMPORTS ────────────────────────────────────────────────
+import ChatFloatingButton from "../components/ChatFloatingButton/ChatFloatingButton";
+import ChatPopup from "../components/ChatPopup/ChatPopup";
 
 // Pages where the Header (navbar) should NOT be shown
 const NO_HEADER_PAGES = ['/login', '/signup', '/deletedAccount'];
@@ -49,6 +52,8 @@ const AppLayout = ({ children }) => {
 const Router = () => {
   const loaderDisplay = useSelector((state) => state.loader.display);
   const user = useSelector((state) => state.user);
+  // ─── NEW CHAT STATE ──────────────────────────────────────────────
+  const isChatOpen = useSelector((state) => state.chat.isOpen);
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
@@ -84,65 +89,74 @@ const Router = () => {
     };
   }, [user?.loggedIn]);
 
-
   if (!authReady) {
     return <Loader />;
   }
 
   return (
     <PresenceProvider userId={user?.loggedIn ? user.id : null} role={user?.role}>
-    <BrowserRouter>
-      {loaderDisplay && <Loader />}
-      <AppLayout>
-        <Routes>
-          {/* Public - anyone can access */}
-          <Route index element={<Home />} />
-          <Route path="/" element={<Home />} />
-          <Route path="terms" element={<Terms />} />
-          <Route path="login" element={<Login />} />
-          <Route path="signup" element={<Signup />} />
-          <Route path="deletedAccount" element={<DeletedAccount />} />
-          <Route path="/bootcamp" element={<Bootcamp />} />
-          <Route path="/course" element={<CourseDetails />} />
-          <Route path="add-material" element={<Addmaterial />} />
+      <BrowserRouter>
+        {loaderDisplay && <Loader />}
+        <AppLayout>
+          <Routes>
+            {/* Public - anyone can access */}
+            <Route index element={<Home />} />
+            <Route path="/" element={<Home />} />
+            <Route path="terms" element={<Terms />} />
+            <Route path="login" element={<Login />} />
+            <Route path="signup" element={<Signup />} />
+            <Route path="deletedAccount" element={<DeletedAccount />} />
+            <Route path="/bootcamp" element={<Bootcamp />} />
+            <Route path="/course" element={<CourseDetails />} />
+            <Route path="add-material" element={<Addmaterial />} />
 
-          <Route element={<ProtectedRoute />}>
-            <Route path="find-expert" element={<FindExpert />} />
-          </Route>
+            <Route element={<ProtectedRoute />}>
+              <Route path="find-expert" element={<FindExpert />} />
+            </Route>
 
-          {/* Any logged-in user */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="work" element={<Work />} />
-            <Route path="Work" element={<Work />} />
-          </Route>
+            {/* Any logged-in user */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="work" element={<Work />} />
+              <Route path="Work" element={<Work />} />
+            </Route>
 
-          {/* Students only */}
-          <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-            <Route path="requests" element={<Requests />} />
-            <Route path="videos" element={<Videos />} />
-            <Route path="course-player" element={<CoursePlayer />} />
-            <Route path="student-profile" element={<StudentProfile />} />
-              </Route>
+            {/* Students only */}
+            <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
+              <Route path="requests" element={<Requests />} />
+              <Route path="videos" element={<Videos />} />
+              <Route path="course-player" element={<CoursePlayer />} />
+              <Route path="student-profile" element={<StudentProfile />} />
+            </Route>
 
-          {/* Teachers only */}
-          <Route element={<ProtectedRoute allowedRoles={["teacher"]} />}>
-            <Route path="offers" element={<Offers />} />
-            <Route path="teacher-profile" element={<TeacherProfile />} />
-            <Route path="course-upload/:bidId" element={<TeacherCourseUpload />} />
-          </Route>
+            {/* Teachers only */}
+            <Route element={<ProtectedRoute allowedRoles={["teacher"]} />}>
+              <Route path="offers" element={<Offers />} />
+              <Route path="teacher-profile" element={<TeacherProfile />} />
+              <Route path="course-upload/:bidId" element={<TeacherCourseUpload />} />
+            </Route>
 
-          {/* Teacher profile view for logged-in users */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="teacher-profile/:id" element={<TeacherProfileView />} />
-          </Route>
+            {/* Teacher profile view for logged-in users */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="teacher-profile/:id" element={<TeacherProfileView />} />
+            </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AppLayout>
-      <Footer />
-    </BrowserRouter>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AppLayout>
+
+        {/* ─── CHAT FLOATING BUTTON & POPUP ────────────────────────── */}
+        {/* Only render if user is logged in (we have a user.id) */}
+        {user?.loggedIn && (
+          <>
+            <ChatFloatingButton />
+            {isChatOpen && <ChatPopup />}
+          </>
+        )}
+
+        <Footer />
+      </BrowserRouter>
     </PresenceProvider>
   );
 };

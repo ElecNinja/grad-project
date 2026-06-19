@@ -1,137 +1,211 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import PropTypes from "prop-types";
-import { ArrowLeft, Loader2, Paperclip, Send } from "lucide-react";
+// Frontend-ReactJS/src/components/ChatPopup/ChatPopup.jsx
+import React, { useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { ArrowLeft, Loader2, Send, X } from 'lucide-react';
 import {
-  fetchChatProfile,
+  fetchConversations,
   fetchMessages,
-  getOrCreateConversation,
-  sendChatMessage,
-  subscribeToConversation,
-} from "./chatApi";
-import "./ChatPopup.css";
-
-function formatDateLabel(dateValue) {
-  if (!dateValue) return "";
-  return new Date(dateValue).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatTime(dateValue) {
-  if (!dateValue) return "";
-  return new Date(dateValue).toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
+  sendMessage,
+  markAsRead,
+  setActiveConversation,
+  closeChat,
+  addNewMessage,
+  incrementUnreadCount,
+} from '../../redux/chatSlice';
+import { subscribeToConversation, markNotificationsAsRead } from './chatApi';
+import { store } from '../../redux/store';
+import './ChatPopup.css';
 
 function getInitials(name) {
-  return (name || "User")
+  return (name || 'User')
     .trim()
-    .split(" ")
+    .split(' ')
     .slice(0, 2)
     .map((word) => word[0])
-    .join("")
+    .join('')
     .toUpperCase();
 }
 
-export default function ChatPopup({ currentUser, peerId, onClose }) {
-  const messagesEndRef = useRef(null);
-  const [peer, setPeer] = useState(null);
-  const [conversationId, setConversationId] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [draft, setDraft] = useState("");
-  const [loading, setLoading] = useState(false);
+function formatTime(dateValue) {
+  if (!dateValue) return '';
+  return new Date(dateValue).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+const ChatPopup = () => {
+  const dispatch = useDispatch();
+  const { conversations, activeConversationId, messages, isOpen, loading } = useSelector(
+    (state) => state.chat
+  );
+  const currentUser = useSelector((state) => state.user);
+  const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState('list');
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
-  const currentUserId = currentUser?.id;
-
-  const loadChat = useCallback(async () => {
-    if (!currentUserId || !peerId) return;
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const [profile, convoId] = await Promise.all([
-        fetchChatProfile(peerId),
-        getOrCreateConversation(currentUserId, peerId),
-      ]);
-
-      setPeer(profile);
-      setConversationId(convoId);
-      const rows = await fetchMessages(convoId);
-      setMessages(rows);
-    } catch {
-      setError("Could not open this conversation.");
-    } finally {
-      setLoading(false);
+  // When a conversation is selected
+  useEffect(() => {
+    if (activeConversationId) {
+      setViewMode('chat');
+      dispatch(fetchMessages(activeConversationId));
+      dispatch(markAsRead(activeConversationId));
+      // Mark notifications as read
+      if (currentUser?.id) {
+        markNotificationsAsRead(activeConversationId, currentUser.id);
+      }
+      dispatch(fetchConversations());
+    } else {
+      setViewMode('list');
     }
-  }, [currentUserId, peerId]);
+  }, [activeConversationId, dispatch, currentUser?.id]);
 
+  // Scroll to bottom when new messages arrive
   useEffect(() => {
-    loadChat();
-  }, [loadChat]);
-
-  useEffect(() => {
-    if (!conversationId) return undefined;
-
-    return subscribeToConversation(conversationId, (row) => {
-      setMessages((prev) => {
-        if (prev.some((item) => item.id === row.id)) return prev;
-        return [...prev, row];
-      });
-    });
-  }, [conversationId]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!draft.trim() || sending || !conversationId) return;
+  // When popup opens, refresh conversations
+  useEffect(() => {
+    if (isOpen) {
+      dispatch(fetchConversations());
+    }
+  }, [isOpen, dispatch]);
 
-    const messageBody = draft;
-    setDraft("");
-    setSending(true);
-    setError("");
+  // ─── Real‑time subscription ──────────────────────────────────────────
+  useEffect(() => {
+    if (!activeConversationId) return undefined;
 
-    try {
-      const row = await sendChatMessage(conversationId, currentUserId, peerId, messageBody);
-      if (row) {
-        setMessages((prev) => (prev.some((item) => item.id === row.id) ? prev : [...prev, row]));
+    console.log('🟢 Subscribing to conversation:', activeConversationId);
+
+    const unsubscribe = subscribeToConversation(activeConversationId, (newMsg) => {
+      console.log('🔔 New message received:', newMsg);
+      // Add to Redux store
+      dispatch(addNewMessage(newMsg));
+
+      // Only increment unread if the message is from someone else AND the chat is not already open for this conversation
+      if (newMsg.sender_id !== currentUser?.id) {
+        const chatState = store.getState().chat;
+        // If chat is open and active conversation is this one, don't increment unread
+        if (!(chatState.isOpen && chatState.activeConversationId === newMsg.conversation_id)) {
+          dispatch(incrementUnreadCount({ conversationId: newMsg.conversation_id }));
+        }
       }
-    } catch {
+    });
+
+    return () => {
+      console.log('🔴 Unsubscribing from conversation:', activeConversationId);
+      unsubscribe();
+    };
+  }, [activeConversationId, dispatch, currentUser?.id]);
+
+  // ─── Handlers ────────────────────────────────────────────────────────
+  const handleSelectConversation = (convId) => {
+    dispatch(setActiveConversation(convId));
+  };
+
+  const handleBackToList = () => {
+    dispatch(setActiveConversation(null));
+    setViewMode('list');
+  };
+
+  const handleClose = () => {
+    dispatch(closeChat());
+    dispatch(setActiveConversation(null));
+  };
+
+  const handleSend = async () => {
+    if (!draft.trim() || sending || !activeConversationId) return;
+    const messageBody = draft;
+    setDraft('');
+    setSending(true);
+    try {
+      await dispatch(sendMessage({ conversationId: activeConversationId, body: messageBody })).unwrap();
+      dispatch(fetchConversations());
+    } catch (error) {
+      console.error('Send message error:', error);
       setDraft(messageBody);
-      setError("Message was not sent. Try again.");
     } finally {
       setSending(false);
+      inputRef.current?.focus();
     }
   };
 
-  const handleKeyDown = (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       handleSend();
     }
   };
 
-  if (!peerId) return null;
-
-  const peerName = peer?.full_name || "Expert";
+  // Find active conversation peer
+  const activeConversation = conversations.find((c) => c.conversationId === activeConversationId);
+  const peer = activeConversation?.peer || null;
+  const peerName = peer?.full_name || 'User';
   const peerAvatar = peer?.avatar_url;
-  const firstMessageDate = messages[0]?.created_at;
 
-  return (
-    <section className="chat-popup" role="dialog" aria-label={`Chat with ${peerName}`}>
-      <header className="chat-popup__header">
-        <button type="button" className="chat-popup__back" onClick={onClose} aria-label="Close chat">
-          <ArrowLeft size={34} strokeWidth={2.5} />
+  // ─── Render functions ──────────────────────────────────────────────
+  const renderList = () => (
+    <div className="chat-popup__list">
+      <div className="chat-popup__list-header">
+        <span>Messages</span>
+        <button className="chat-popup__close-btn" onClick={handleClose}>
+          <X size={20} />
         </button>
+      </div>
+      {loading && conversations.length === 0 ? (
+        <div className="chat-popup__state">
+          <Loader2 size={24} className="chat-popup__spin" />
+          <span>Loading...</span>
+        </div>
+      ) : conversations.length === 0 ? (
+        <div className="chat-popup__empty">No conversations yet.</div>
+      ) : (
+        <ul>
+          {conversations.map((conv) => (
+            <li
+              key={conv.conversationId}
+              className="chat-popup__list-item"
+              onClick={() => handleSelectConversation(conv.conversationId)}
+            >
+              <div className="chat-popup__list-avatar">
+                {conv.peer?.avatar_url ? (
+                  <img src={conv.peer.avatar_url} alt={conv.peer.full_name} />
+                ) : (
+                  <span>{getInitials(conv.peer?.full_name)}</span>
+                )}
+              </div>
+              <div className="chat-popup__list-info">
+                <div className="chat-popup__list-name">{conv.peer?.full_name || 'Unknown'}</div>
+                <div className="chat-popup__list-preview">
+                  {conv.lastMessage?.body || 'No messages yet'}
+                </div>
+              </div>
+              <div className="chat-popup__list-meta">
+                <span className="chat-popup__list-time">
+                  {conv.lastMessage?.created_at ? formatTime(conv.lastMessage.created_at) : ''}
+                </span>
+                {conv.unreadCount > 0 && (
+                  <span className="chat-popup__list-badge">{conv.unreadCount}</span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 
+  const renderChat = () => (
+    <div className="chat-popup__chat">
+      <header className="chat-popup__chat-header">
+        <button className="chat-popup__back" onClick={handleBackToList}>
+          <ArrowLeft size={22} />
+        </button>
         <div className="chat-popup__person">
           <span className="chat-popup__avatar">
             {peerAvatar ? <img src={peerAvatar} alt={peerName} /> : getInitials(peerName)}
@@ -142,44 +216,38 @@ export default function ChatPopup({ currentUser, peerId, onClose }) {
             <small>online</small>
           </span>
         </div>
+        <button className="chat-popup__close-btn" onClick={handleClose}>
+          <X size={20} />
+        </button>
       </header>
 
       <div className="chat-popup__body">
-        {loading && (
+        {loading && messages.length === 0 ? (
           <div className="chat-popup__state">
             <Loader2 size={24} className="chat-popup__spin" />
-            <span>Opening chat...</span>
+            <span>Loading messages...</span>
           </div>
-        )}
-
-        {!loading && error && <div className="chat-popup__error">{error}</div>}
-
-        {!loading && !error && (
+        ) : (
           <>
-            <div className="chat-popup__timeline">
-              <span>{formatDateLabel(firstMessageDate || new Date())}</span>
-              <span>{formatTime(firstMessageDate || new Date())}</span>
-            </div>
-
             {messages.length === 0 && (
-              <div className="chat-popup__empty">
-                Start the conversation with {peerName.split(" ")[0]}.
-              </div>
+              <div className="chat-popup__empty">No messages yet. Say hello!</div>
             )}
-
-            {messages.map((message) => {
-              const isMine = message.sender_id === currentUserId;
+            {messages.map((msg) => {
+              const isMine = msg.sender_id === currentUser?.id;
               return (
                 <div
-                  key={message.id}
-                  className={`chat-popup__row ${isMine ? "chat-popup__row--mine" : "chat-popup__row--theirs"}`}
+                  key={msg.id}
+                  className={`chat-popup__row ${isMine ? 'chat-popup__row--mine' : 'chat-popup__row--theirs'}`}
                 >
                   {!isMine && (
                     <span className="chat-popup__mini-avatar">
                       {peerAvatar ? <img src={peerAvatar} alt="" /> : getInitials(peerName)}
                     </span>
                   )}
-                  <div className="chat-popup__bubble">{message.body}</div>
+                  <div className="chat-popup__bubble">
+                    <span>{msg.body}</span>
+                    <span className="chat-popup__time">{formatTime(msg.created_at)}</span>
+                  </div>
                 </div>
               );
             })}
@@ -190,34 +258,32 @@ export default function ChatPopup({ currentUser, peerId, onClose }) {
 
       <footer className="chat-popup__composer">
         <textarea
+          ref={inputRef}
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Write a message..."
+          placeholder="Type a message..."
           rows={1}
-          disabled={loading || !conversationId}
+          disabled={loading}
         />
-        <button type="button" className="chat-popup__icon-btn" aria-label="Attach file" disabled>
-          <Paperclip size={25} />
-        </button>
         <button
-          type="button"
-          className="chat-popup__icon-btn chat-popup__send"
+          className="chat-popup__send"
           onClick={handleSend}
-          disabled={sending || !draft.trim() || loading || !conversationId}
-          aria-label="Send message"
+          disabled={sending || !draft.trim() || loading}
         >
-          {sending ? <Loader2 size={24} className="chat-popup__spin" /> : <Send size={27} />}
+          {sending ? <Loader2 size={22} className="chat-popup__spin" /> : <Send size={22} />}
         </button>
       </footer>
-    </section>
+    </div>
   );
-}
 
-ChatPopup.propTypes = {
-  currentUser: PropTypes.shape({
-    id: PropTypes.string,
-  }),
-  peerId: PropTypes.string,
-  onClose: PropTypes.func.isRequired,
+  return (
+    <div className="chat-popup-overlay" onClick={handleClose}>
+      <div className="chat-popup" onClick={(e) => e.stopPropagation()}>
+        {viewMode === 'list' ? renderList() : renderChat()}
+      </div>
+    </div>
+  );
 };
+
+export default ChatPopup;

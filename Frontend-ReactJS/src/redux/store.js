@@ -7,10 +7,12 @@
 import loaderReducer from "./loaderSlice";
 import userReducer from "./userSlice";
 import { configureStore } from "@reduxjs/toolkit";
+import chatReducer from "./chatSlice";
 
 export const store = configureStore({
  reducer: {
   loader: loaderReducer,
   user: userReducer,
+  chat: chatReducer,
  }
 })

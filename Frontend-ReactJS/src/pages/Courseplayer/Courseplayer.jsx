@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import './CoursePlayer.css';
+// import './CoursePlayer.css';
 
 const extractYTId = (url) => {
   if (!url) return '';
