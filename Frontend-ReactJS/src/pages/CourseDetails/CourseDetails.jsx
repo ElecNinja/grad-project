@@ -10,6 +10,20 @@ import {
   mergeBootcampCatalogs,
 } from "../Bootcamp/bootcampUtils";
 import { enrollPublicBootcamp } from "../../apis/handlers/Publicbootcamphandlers";
+import { 
+  PlayCircle, 
+  Clock, 
+  Award, 
+  Star, 
+  Share2, 
+  ChevronDown, 
+  ChevronUp, 
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Users
+} from "lucide-react";
 
 function CourseDetails() {
   const navigate = useNavigate();
@@ -92,12 +106,12 @@ function CourseDetails() {
 
   const renderStars = (rating) =>
     Array.from({ length: 5 }, (_, i) => (
-      <span
+      <Star
         key={i}
-        style={{ color: i < Math.round(rating || 0) ? "#f5a623" : "#ccc", fontSize: "14px" }}
-      >
-        ★
-      </span>
+        size={14}
+        fill={i < Math.round(rating || 0) ? "#f5a623" : "none"}
+        stroke={i < Math.round(rating || 0) ? "#f5a623" : "#cbd5e1"}
+      />
     ));
 
   const whatYouLearn = useMemo(() => {
@@ -121,33 +135,17 @@ function CourseDetails() {
 
   const hasCapacity = course?.capacity != null && course.capacity > 0;
   const studentsLabel = hasCapacity
-    ? `Students: (${enrolledCount}/${course.capacity})`
+    ? `(${enrolledCount}/${course.capacity} filled)`
     : enrolledCount > 0
-      ? `Students: ${enrolledCount}`
+      ? `${enrolledCount} students`
       : null;
 
   const atCapacity = hasCapacity && enrolledCount >= course.capacity;
-
-  // Build the "this bootcamp includes" list dynamically so rows with no
-  // real data (e.g. 0 videos, no duration) simply don't render instead
-  // of leaving a blank-looking line.
-  const includesItems = useMemo(() => {
-    const items = [];
-    if (course?.totalLectures > 0) {
-      items.push(`${course.totalLectures} video${course.totalLectures !== 1 ? "s" : ""}`);
-    }
-    if (course?.totalDuration) {
-      items.push(`${course.totalDuration} total length`);
-    }
-    items.push("Full lifetime access");
-    return items;
-  }, [course?.totalLectures, course?.totalDuration]);
 
   const toggleSection = (index) =>
     setOpenSections((prev) => ({ ...prev, [index]: !prev[index] }));
 
   // Bootcamps carousel: track whether we can scroll further left/right
-  // so the arrow buttons can disable themselves at the ends.
   const bcRowRef = useRef(null);
   const [bcCanScrollLeft, setBcCanScrollLeft] = useState(false);
   const [bcCanScrollRight, setBcCanScrollRight] = useState(false);
@@ -206,7 +204,7 @@ function CourseDetails() {
           style={{
             marginTop: "20px",
             padding: "10px 24px",
-            background: "#2f6df6",
+            background: "#3b82f6",
             color: "white",
             border: "none",
             borderRadius: "20px",
@@ -227,27 +225,27 @@ function CourseDetails() {
         ? "Processing..."
         : "Buy Now";
 
-  // The main column only ever holds the "what you'll learn" box, so if
-  // there's nothing to show there we skip rendering it entirely rather
-  // than leaving an empty padded/bordered box next to the sidebar.
   const hasMainContent = hasLearnContent;
 
   return (
     <div className="cd-page">
       <div className="cd-banner">
         <div className="cd-banner-left">
+          <div className="cd-badge-row">
+            <span className="cd-premium-badge"><Sparkles size={12} /> Premium Bootcamp</span>
+          </div>
           <h1>{course.title}</h1>
           {course.subtitle && <p className="cd-subtitle">{course.subtitle}</p>}
           {course.rating != null && course.rating > 0 && (
             <div className="cd-rating-row">
-              {renderStars(course.rating)}
+              <span className="stars">{renderStars(course.rating)}</span>
               <span className="cd-rating-num">{course.rating}</span>
               {course.reviews != null && (
-                <span className="cd-reviews">{course.reviews.toLocaleString()} ratings</span>
+                <span className="cd-reviews">({course.reviews.toLocaleString()} ratings)</span>
               )}
             </div>
           )}
-          {course.expert && <p className="cd-expert">Expert: {course.expert}</p>}
+          {course.expert && <p className="cd-expert">Expert: <span>{course.expert}</span></p>}
         </div>
         <div className="cd-banner-img">
           <img
@@ -267,7 +265,10 @@ function CourseDetails() {
               <h2>What you'll learn</h2>
               <div className="cd-learn-grid">
                 {visibleLearn.map((item, index) => (
-                  <div key={index} className="cd-learn-item">✓ {item}</div>
+                  <div key={index} className="cd-learn-item">
+                    <Check size={16} className="cd-check-icon" />
+                    <span>{item}</span>
+                  </div>
                 ))}
               </div>
               {whatYouLearn.length > 8 && (
@@ -288,14 +289,37 @@ function CourseDetails() {
           >
             {buyBtnLabel}
           </button>
+          
           <div className="cd-includes">
             <p className="cd-includes-title">This bootcamp includes:</p>
-            {includesItems.map((item, index) => (
-              <p key={index}>• {item}</p>
-            ))}
+            {course?.totalLectures > 0 && (
+              <p className="cd-include-row">
+                <PlayCircle size={16} className="cd-inc-icon" />
+                <span>{course.totalLectures} video{course.totalLectures !== 1 ? "s" : ""}</span>
+              </p>
+            )}
+            {course?.totalDuration && (
+              <p className="cd-include-row">
+                <Clock size={16} className="cd-inc-icon" />
+                <span>{course.totalDuration} total length</span>
+              </p>
+            )}
+            <p className="cd-include-row">
+              <Award size={16} className="cd-inc-icon" />
+              <span>Full lifetime access</span>
+            </p>
           </div>
-          {studentsLabel && <div className="cd-students">{studentsLabel}</div>}
-          <button className="cd-share-btn">Share</button>
+
+          {studentsLabel && (
+            <div className="cd-students">
+              <Users size={16} className="cd-stud-icon" />
+              <span>{studentsLabel}</span>
+            </div>
+          )}
+          
+          <button className="cd-share-btn">
+            <Share2 size={14} /> Share
+          </button>
         </div>
       </div>
 
@@ -328,7 +352,9 @@ function CourseDetails() {
                   <div key={index} className="cd-acc-item">
                     <div className="cd-acc-header" onClick={() => toggleSection(index)}>
                       <span className="cd-acc-title">
-                        <span className="cd-acc-arrow">{isOpen ? "▲" : "▼"}</span>
+                        <span className="cd-acc-arrow">
+                          {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </span>
                         {section.title}
                       </span>
                       <span className="cd-sec-meta">
@@ -340,7 +366,9 @@ function CourseDetails() {
                       <div className="cd-acc-body">
                         {section.items.map((videoTitle, lessonIndex) => (
                           <div key={lessonIndex} className="cd-lecture-row">
-                            <span className="cd-lecture-icon">▶</span>
+                            <span className="cd-lecture-icon">
+                              <PlayCircle size={14} color="#64748b" />
+                            </span>
                             <span className="cd-lecture-title">{videoTitle}</span>
                             <span className="cd-lecture-dur">{section.durations?.[lessonIndex] || "—"}</span>
                           </div>
@@ -363,7 +391,7 @@ function CourseDetails() {
 
         {otherBootcamps.length > 0 && (
           <div className="cd-bootcamps">
-            <h2>Bootcamps</h2>
+            <h2>Other Bootcamps You Might Like</h2>
             <div className="cd-bc-carousel">
               <button
                 type="button"
@@ -372,7 +400,7 @@ function CourseDetails() {
                 disabled={!bcCanScrollLeft}
                 aria-label="Scroll bootcamps left"
               >
-                ‹
+                <ChevronLeft size={20} />
               </button>
 
               <div className="cd-bootcamps-row" ref={bcRowRef}>
@@ -382,16 +410,18 @@ function CourseDetails() {
                     className="cd-bc-card"
                     onClick={() => navigate("/course", { state: { course: bootcamp } })}
                   >
-                    <img
-                      src={bootcamp.image || PLACEHOLDER_IMAGE}
-                      alt={bootcamp.title}
-                      onError={(e) => {
-                        e.currentTarget.src = PLACEHOLDER_IMAGE;
-                      }}
-                    />
+                    <div className="cd-bc-img-wrapper">
+                      <img
+                        src={bootcamp.image || PLACEHOLDER_IMAGE}
+                        alt={bootcamp.title}
+                        onError={(e) => {
+                          e.currentTarget.src = PLACEHOLDER_IMAGE;
+                        }}
+                      />
+                    </div>
                     <div className="cd-bc-info">
                       <p className="cd-bc-title">{bootcamp.title}</p>
-                      {bootcamp.expert && <p className="cd-bc-expert">Expert : {bootcamp.expert}</p>}
+                      {bootcamp.expert && <p className="cd-bc-expert">Expert: {bootcamp.expert}</p>}
                       {(() => {
                         const bHasCapacity = bootcamp.capacity != null && bootcamp.capacity > 0;
                         const bCount = bootcamp.enrolledCount ?? 0;
@@ -403,7 +433,15 @@ function CourseDetails() {
                         }
                         return null;
                       })()}
-                      {bootcamp.price && <p className="cd-bc-price">{bootcamp.price}</p>}
+                      <div className="cd-bc-footer-row">
+                        {bootcamp.price && <p className="cd-bc-price">{bootcamp.price}</p>}
+                        {bootcamp.rating != null && bootcamp.rating > 0 && (
+                          <div className="cd-bc-rating">
+                            <Star size={12} fill="#ea580c" stroke="#ea580c" />
+                            <span>{bootcamp.rating}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -416,7 +454,7 @@ function CourseDetails() {
                 disabled={!bcCanScrollRight}
                 aria-label="Scroll bootcamps right"
               >
-                ›
+                <ChevronRight size={20} />
               </button>
             </div>
           </div>
