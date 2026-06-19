@@ -29,9 +29,15 @@ export const fetchMessages = createAsyncThunk(
 
 export const sendMessage = createAsyncThunk(
   'chat/sendMessage',
-  async ({ conversationId, body }, { rejectWithValue }) => {
+  async ({ conversationId, body, fileUrl, fileName, fileType }, { rejectWithValue }) => {
     try {
-      const response = await api.post(`${baseUrl}/api/chat/message`, { conversationId, body });
+      const response = await api.post(`${baseUrl}/api/chat/message`, {
+        conversationId,
+        body,
+        fileUrl,
+        fileName,
+        fileType,
+      });
       return { conversationId, message: response.data.data };
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);

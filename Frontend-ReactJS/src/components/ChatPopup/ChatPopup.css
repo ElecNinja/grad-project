@@ -381,3 +381,44 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.chat-popup__attach-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s, transform 0.2s;
+}
+.chat-popup__attach-btn:hover {
+  color: #2e72f8;
+  transform: scale(1.1);
+}
+.chat-popup__attach-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── File link styling ─── */
+.chat-file-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(29, 78, 216, 0.08);
+}
+.chat-file-link:hover {
+  background: rgba(29, 78, 216, 0.15);
+}
+.chat-file-icon {
+  font-size: 18px;
+}
+.chat-file-name {
+  flex: 1;
+  word-break: break-word;
+}

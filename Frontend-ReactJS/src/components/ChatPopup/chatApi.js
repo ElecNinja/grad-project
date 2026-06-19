@@ -171,3 +171,36 @@ export async function markNotificationsAsRead(conversationId, userId) {
     .eq('is_read', false);
   if (error) console.error('Error marking notifications as read:', error);
 }
+
+export async function uploadChatFile(file, conversationId, userId) {
+  if (!file || !conversationId || !userId) return null;
+
+  // Generate a unique file path: {conversationId}/{userId}/{timestamp}_{filename}
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}.${fileExt}`;
+  const filePath = `${conversationId}/${userId}/${fileName}`;
+
+  // Upload to Supabase Storage
+  const { data, error } = await supabase.storage
+    .from('chat-files')
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+
+  if (error) {
+    console.error('Error uploading file:', error);
+    throw error;
+  }
+
+  // Get public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('chat-files')
+    .getPublicUrl(filePath);
+
+  return {
+    url: publicUrl,
+    name: file.name,
+    type: file.type,
+  };
+}

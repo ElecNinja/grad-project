@@ -1,7 +1,7 @@
 // Frontend-ReactJS/src/components/ChatPopup/ChatPopup.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { ArrowLeft, Loader2, Send, X } from 'lucide-react';
+import { ArrowLeft, Loader2, Send, X, Paperclip } from 'lucide-react';
 import {
   fetchConversations,
   fetchMessages,
@@ -12,7 +12,7 @@ import {
   addNewMessage,
   incrementUnreadCount,
 } from '../../redux/chatSlice';
-import { subscribeToConversation, markNotificationsAsRead } from './chatApi';
+import { subscribeToConversation, markNotificationsAsRead, uploadChatFile } from './chatApi';
 import { store } from '../../redux/store';
 import './ChatPopup.css';
 
@@ -45,6 +45,8 @@ const ChatPopup = () => {
   const [viewMode, setViewMode] = useState('list');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef(null);
 
   // When a conversation is selected
   useEffect(() => {
@@ -52,7 +54,6 @@ const ChatPopup = () => {
       setViewMode('chat');
       dispatch(fetchMessages(activeConversationId));
       dispatch(markAsRead(activeConversationId));
-      // Mark notifications as read
       if (currentUser?.id) {
         markNotificationsAsRead(activeConversationId, currentUser.id);
       }
@@ -79,29 +80,46 @@ const ChatPopup = () => {
   // ─── Real‑time subscription ──────────────────────────────────────────
   useEffect(() => {
     if (!activeConversationId) return undefined;
-
-    console.log('🟢 Subscribing to conversation:', activeConversationId);
-
     const unsubscribe = subscribeToConversation(activeConversationId, (newMsg) => {
-      console.log('🔔 New message received:', newMsg);
-      // Add to Redux store
       dispatch(addNewMessage(newMsg));
-
-      // Only increment unread if the message is from someone else AND the chat is not already open for this conversation
       if (newMsg.sender_id !== currentUser?.id) {
         const chatState = store.getState().chat;
-        // If chat is open and active conversation is this one, don't increment unread
         if (!(chatState.isOpen && chatState.activeConversationId === newMsg.conversation_id)) {
           dispatch(incrementUnreadCount({ conversationId: newMsg.conversation_id }));
         }
       }
     });
-
     return () => {
-      console.log('🔴 Unsubscribing from conversation:', activeConversationId);
       unsubscribe();
     };
   }, [activeConversationId, dispatch, currentUser?.id]);
+
+  // ─── File upload logic (reusable) ────────────────────────────────────
+  const handleFileUpload = async (file) => {
+    if (!file || !activeConversationId) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+    setUploadingFile(true);
+    try {
+      const fileData = await uploadChatFile(file, activeConversationId, currentUser?.id);
+      if (!fileData) throw new Error('Upload failed');
+      await dispatch(sendMessage({
+        conversationId: activeConversationId,
+        body: fileData.name,
+        fileUrl: fileData.url,
+        fileName: fileData.name,
+        fileType: fileData.type,
+      })).unwrap();
+      dispatch(fetchConversations());
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Failed to upload file. Please try again.');
+    } finally {
+      setUploadingFile(false);
+    }
+  };
 
   // ─── Handlers ────────────────────────────────────────────────────────
   const handleSelectConversation = (convId) => {
@@ -124,7 +142,10 @@ const ChatPopup = () => {
     setDraft('');
     setSending(true);
     try {
-      await dispatch(sendMessage({ conversationId: activeConversationId, body: messageBody })).unwrap();
+      await dispatch(sendMessage({
+        conversationId: activeConversationId,
+        body: messageBody,
+      })).unwrap();
       dispatch(fetchConversations());
     } catch (error) {
       console.error('Send message error:', error);
@@ -139,6 +160,33 @@ const ChatPopup = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  // ─── File input selection ──────────────────────────────────────────
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await handleFileUpload(file);
+      e.target.value = '';
+    }
+  };
+
+  // ─── Paste handler ──────────────────────────────────────────────────
+  const handlePaste = async (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          await handleFileUpload(file);
+        }
+        return;
+      }
+      // Text pastes are handled by default
     }
   };
 
@@ -234,6 +282,8 @@ const ChatPopup = () => {
             )}
             {messages.map((msg) => {
               const isMine = msg.sender_id === currentUser?.id;
+              const isFile = msg.message_type === 'file';
+              const isImage = msg.file_url && msg.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
               return (
                 <div
                   key={msg.id}
@@ -245,7 +295,18 @@ const ChatPopup = () => {
                     </span>
                   )}
                   <div className="chat-popup__bubble">
-                    <span>{msg.body}</span>
+                    {isFile ? (
+                      isImage ? (
+                        <img src={msg.file_url} alt={msg.file_name} style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8 }} />
+                      ) : (
+                        <a href={msg.file_url} target="_blank" rel="noopener noreferrer" className="chat-file-link">
+                          <span className="chat-file-icon">📎</span>
+                          <span className="chat-file-name">{msg.file_name || 'File'}</span>
+                        </a>
+                      )
+                    ) : (
+                      <span>{msg.body}</span>
+                    )}
                     <span className="chat-popup__time">{formatTime(msg.created_at)}</span>
                   </div>
                 </div>
@@ -262,14 +323,30 @@ const ChatPopup = () => {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           placeholder="Type a message..."
           rows={1}
-          disabled={loading}
+          disabled={loading || uploadingFile}
         />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
+          style={{ display: 'none' }}
+          onChange={handleFileSelect}
+        />
+        <button
+          className="chat-popup__attach-btn"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadingFile || loading || !activeConversationId}
+          title="Attach file (PDF or Image)"
+        >
+          {uploadingFile ? <Loader2 size={22} className="chat-popup__spin" /> : <Paperclip size={22} />}
+        </button>
         <button
           className="chat-popup__send"
           onClick={handleSend}
-          disabled={sending || !draft.trim() || loading}
+          disabled={sending || !draft.trim() || loading || uploadingFile}
         >
           {sending ? <Loader2 size={22} className="chat-popup__spin" /> : <Send size={22} />}
         </button>
