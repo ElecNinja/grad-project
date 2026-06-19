@@ -116,9 +116,9 @@ async function getConversationMessages(conversationId, currentUserId) {
 /**
  * Send a new message.
  */
-async function sendMessage(conversationId, senderId, body) {
-  const cleanBody = body?.trim();
-  if (!cleanBody) throw new Error('Message body cannot be empty');
+async function sendMessage(conversationId, senderId, body, fileUrl = null, fileName = null, fileType = null) {
+  const cleanBody = body?.trim() || '';
+  if (!conversationId || !senderId) throw new Error('Missing required fields');
 
   // Verify sender is a member
   const { data: membership, error: memError } = await supabase
@@ -131,6 +131,9 @@ async function sendMessage(conversationId, senderId, body) {
   if (memError) throw memError;
   if (!membership) throw new Error('Sender is not a member of this conversation');
 
+  // Determine message type: 'file' if fileUrl exists, else 'text'
+  const messageType = fileUrl ? 'file' : 'text';
+
   // Insert message
   const { data: newMessage, error: insertError } = await supabase
     .from('messages')
@@ -138,10 +141,12 @@ async function sendMessage(conversationId, senderId, body) {
       conversation_id: conversationId,
       sender_id: senderId,
       body: cleanBody,
-      message_type: 'text',
+      message_type: messageType,
+      file_url: fileUrl || null,
+      file_name: fileName || null,
       read: false,
     })
-    .select('id, sender_id, body, created_at')
+    .select('id, sender_id, body, created_at, file_url, file_name, message_type')
     .single();
 
   if (insertError) throw insertError;
@@ -159,7 +164,6 @@ async function sendMessage(conversationId, senderId, body) {
 
   // If recipient exists, create notification
   if (recipientId) {
-    // Fetch sender name for notification
     const { data: senderProfile, error: profileError } = await supabase
       .from('profiles')
       .select('full_name')
@@ -173,7 +177,7 @@ async function sendMessage(conversationId, senderId, body) {
         recipient_id: recipientId,
         type: 'new_message',
         title: `New message from ${senderName}`,
-        body: cleanBody,
+        body: cleanBody || (fileName || 'File attachment'),
         data: { conversation_id: conversationId, sender_id: senderId },
         is_read: false,
         read_at: null,

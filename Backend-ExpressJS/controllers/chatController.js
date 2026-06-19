@@ -24,12 +24,12 @@ exports.getMessages = async (req, res, next) => {
 
 exports.sendMessage = async (req, res, next) => {
   try {
-    const { conversationId, body } = req.body;
-    if (!conversationId || !body) {
-      return res.status(400).json({ success: false, message: 'Missing conversationId or body' });
+    const { conversationId, body, fileUrl, fileName, fileType } = req.body;
+    if (!conversationId) {
+      return res.status(400).json({ success: false, message: 'Missing conversationId' });
     }
     const senderId = req.user.id;
-    const message = await chatService.sendMessage(conversationId, senderId, body);
+    const message = await chatService.sendMessage(conversationId, senderId, body, fileUrl, fileName, fileType);
     res.status(201).json({ success: true, data: message });
   } catch (error) {
     next(error);
