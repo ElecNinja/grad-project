@@ -18,23 +18,29 @@ function mapLesson(row) {
   };
 }
 
+function extractTeacherName(bc) {
+  const tp = Array.isArray(bc.teacher_profiles) ? bc.teacher_profiles[0] : bc.teacher_profiles;
+  const prof = Array.isArray(tp?.profiles) ? tp.profiles[0] : tp?.profiles;
+  return prof?.full_name ?? null;
+}
+
 function pickBootcampFields(bc) {
   if (!bc) return {};
   return {
     category: bc.category ?? bc.topic ?? null,
     level: bc.level ?? null,
-    expert:
-      bc.expert_name ??
-      bc.expert ??
-      bc.profiles?.full_name ??
-      bc.profiles?.[0]?.full_name ??
-      null,
-    price: bc.price ?? null,
+    expert: bc.expert_name ?? bc.expert ?? extractTeacherName(bc) ?? null,
+    price: bc.price ?? bc.total_price ?? null,
     currency: bc.currency ?? "GBP",
     rating: bc.rating != null ? Number(bc.rating) : null,
     reviews: bc.review_count ?? bc.reviews ?? null,
     badge: bc.badge ?? null,
     image: bc.image_url ?? bc.thumbnail_url ?? bc.image ?? null,
+    tags: Array.isArray(bc.tags) ? bc.tags : [],
+    requirements: bc.requirements ?? null,
+    whatYouLearn: bc.what_you_learn ?? bc.whatYouLearn ?? null,
+    capacity: bc.max_students ?? null,
+    enrolledCount: bc.enrolled_count ?? 0,
   };
 }
 
@@ -67,6 +73,11 @@ function resolveBootcamp(row) {
     reviews: null,
     badge: null,
     image: row.thumbnail_url || null,
+    tags: [],
+    requirements: null,
+    whatYouLearn: null,
+    capacity: null,
+    enrolledCount: 0,
   };
 }
 
@@ -92,6 +103,11 @@ export function lessonsToBootcamps(lessons) {
         reviews: meta.reviews,
         badge: meta.badge,
         image: meta.image || row.thumbnail_url || null,
+        tags: meta.tags || [],
+        requirements: meta.requirements || null,
+        whatYouLearn: meta.whatYouLearn || null,
+        capacity: meta.capacity,
+        enrolledCount: meta.enrolledCount,
         hasUnpublishedLessons: false,
         lessons: [],
         sectionsMap: new Map(),
@@ -221,10 +237,15 @@ export function bootcampToCourseState(bootcamp) {
     reviews: bootcamp.reviews ?? undefined,
     image: bootcamp.image || PLACEHOLDER_IMAGE,
     badge: bootcamp.badge,
+    relatedTopics: bootcamp.tags || [],
+    requirements: bootcamp.requirements || null,
+    whatYouLearn: bootcamp.whatYouLearn || null,
     sections,
     totalSections: sections.length,
     totalLectures: bootcamp.lessons.length,
     totalDuration: formatDuration(totalMin),
     lessons: bootcamp.lessons,
+    capacity: bootcamp.capacity ?? null,
+    enrolledCount: bootcamp.enrolledCount ?? 0,
   };
 }

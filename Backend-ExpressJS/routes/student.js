@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const { isAuthenticated } = require("../middleware/authMiddleware");
-const { createRequest, getMyRequests, getAcceptedOffers } = require("../controllers/studentController");
+const { createRequest, getMyRequests, getAcceptedOffers, confirmBid } = require("../controllers/studentController");
 const { getMyCourses, getMyBootcamps, getMyUploadedVideos } = require("../controllers/studentVideosController");
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -16,6 +16,9 @@ router.get("/requests", isAuthenticated, getMyRequests);
 // Student gets their accepted offers (courses/bootcamps)
 router.get("/accepted-offers", isAuthenticated, getAcceptedOffers);
 
+// ── NEW: Student confirms (pays/accepts) a bid ──
+router.post("/confirm-bid", isAuthenticated, confirmBid);
+
 // Student gets their enrolled courses (with progress + syllabus)
 router.get("/videos/courses", isAuthenticated, getMyCourses);
 
@@ -24,7 +27,6 @@ router.get("/videos/bootcamps", isAuthenticated, getMyBootcamps);
 
 // Student gets videos a teacher uploaded specifically for them
 router.get("/videos/uploaded", isAuthenticated, getMyUploadedVideos);
-
 
 const publicBootcampController = require("../controllers/publicBootcampController");
 router.get("/public-bootcamps", isAuthenticated, publicBootcampController.listAvailablePublicBootcampsController);

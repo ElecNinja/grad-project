@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './Videos.css';
 import { getMyVideoCourses, getMyVideoBootcamps } from '../../apis/handlers/getStudentVideos';
 import { getMyUploadedVideos } from '../../apis/handlers/getMyUploadedVideos';
-import { useNotifications } from '../work/Work';
+import { useNotifications } from '../work/notificationStore';
 
 const extractYTId = (url) => {
   if (!url) return '';
@@ -171,6 +171,14 @@ function Videos() {
     });
   };
 
+  // ── "Continue Bootcamp" → goes to player page at the selected lesson ──
+  const handleContinueBootcamp = () => {
+    if (!selected) return;
+    navigate('/course-player', {
+      state: { item: selected, initialLessonIdx: currentLessonIdx },
+    });
+  };
+
   if (loading) return <div className="videos-page"><p>Loading your videos...</p></div>;
   if (error)   return <div className="videos-page"><p>{error}</p></div>;
 
@@ -297,7 +305,7 @@ function Videos() {
                       {selected.syllabus.map((lesson, idx) => (
                         <div key={lesson.id}
                           className={`videos-lesson ${idx === currentLessonIdx ? 'current' : ''}`}
-                          onClick={() => { setCurrentLessonIdx(idx); setPlaying(true); }}>
+                          onClick={() => { setCurrentLessonIdx(idx); setPlaying(false); }}>
                           <span className="videos-lesson-icon">{idx === currentLessonIdx ? '🔵' : '⭕'}</span>
                           <span className="videos-lesson-title">{lesson.title}</span>
                         </div>
@@ -305,10 +313,16 @@ function Videos() {
                     </div>
                   )}
 
-                  {/* ── زرار Start Course ── */}
-                  <button className="videos-start-btn" onClick={handleStartCourse}>
-                    {activeTab === 'bootcamp' ? 'Watch Selected Video →' : 'Start Course'}
-                  </button>
+                  {/* ── Action button ── */}
+                  {activeTab === 'bootcamp' ? (
+                    <button className="videos-start-btn" onClick={handleContinueBootcamp}>
+                      Continue Bootcamp →
+                    </button>
+                  ) : (
+                    <button className="videos-start-btn" onClick={handleStartCourse}>
+                      Start Course
+                    </button>
+                  )}
                 </div>
               </>
             )}

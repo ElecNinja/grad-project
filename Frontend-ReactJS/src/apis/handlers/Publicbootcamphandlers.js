@@ -33,15 +33,17 @@ export async function enrollPublicBootcamp(bootcampId) {
 }
 
 // Teacher: add a new section to an existing bootcamp
+// FIX: was POSTing to /api/teacher/bootcamps/... (404) — correct path is /api/teacher/public-bootcamps/...
 export async function addBootcampSection({ bootcampId, sectionTitle, videos }) {
   try {
     const response = await api.post(
-      `/api/teacher/bootcamps/${bootcampId}/sections`,
+      `/api/teacher/public-bootcamps/${bootcampId}/sections`,
       { title: sectionTitle, videos },
       { validateStatus: () => true }
     );
     if (response.status === 200 || response.status === 201) {
-      return { response: true, data: response.data?.section || response.data, message: "" };
+      // backend returns { data: section } — read response.data.data, not response.data.section
+      return { response: true, data: response.data?.data || null, message: "" };
     }
     return { response: false, data: null, message: response.data?.error || "Failed to add section" };
   } catch (error) {
@@ -51,15 +53,17 @@ export async function addBootcampSection({ bootcampId, sectionTitle, videos }) {
 }
 
 // Teacher: make a bootcamp public with a capacity limit
+// FIX: was PATCH to /api/teacher/bootcamps/.../publish (404) — correct is POST /api/teacher/public-bootcamps/.../make-public
 export async function makeBootcampPublic({ bootcampId, capacity }) {
   try {
-    const response = await api.patch(
-      `/api/teacher/bootcamps/${bootcampId}/publish`,
-      { max_students: capacity },
+    const response = await api.post(
+      `/api/teacher/public-bootcamps/${bootcampId}/make-public`,
+      { capacity },
       { validateStatus: () => true }
     );
     if (response.status === 200) {
-      return { response: true, data: response.data, message: "" };
+      // backend returns { data: result } — read response.data.data, not response.data
+      return { response: true, data: response.data?.data || null, message: "" };
     }
     return { response: false, data: null, message: response.data?.error || "Failed to publish bootcamp" };
   } catch (error) {

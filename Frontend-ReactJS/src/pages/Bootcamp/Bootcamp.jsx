@@ -159,6 +159,11 @@ function Bootcamp() {
                   >
                     {category.courses.map((course) => {
                       const priceLabel = formatPrice(course.price, course.currency);
+                      // NEW: student counter — only rendered when the teacher set a capacity
+                      const hasCapacity = course.capacity != null && course.capacity > 0;
+                      const studentsLabel = hasCapacity
+                        ? `${course.enrolledCount ?? 0}/${course.capacity} students`
+                        : null;
                       return (
                         <div
                           key={course.id}
@@ -200,6 +205,9 @@ function Bootcamp() {
                                 )}
                               </div>
                             )}
+                            {studentsLabel && (
+                              <p className="students-count">{studentsLabel}</p>
+                            )}
                             {(priceLabel || course.badge) && (
                               <div className="price-row">
                                 {priceLabel && <span className="price">{priceLabel}</span>}
@@ -229,5 +237,3 @@ function Bootcamp() {
 }
 
 export default Bootcamp;
-
-

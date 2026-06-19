@@ -4,6 +4,14 @@ import { getAcceptedOffers } from '../../apis/handlers/getAcceptedOffers';
 import { uploadTeacherVideo } from '../../apis/handlers/uploadTeacherVideo';
 import { createPublicBootcamp } from '../../apis/handlers/Createpublicbootcamp';
 import { addBootcampSection, makeBootcampPublic } from '../../apis/handlers/Publicbootcamphandlers';
+import {
+  notifyStudent,
+  subscribeNotifications,
+  getNotifications,
+  markAllReadForUser,
+  clearNotificationsForUser,
+  useNotifications,
+} from './notificationStore';
 import './Work.css';
 
 const extractYouTubeId = (url) => {
@@ -22,38 +30,8 @@ const extractYouTubeId = (url) => {
 const getYouTubeThumbnail = (videoId) =>
   videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
 
-let _notifListeners = [];
-let _notifications = [];
 
-export const notifyStudent = (studentId, payload) => {
-  const notif = {
-    id: `${Date.now()}_${Math.random()}`,
-    studentId,
-    ...payload,
-    createdAt: new Date().toISOString(),
-    read: false,
-  };
-  _notifications = [notif, ..._notifications];
-  _notifListeners.forEach((fn) => fn([..._notifications]));
-};
 
-export const useNotifications = (userId) => {
-  const [notifs, setNotifs] = useState(
-    _notifications.filter((n) => n.studentId === userId)
-  );
-  useEffect(() => {
-    const handler = (all) => setNotifs(all.filter((n) => n.studentId === userId));
-    _notifListeners.push(handler);
-    return () => { _notifListeners = _notifListeners.filter((fn) => fn !== handler); };
-  }, [userId]);
-  const markAllRead = () => {
-    _notifications = _notifications.map((n) =>
-      n.studentId === userId ? { ...n, read: true } : n
-    );
-    setNotifs(_notifications.filter((n) => n.studentId === userId));
-  };
-  return { notifs, markAllRead };
-};
 
 function NotificationBell({ userId, onNavigateToVideos }) {
   const { notifs, markAllRead } = useNotifications(userId);
@@ -62,7 +40,9 @@ function NotificationBell({ userId, onNavigateToVideos }) {
   const ref = useRef(null);
 
   useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
@@ -77,8 +57,8 @@ function NotificationBell({ userId, onNavigateToVideos }) {
       <button className="notif-bell-btn" onClick={handleOpen} title="Notifications">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
         {unread > 0 && <span className="notif-badge">{unread > 9 ? '9+' : unread}</span>}
       </button>
@@ -88,7 +68,7 @@ function NotificationBell({ userId, onNavigateToVideos }) {
             <span>Notifications</span>
             {notifs.length > 0 && (
               <button className="notif-clear" onClick={() => {
-                _notifications = _notifications.filter((n) => n.studentId !== userId);
+                clearNotificationsForUser(userId);
                 markAllRead();
               }}>Clear all</button>
             )}
@@ -189,7 +169,6 @@ function VideoWatchModal({ offer, maxWatches, onClose, onWatchComplete }) {
   );
 }
 
-// ── Edit Modal ──────────────────────────────────────────────────────────────
 function EditVideoModal({ offer, onClose, onSave }) {
   const [title, setTitle] = useState(offer.title || '');
   const [description, setDescription] = useState(offer.description || '');
@@ -227,38 +206,27 @@ function EditVideoModal({ offer, onClose, onSave }) {
   );
 }
 
-// ── Add Section Modal ─────────────────────────────────────────────────────
-// Lets the teacher add a new section (e.g. "CSS", "JavaScript") with its
-// own videos to an existing bootcamp.
 function AddSectionModal({ bootcampId, onClose, onSaved }) {
   const [sectionTitle, setSectionTitle] = useState('');
-  const [sectionVideos, setSectionVideos] = useState([{ url: '', title: '' }]);
+  const [sectionVideos, setSectionVideos] = useState([{ url: '', title: '', durationMin: '' }]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async () => {
     if (!sectionTitle.trim()) { setError('Please add a section title.'); return; }
-
     const validVideos = sectionVideos
       .filter((v) => v.url.trim() && extractYouTubeId(v.url))
-      .map((v) => ({ title: v.title?.trim() || '', url: v.url.trim() }));
-
+      .map((v) => ({
+        title: v.title?.trim() || '',
+        url: v.url.trim(),
+        durationMin: v.durationMin ? Number(v.durationMin) : null,
+      }));
     if (validVideos.length === 0) { setError('Please add at least one valid YouTube URL.'); return; }
-
     setError('');
     setSubmitting(true);
     try {
-      const result = await addBootcampSection({
-        bootcampId,
-        sectionTitle,
-        videos: validVideos,
-      });
-
-      if (!result.response) {
-        setError(result.message || 'Failed to add section.');
-        return;
-      }
-
+      const result = await addBootcampSection({ bootcampId, sectionTitle, videos: validVideos });
+      if (!result.response) { setError(result.message || 'Failed to add section.'); return; }
       onSaved?.(result.data);
       onClose();
     } catch (err) {
@@ -303,6 +271,19 @@ function AddSectionModal({ bootcampId, onClose, onSaved }) {
                   {v.url && !extractYouTubeId(v.url) && (
                     <div style={{ color: '#ef4444', fontSize: '11px', marginTop: 2 }}>Invalid YouTube URL</div>
                   )}
+                  <input
+                    className="field-input"
+                    type="number"
+                    min="1"
+                    placeholder="Duration (minutes) e.g. 45"
+                    value={v.durationMin || ''}
+                    onChange={(e) => {
+                      const updated = [...sectionVideos];
+                      updated[i] = { ...updated[i], durationMin: e.target.value };
+                      setSectionVideos(updated);
+                    }}
+                    style={{ marginTop: 6 }}
+                  />
                 </div>
                 {sectionVideos.length > 1 && (
                   <button onClick={() => setSectionVideos(sectionVideos.filter((_, idx) => idx !== i))}
@@ -310,40 +291,30 @@ function AddSectionModal({ bootcampId, onClose, onSaved }) {
                 )}
               </div>
             ))}
-            <button onClick={() => setSectionVideos([...sectionVideos, { url: '', title: '' }])}
+            <button onClick={() => setSectionVideos([...sectionVideos, { url: '', title: '', durationMin: '' }])}
               style={{ fontSize: 13, color: 'var(--primary)', background: 'none',
                 border: '1.5px dashed var(--primary)', borderRadius: 8,
                 padding: '6px 16px', cursor: 'pointer', marginTop: 4 }}>
               + Add Video
             </button>
           </div>
-
           {error && (
             <div style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca',
-              borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>
-              {error}
-            </div>
+              borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>{error}</div>
           )}
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
           <button className="btn-watched" disabled={submitting} style={{ opacity: submitting ? 0.5 : 1 }}
-            onClick={handleSubmit}>
-            {submitting ? 'Adding...' : 'Add Section'}
-          </button>
+            onClick={handleSubmit}>{submitting ? 'Adding...' : 'Add Section'}</button>
           <button onClick={onClose}
             style={{ flex: 1, padding: 10, borderRadius: 10, border: '1.5px solid #e2e8f0',
-              background: 'white', cursor: 'pointer', fontSize: 13 }}>
-            Cancel
-          </button>
+              background: 'white', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Make Public Modal ─────────────────────────────────────────────────────
-// Lets the teacher convert a private bootcamp into a public, self-enroll
-// bootcamp with a chosen capacity.
 function MakePublicModal({ bootcampId, onClose, onSaved }) {
   const [capacity, setCapacity] = useState(10);
   const [submitting, setSubmitting] = useState(false);
@@ -351,17 +322,11 @@ function MakePublicModal({ bootcampId, onClose, onSaved }) {
 
   const handleSubmit = async () => {
     if (!capacity || Number(capacity) <= 0) { setError('Please set how many students can join.'); return; }
-
     setError('');
     setSubmitting(true);
     try {
       const result = await makeBootcampPublic({ bootcampId, capacity: Number(capacity) });
-
-      if (!result.response) {
-        setError(result.message || 'Failed to make bootcamp public.');
-        return;
-      }
-
+      if (!result.response) { setError(result.message || 'Failed to make bootcamp public.'); return; }
       onSaved?.(result.data);
       onClose();
     } catch (err) {
@@ -384,26 +349,20 @@ function MakePublicModal({ bootcampId, onClose, onSaved }) {
             <input className="field-input" type="number" min="1" placeholder="e.g. 20"
               value={capacity} onChange={(e) => setCapacity(e.target.value)} />
             <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: 4 }}>
-              Any student can join instantly until this number is reached — no approval needed.
+              Any student can join instantly until this number is reached.
             </div>
           </div>
           {error && (
             <div style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca',
-              borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>
-              {error}
-            </div>
+              borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>{error}</div>
           )}
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
           <button className="btn-watched" disabled={submitting} style={{ opacity: submitting ? 0.5 : 1 }}
-            onClick={handleSubmit}>
-            {submitting ? 'Publishing...' : 'Make Public'}
-          </button>
+            onClick={handleSubmit}>{submitting ? 'Publishing...' : 'Make Public'}</button>
           <button onClick={onClose}
             style={{ flex: 1, padding: 10, borderRadius: 10, border: '1.5px solid #e2e8f0',
-              background: 'white', cursor: 'pointer', fontSize: 13 }}>
-            Cancel
-          </button>
+              background: 'white', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
         </div>
       </div>
     </div>
@@ -423,8 +382,9 @@ export default function Work({ onNavigateToStudentVideos }) {
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState('');
 
-  // uploaded videos list (shown in Video Management after upload)
-  // FIX 1: initialize from localStorage so they survive page refresh
+  const [bootcampError, setBootcampError] = useState('');
+  const [bootcampSuccess, setBootcampSuccess] = useState('');
+
   const [uploadedRows, setUploadedRows] = useState(() => {
     try {
       const saved = localStorage.getItem('work_uploadedRows');
@@ -432,10 +392,7 @@ export default function Work({ onNavigateToStudentVideos }) {
     } catch { return []; }
   });
 
-  // edit modal
   const [editOffer, setEditOffer] = useState(null);
-
-  // add-section / make-public modals (bootcamp management)
   const [sectionModalBootcampId, setSectionModalBootcampId] = useState(null);
   const [makePublicBootcampId, setMakePublicBootcampId] = useState(null);
 
@@ -451,8 +408,17 @@ export default function Work({ onNavigateToStudentVideos }) {
   const [bootcampTitle, setBootcampTitle] = useState('');
   const [bootcampDesc, setBootcampDesc] = useState('');
   const [bootcampTags, setBootcampTags] = useState('');
-  const [bootcampSectionTitle, setBootcampSectionTitle] = useState('');
-  const [bootcampVideos, setBootcampVideos] = useState([{ url: '', title: '' }]);
+  const [bootcampRequirements, setBootcampRequirements] = useState('');
+  const [bootcampLearn, setBootcampLearn] = useState('');
+  const [bootcampPrice, setBootcampPrice] = useState('');
+  const [bootcampCapacity, setBootcampCapacity] = useState('');
+  const [bootcampImage, setBootcampImage] = useState(null);
+  const [bootcampImagePreview, setBootcampImagePreview] = useState('');
+  const bootcampImageRef = useRef(null);
+
+  const [bootcampSections, setBootcampSections] = useState([
+    { title: '', videos: [{ url: '', title: '', durationMin: '' }] },
+  ]);
 
   const [watchModal, setWatchModal] = useState(null);
   const [watchCounts, setWatchCounts] = useState({});
@@ -465,7 +431,6 @@ export default function Work({ onNavigateToStudentVideos }) {
   useEffect(() => { fetchAcceptedOffers(); }, [userRole]);
   useEffect(() => { setSelectedOfferId(null); }, [activeContentTab]);
 
-  // FIX 1: persist uploadedRows so refresh doesn't bring students back
   useEffect(() => {
     try {
       localStorage.setItem('work_uploadedRows', JSON.stringify(uploadedRows));
@@ -492,7 +457,6 @@ export default function Work({ onNavigateToStudentVideos }) {
     live_1on1: offers.filter((o) => o.type === 'live_1on1'),
   };
 
-  // Stats: count uploaded rows by type so numbers update after upload
   const uploadedRecorded = uploadedRows.filter((r) => r.type === 'recorded').length;
   const uploadedBootcamp = uploadedRows.filter((r) => r.type === 'bootcamp').length;
 
@@ -503,15 +467,13 @@ export default function Work({ onNavigateToStudentVideos }) {
   };
 
   const getListOffers = () => {
-    if (activeContentTab === 'Online Course') return groupedOffers.live_1on1;
-    if (activeContentTab === 'Videos') return groupedOffers.recorded;
-    if (activeContentTab === 'Bootcamp') return groupedOffers.bootcamp;
+    if (activeContentTab === 'Online Course') return offers.filter((o) => o.type === 'live_1on1');
+    if (activeContentTab === 'Videos') return offers.filter((o) => o.type === 'recorded');
+    if (activeContentTab === 'Bootcamp') return offers.filter((o) => o.type === 'bootcamp');
     return offers;
   };
 
-  // FIX 1: exclude students who already got an upload this session
-  const uploadedStudentIds = uploadedRows.map((r) => r._studentId).filter(Boolean);
-  const listOffers = getListOffers().filter((o) => !uploadedStudentIds.includes(o.studentId));
+  const listOffers = getListOffers();
 
   const getStatusBadge = (status) =>
     (status === 'accepted' || status === 'published') ? 'badge-status badge-published' : 'badge-status badge-processing';
@@ -531,18 +493,23 @@ export default function Work({ onNavigateToStudentVideos }) {
     }
   };
 
-  // Video Management only shows uploadedRows (things uploaded this session)
   const filteredTableOffers = uploadedRows.filter((o) => {
     if (filterType === 'All Categories') return true;
     return getTypeLabel(o.type).toLowerCase() === filterType.toLowerCase();
   });
 
-  // ── Upload Video ──
-  const handleUploadVideo = async () => {
-    if (activeContentTab === 'Bootcamp') { handleUploadBootcamp(); return; }
+  const handleBootcampImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBootcampImage(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setBootcampImagePreview(ev.target.result);
+    reader.readAsDataURL(file);
+  };
 
+  const handleUploadVideo = async () => {
     const yId = extractYouTubeId(youtubeUrl);
-    const selectedOffer = listOffers.find(o => o.id === selectedOfferId);
+    const selectedOffer = listOffers.find((o) => o.id === selectedOfferId);
     const studentIdToUpload = selectedOffer?.studentId;
 
     if (!videoTitle.trim()) { setUploadError('Please add a video title.'); return; }
@@ -565,7 +532,6 @@ export default function Work({ onNavigateToStudentVideos }) {
 
       notifyStudent(studentIdToUpload, { teacherName: userName, type: 'video', title: videoTitle });
 
-      // FIX 1: add to uploadedRows (appears in Video Management), remove student from My Lists
       setUploadedRows((prev) => [...prev, {
         id: `uploaded_${Date.now()}`,
         title: videoTitle,
@@ -588,62 +554,144 @@ export default function Work({ onNavigateToStudentVideos }) {
     }
   };
 
-  // ── Create Bootcamp (starts private — first section + its videos) ──
-  const handleUploadBootcamp = async () => {
-    if (!bootcampTitle.trim()) { setUploadError('Please add a bootcamp title.'); return; }
-    if (!bootcampSectionTitle.trim()) { setUploadError('Please add a title for the first section (e.g. HTML, Intro).'); return; }
-
-    const validVideos = bootcampVideos
-      .filter((v) => v.url.trim() && extractYouTubeId(v.url))
-      .map((v) => ({ title: v.title?.trim() || '', url: v.url.trim() }));
-
-    if (validVideos.length === 0) { setUploadError('Please add at least one valid YouTube URL.'); return; }
-
+  const handleUploadToGroup = () => {
+    const selectedOffer = listOffers.find((o) => o.id === selectedOfferId);
+    if (!selectedOffer) { setUploadError('Please select a student from My Lists first.'); return; }
     setUploadError('');
-    setUploadSuccess('');
+    setUploadSuccess(`Video will be published to: ${selectedOffer.studentName}`);
+  };
+
+  const updateSectionTitle = (sIdx, val) => {
+    setBootcampSections((prev) => prev.map((s, i) => i === sIdx ? { ...s, title: val } : s));
+  };
+
+  const updateSectionVideo = (sIdx, vIdx, field, val) => {
+    setBootcampSections((prev) => prev.map((s, i) => {
+      if (i !== sIdx) return s;
+      const videos = s.videos.map((v, j) => j === vIdx ? { ...v, [field]: val } : v);
+      return { ...s, videos };
+    }));
+  };
+
+  const addVideoToSectionForm = (sIdx) => {
+    setBootcampSections((prev) => prev.map((s, i) =>
+      i === sIdx ? { ...s, videos: [...s.videos, { url: '', title: '', durationMin: '' }] } : s
+    ));
+  };
+
+  const removeVideoFromSection = (sIdx, vIdx) => {
+    setBootcampSections((prev) => prev.map((s, i) => {
+      if (i !== sIdx) return s;
+      return { ...s, videos: s.videos.filter((_, j) => j !== vIdx) };
+    }));
+  };
+
+  const addSection = () => {
+    setBootcampSections((prev) => [...prev, { title: '', videos: [{ url: '', title: '', durationMin: '' }] }]);
+  };
+
+  const removeSection = (sIdx) => {
+    setBootcampSections((prev) => prev.filter((_, i) => i !== sIdx));
+  };
+
+  const handleUploadBootcamp = async () => {
+    setBootcampError('');
+    setBootcampSuccess('');
+
+    if (!bootcampTitle.trim()) { setBootcampError('Please add a bootcamp title.'); return; }
+    if (!bootcampSections[0]?.title.trim()) { setBootcampError('Please add a title for the first section.'); return; }
+
+    const firstValidVideos = bootcampSections[0].videos
+      .filter((v) => v.url.trim() && extractYouTubeId(v.url))
+      .map((v) => ({
+        title: v.title?.trim() || '',
+        url: v.url.trim(),
+        durationMin: v.durationMin ? Number(v.durationMin) : null,
+      }));
+
+    if (firstValidVideos.length === 0) { setBootcampError('Please add at least one valid YouTube URL in the first section.'); return; }
+
     setUploading(true);
 
     try {
       const result = await createPublicBootcamp({
         title: bootcampTitle,
         description: bootcampDesc,
-        sectionTitle: bootcampSectionTitle,
-        videos: validVideos,
+        sectionTitle: bootcampSections[0].title,
+        videos: firstValidVideos,
+        capacity: bootcampCapacity ? Number(bootcampCapacity) : null,
+        price: bootcampPrice ? Number(bootcampPrice) : 0,
+        image: bootcampImage || null,
+        tags: bootcampTags,
+        requirements: bootcampRequirements,
+        whatYouLearn: bootcampLearn,
       });
 
       if (!result.response) {
-        setUploadError(result.message || 'Failed to create bootcamp.');
+        setBootcampError(result.message || 'Failed to create bootcamp.');
         return;
       }
 
-      // Reflect it in Video Management immediately (private until "Make Public")
+      const bootcampId = result.data?.id;
+      const createdSections = result.data?.section
+        ? [{ id: result.data.section.id, title: result.data.section.title, lessons: firstValidVideos }]
+        : [];
+
+      for (let i = 1; i < bootcampSections.length; i++) {
+        const sec = bootcampSections[i];
+        if (!sec.title.trim()) continue;
+        const secVideos = sec.videos
+          .filter((v) => v.url.trim() && extractYouTubeId(v.url))
+          .map((v) => ({
+            title: v.title?.trim() || '',
+            url: v.url.trim(),
+            durationMin: v.durationMin ? Number(v.durationMin) : null,
+          }));
+        if (secVideos.length === 0) continue;
+
+        const secResult = await addBootcampSection({
+          bootcampId,
+          sectionTitle: sec.title,
+          videos: secVideos,
+        });
+        if (secResult.response && secResult.data) {
+          createdSections.push({ id: secResult.data.id, title: sec.title, lessons: secVideos });
+        }
+      }
+
       setUploadedRows((prev) => [...prev, {
-        id: result.data?.id || `bootcamp_${Date.now()}`,
+        id: bootcampId || `bootcamp_${Date.now()}`,
         title: bootcampTitle,
         description: bootcampDesc,
         type: 'bootcamp',
         bidStatus: 'accepted',
         createdAt: result.data?.created_at || new Date().toISOString(),
-        videos: validVideos,
-        sections: result.data?.section ? [{ id: result.data.section.id, title: result.data.section.title, lessons: validVideos }] : [],
+        videos: firstValidVideos,
+        sections: createdSections,
         isPublic: false,
-        capacity: null,
+        capacity: bootcampCapacity ? Number(bootcampCapacity) : null,
+        price: bootcampPrice ? Number(bootcampPrice) : 0,
         enrolledCount: 0,
+        tags: bootcampTags ? bootcampTags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+        requirements: bootcampRequirements || '',
+        whatYouLearn: bootcampLearn || '',
+        thumbnailUrl: bootcampImagePreview || null,
       }]);
 
-      setBootcampTitle(''); setBootcampDesc(''); setBootcampTags('');
-      setBootcampSectionTitle(''); setBootcampVideos([{ url: '', title: '' }]);
-      setUploadSuccess('Bootcamp created. Add more sections or use "Make Public" from Video Management when ready.');
+      setBootcampTitle(''); setBootcampDesc(''); setBootcampTags(''); setBootcampRequirements('');
+      setBootcampLearn(''); setBootcampPrice(''); setBootcampCapacity('');
+      setBootcampImage(null); setBootcampImagePreview('');
+      setBootcampSections([{ title: '', videos: [{ url: '', title: '', durationMin: '' }] }]);
+      setBootcampSuccess('Bootcamp created successfully!');
     } catch (err) {
-      setUploadError(err?.response?.data?.error || 'Failed to create bootcamp. Please try again.');
+      setBootcampError(err?.response?.data?.error || 'Failed to create bootcamp. Please try again.');
     } finally {
       setUploading(false);
     }
   };
 
-  // ── Go Live ──
   const handleGoLive = () => {
-    const selectedOffer = listOffers.find(o => o.id === selectedOfferId);
+    const selectedOffer = listOffers.find((o) => o.id === selectedOfferId);
     const studentIdToUpload = selectedOffer?.studentId;
 
     if (!liveTitle.trim()) { setUploadError('Please add a live session title.'); return; }
@@ -659,22 +707,18 @@ export default function Work({ onNavigateToStudentVideos }) {
     setWatchCounts((prev) => ({ ...prev, [offerId]: count }));
   };
 
-  // FIX 3: edit handler
   const handleEditSave = (updated) => {
     setUploadedRows((prev) => prev.map((o) => o.id === updated.id ? updated : o));
     setEditOffer(null);
   };
 
-  // called when AddSectionModal succeeds — append the new section locally
   const handleSectionAdded = (bootcampId, newSection) => {
     setUploadedRows((prev) => prev.map((o) => {
       if (o.id !== bootcampId) return o;
-      const sections = [...(o.sections || []), newSection];
-      return { ...o, sections };
+      return { ...o, sections: [...(o.sections || []), newSection] };
     }));
   };
 
-  // called when MakePublicModal succeeds — flip the row to public locally
   const handleMadePublic = (bootcampId, data) => {
     setUploadedRows((prev) => prev.map((o) => {
       if (o.id !== bootcampId) return o;
@@ -687,7 +731,144 @@ export default function Work({ onNavigateToStudentVideos }) {
     }));
   };
 
-  // ── Student view ──────────────────────────────────────────────────────────
+  const renderMyList = () => (
+    <div className="card">
+      <div className="list-card-header">
+        <span className="list-card-title">My Lists</span>
+        <button className="chevron-btn" onClick={() => setListOpen(!listOpen)}>
+          {listOpen ? '▲' : '▼'}
+        </button>
+      </div>
+
+      {listOpen && listOffers.length > 0 && (
+        <div style={{ fontSize: 12, color: 'var(--text-light)', marginBottom: 10 }}>
+          Click on a student to select them before uploading
+        </div>
+      )}
+
+      {uploadError && (
+        <div style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca',
+          borderRadius: 8, padding: '8px 12px', fontSize: 13, marginBottom: 10 }}>
+          {uploadError}
+        </div>
+      )}
+      {uploadSuccess && (
+        <div style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
+          borderRadius: 8, padding: '8px 12px', fontSize: 13, marginBottom: 10 }}>
+          {uploadSuccess}
+        </div>
+      )}
+
+      {loading && <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-light)' }}>Loading...</div>}
+
+      {!loading && listOpen && (
+        <>
+          {listOffers.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-light)' }}>
+              No students for {activeContentTab} yet
+            </div>
+          ) : (
+            listOffers.map((offer, index) => {
+              const isSelected = selectedOfferId === offer.id;
+              return (
+                <div key={offer.id || index} className="list-item"
+                  onClick={() => { setSelectedOfferId(isSelected ? null : offer.id); setUploadError(''); setUploadSuccess(''); }}
+                  style={{
+                    cursor: 'pointer',
+                    background: isSelected ? 'var(--primary-light)' : 'white',
+                    borderRadius: 8, padding: '10px 12px',
+                    border: isSelected ? '1.5px solid var(--primary)' : '1.5px solid transparent',
+                    transition: 'all 0.15s',
+                  }}>
+                  <div className="list-user">
+                    <div className="list-avatar" style={{
+                      background: offer.studentPhoto
+                        ? `url(${offer.studentPhoto}) center/cover`
+                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      backgroundSize: 'cover',
+                    }}>
+                      {!offer.studentPhoto && (
+                        <span style={{ color: 'white', fontSize: '13px', fontWeight: 700 }}>
+                          {offer.studentName?.charAt(0) || 'S'}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <div className="list-user-name" style={{ color: isSelected ? 'var(--primary)' : '' }}>
+                        {offer.studentName || 'Student'}
+                      </div>
+                      <div className="list-course">
+                        {offer.title || 'Untitled'} · {getTypeLabel(offer.type)}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {isSelected && (
+                      <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--primary)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                          stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
+                    )}
+                    {offer.fileUrl && (
+                      <a href={offer.fileUrl} target="_blank" rel="noopener noreferrer"
+                        className="badge-pdf badge-pdf-link" title="View Student PDF"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                          viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                          <line x1="9" y1="13" x2="15" y2="13" />
+                          <line x1="9" y1="17" x2="13" y2="17" />
+                        </svg>
+                        <span style={{ fontSize: '11px', fontWeight: 700 }}>PDF</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </>
+      )}
+
+      <button className="btn-publish"
+        disabled={uploading || (listOffers.length > 0 && !selectedOfferId)}
+        style={{ opacity: uploading || (listOffers.length > 0 && !selectedOfferId) ? 0.5 : 1 }}
+        onClick={
+          activeContentTab === 'Online Course' ? handleGoLive :
+          activeContentTab === 'Bootcamp' ? handleUploadToGroup :
+          handleUploadVideo
+        }>
+        {activeContentTab === 'Online Course' ? (
+          <>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" />
+            </svg>
+            Go Live
+          </>
+        ) : (
+          <>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+              <path d="M5 21h14" />
+            </svg>
+            {uploading ? 'Uploading...' : 'Upload and Publish'}
+            {!uploading && selectedOfferId && listOffers.find((o) => o.id === selectedOfferId) && (
+              <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.85 }}>
+                → {listOffers.find((o) => o.id === selectedOfferId)?.studentName}
+              </span>
+            )}
+          </>
+        )}
+      </button>
+    </div>
+  );
+
   if (userRole === 'student') {
     return (
       <div className="page-container">
@@ -727,7 +908,7 @@ export default function Work({ onNavigateToStudentVideos }) {
                     {thumb ? <img src={thumb} alt={offer.title} /> : (
                       <div className="student-video-thumb-placeholder">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" strokeWidth="2">
-                          <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+                          <polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" />
                         </svg>
                       </div>
                     )}
@@ -765,7 +946,6 @@ export default function Work({ onNavigateToStudentVideos }) {
     );
   }
 
-  // ── Teacher view ──────────────────────────────────────────────────────────
   return (
     <div className="page-container">
       <div className="page-header">
@@ -784,13 +964,12 @@ export default function Work({ onNavigateToStudentVideos }) {
         <div className="stat-card"><div className="stat-label">Record</div><div className="stat-value">{stats.live} Videos</div></div>
       </div>
 
-      {/* Upload New Content */}
       <div className="card">
         <div className="card-title">
           <svg className="upload-new-content-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
           Upload New Content
         </div>
@@ -803,17 +982,17 @@ export default function Work({ onNavigateToStudentVideos }) {
               onClick={() => setActiveContentTab(tab)}>
               {tab === 'Online Course' && (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+                  <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
                 </svg>
               )}
               {tab === 'Videos' && (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+                  <polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" />
                 </svg>
               )}
               {tab === 'Bootcamp' && (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+                  <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" />
                 </svg>
               )}
               {tab}
@@ -893,77 +1072,169 @@ export default function Work({ onNavigateToStudentVideos }) {
                 value={bootcampDesc} onChange={(e) => setBootcampDesc(e.target.value)} />
             </div>
             <div>
-              <div className="field-label">Tags</div>
-              <input className="field-input" placeholder="e.g. web dev, intensive, fullstack"
-                value={bootcampTags} onChange={(e) => setBootcampTags(e.target.value)} />
-            </div>
-            <div>
-              <div className="field-label">First Section Title</div>
-              <input className="field-input" placeholder="e.g. HTML, Intro, Getting Started"
-                value={bootcampSectionTitle} onChange={(e) => setBootcampSectionTitle(e.target.value)} />
+              <div className="field-label">What You'll Learn</div>
+              <textarea className="field-textarea"
+                placeholder={"e.g. Build responsive websites\nUnderstand CSS Grid\nWrite clean JavaScript"}
+                value={bootcampLearn} onChange={(e) => setBootcampLearn(e.target.value)} />
               <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: 4 }}>
-                Your bootcamp starts with this one section. You can add more sections (CSS, JavaScript, ...) after creating it.
+                Each line becomes a bullet point on the bootcamp page.
               </div>
             </div>
             <div>
-              <div className="field-label">Videos for this Section</div>
-              {bootcampVideos.map((v, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
-                    <input className="field-input" placeholder={`Video ${i + 1} Title`}
-                      value={v.title}
-                      onChange={(e) => {
-                        const updated = [...bootcampVideos];
-                        updated[i] = { ...updated[i], title: e.target.value };
-                        setBootcampVideos(updated);
-                      }} style={{ marginBottom: 6 }} />
-                    <input className="field-input" placeholder="YouTube URL"
-                      value={v.url}
-                      onChange={(e) => {
-                        const updated = [...bootcampVideos];
-                        updated[i] = { ...updated[i], url: e.target.value };
-                        setBootcampVideos(updated);
-                      }} />
-                    {v.url && !extractYouTubeId(v.url) && (
-                      <div style={{ color: '#ef4444', fontSize: '11px', marginTop: 2 }}>Invalid YouTube URL</div>
-                    )}
-                    {extractYouTubeId(v.url) && (
-                      <img src={getYouTubeThumbnail(extractYouTubeId(v.url))} alt="preview"
-                        style={{ marginTop: 6, width: '100%', borderRadius: 6, maxHeight: 80, objectFit: 'cover' }} />
-                    )}
-                  </div>
-                  {bootcampVideos.length > 1 && (
-                    <button onClick={() => setBootcampVideos(bootcampVideos.filter((_, idx) => idx !== i))}
-                      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 18, marginTop: 8 }}>✕</button>
-                  )}
+              <div className="field-label">Explore Related Topics</div>
+              <input className="field-input" placeholder="e.g. Web Dev, Intensive, Fullstack (separate with commas)"
+                value={bootcampTags} onChange={(e) => setBootcampTags(e.target.value)} />
+              <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: 4 }}>
+                Separate each topic with a comma ( , )
+              </div>
+            </div>
+            <div>
+              <div className="field-label">Requirements</div>
+              <textarea className="field-textarea" placeholder="e.g. Learner should be from an engineering / technical background."
+                value={bootcampRequirements} onChange={(e) => setBootcampRequirements(e.target.value)} />
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div className="field-label">Price per Student</div>
+                <input className="field-input" type="number" min="0" placeholder="e.g. 500"
+                  value={bootcampPrice} onChange={(e) => setBootcampPrice(e.target.value)} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="field-label">Max Students</div>
+                <input className="field-input" type="number" min="1" placeholder="e.g. 20"
+                  value={bootcampCapacity} onChange={(e) => setBootcampCapacity(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <div className="field-label">Bootcamp Cover Image</div>
+              <input ref={bootcampImageRef} type="file" accept="image/*"
+                style={{ display: 'none' }} onChange={handleBootcampImageChange} />
+              {bootcampImagePreview ? (
+                <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+                  <img src={bootcampImagePreview} alt="Bootcamp cover preview"
+                    style={{ width: '100%', maxHeight: 180, objectFit: 'cover',
+                      borderRadius: 10, border: '1.5px solid #e2e8f0' }} />
+                  <button onClick={() => { setBootcampImage(null); setBootcampImagePreview(''); }}
+                    style={{ position: 'absolute', top: 8, right: 8,
+                      background: 'rgba(0,0,0,0.55)', color: 'white', border: 'none',
+                      borderRadius: '50%', width: 28, height: 28, cursor: 'pointer',
+                      fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                  <button onClick={() => bootcampImageRef.current?.click()}
+                    style={{ position: 'absolute', bottom: 8, right: 8,
+                      background: 'rgba(255,255,255,0.9)', color: 'var(--primary)',
+                      border: '1.5px solid var(--primary)', borderRadius: 8,
+                      padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Change</button>
                 </div>
-              ))}
-              <button onClick={() => setBootcampVideos([...bootcampVideos, { url: '', title: '' }])}
-                style={{ fontSize: 13, color: 'var(--primary)', background: 'none',
-                  border: '1.5px dashed var(--primary)', borderRadius: 8,
-                  padding: '6px 16px', cursor: 'pointer', marginTop: 4 }}>
-                + Add Video
-              </button>
+              ) : (
+                <button onClick={() => bootcampImageRef.current?.click()}
+                  style={{ width: '100%', padding: '28px 16px',
+                    border: '2px dashed #c7d2fe', borderRadius: 10,
+                    background: '#f8f7ff', cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                    color: 'var(--primary)', fontSize: 13, fontWeight: 500 }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <rect x="3" y="3" width="18" height="18" rx="3" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  <span>Click to upload cover image</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-light)', fontWeight: 400 }}>PNG, JPG, WEBP · Recommended 16:9</span>
+                </button>
+              )}
             </div>
 
-            {uploadError && (
+            {bootcampSections.map((sec, sIdx) => (
+              <div key={sIdx} style={{
+                border: '1.5px solid #e2e8f0', borderRadius: 10, padding: 14, marginBottom: 4,
+                background: sIdx === 0 ? '#fafafa' : '#f8f7ff',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>
+                    {sIdx === 0 ? 'First Section' : `Section ${sIdx + 1}`}
+                  </div>
+                  {sIdx > 0 && (
+                    <button onClick={() => removeSection(sIdx)}
+                      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}>
+                      Remove Section
+                    </button>
+                  )}
+                </div>
+
+                <div className="field-label">Section Title</div>
+                <input className="field-input" placeholder="e.g. HTML, Intro, Getting Started"
+                  value={sec.title} onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
+                  style={{ marginBottom: 10 }} />
+
+                {sIdx === 0 && (
+                  <div style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: 8 }}>
+                    Your bootcamp starts with this section. You can add more sections below.
+                  </div>
+                )}
+
+                <div className="field-label">Videos for this Section</div>
+                {sec.videos.map((v, vIdx) => (
+                  <div key={vIdx} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1 }}>
+                      <input className="field-input" placeholder={`Video ${vIdx + 1} Title`}
+                        value={v.title}
+                        onChange={(e) => updateSectionVideo(sIdx, vIdx, 'title', e.target.value)}
+                        style={{ marginBottom: 6 }} />
+                      <input className="field-input" placeholder="YouTube URL"
+                        value={v.url}
+                        onChange={(e) => updateSectionVideo(sIdx, vIdx, 'url', e.target.value)} />
+                      {v.url && !extractYouTubeId(v.url) && (
+                        <div style={{ color: '#ef4444', fontSize: '11px', marginTop: 2 }}>Invalid YouTube URL</div>
+                      )}
+                      {extractYouTubeId(v.url) && (
+                        <img src={getYouTubeThumbnail(extractYouTubeId(v.url))} alt="preview"
+                          style={{ marginTop: 6, width: '100%', borderRadius: 6, maxHeight: 80, objectFit: 'cover' }} />
+                      )}
+                      <input
+                        className="field-input"
+                        type="number"
+                        min="1"
+                        placeholder="Duration (minutes) e.g. 45"
+                        value={v.durationMin || ''}
+                        onChange={(e) => updateSectionVideo(sIdx, vIdx, 'durationMin', e.target.value)}
+                        style={{ marginTop: 6 }}
+                      />
+                    </div>
+                    {sec.videos.length > 1 && (
+                      <button onClick={() => removeVideoFromSection(sIdx, vIdx)}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 18, marginTop: 8 }}>✕</button>
+                    )}
+                  </div>
+                ))}
+                <button onClick={() => addVideoToSectionForm(sIdx)}
+                  style={{ fontSize: 13, color: 'var(--primary)', background: 'none',
+                    border: '1.5px dashed var(--primary)', borderRadius: 8,
+                    padding: '6px 16px', cursor: 'pointer', marginTop: 4 }}>
+                  + Add Video
+                </button>
+              </div>
+            ))}
+
+            <button onClick={addSection}
+              style={{ fontSize: 13, fontWeight: 600, color: '#7c3aed', background: '#f5f3ff',
+                border: '1.5px dashed #7c3aed', borderRadius: 8,
+                padding: '8px 20px', cursor: 'pointer', width: '100%' }}>
+              + Add Section
+            </button>
+
+            {bootcampError && (
               <div style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca',
-                borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>
-                {uploadError}
-              </div>
+                borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>{bootcampError}</div>
             )}
-            {uploadSuccess && (
+            {bootcampSuccess && (
               <div style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
-                borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>
-                {uploadSuccess}
-              </div>
+                borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>{bootcampSuccess}</div>
             )}
 
             <button className="btn-publish" disabled={uploading}
               style={{ opacity: uploading ? 0.5 : 1 }} onClick={handleUploadBootcamp}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                <path d="M5 21h14"/>
+                <polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+                <path d="M5 21h14" />
               </svg>
               {uploading ? 'Creating...' : 'Create Bootcamp'}
             </button>
@@ -971,143 +1242,8 @@ export default function Work({ onNavigateToStudentVideos }) {
         )}
       </div>
 
-      {/* My Lists — only relevant for Videos / Online Course (per-student flow). Bootcamp is managed from Video Management below. */}
-      {activeContentTab !== 'Bootcamp' && (
-      <div className="card">
-        <div className="list-card-header">
-          <span className="list-card-title">My Lists</span>
-          <button className="chevron-btn" onClick={() => setListOpen(!listOpen)}>
-            {listOpen ? '▲' : '▼'}
-          </button>
-        </div>
+      {renderMyList()}
 
-        {listOpen && listOffers.length > 0 && (
-          <div style={{ fontSize: 12, color: 'var(--text-light)', marginBottom: 10 }}>
-            Click on a student to select them before uploading
-          </div>
-        )}
-
-        {uploadError && (
-          <div style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca',
-            borderRadius: 8, padding: '8px 12px', fontSize: 13, marginBottom: 10 }}>
-            {uploadError}
-          </div>
-        )}
-        {uploadSuccess && (
-          <div style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
-            borderRadius: 8, padding: '8px 12px', fontSize: 13, marginBottom: 10 }}>
-            {uploadSuccess}
-          </div>
-        )}
-
-        {loading && <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-light)' }}>Loading...</div>}
-
-        {!loading && listOpen && (
-          <>
-            {listOffers.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-light)' }}>
-                No students for {activeContentTab} yet
-              </div>
-            ) : (
-              listOffers.map((offer, index) => {
-                const isSelected = selectedOfferId === offer.id;
-                return (
-                  <div key={offer.id || index} className="list-item"
-                    onClick={() => { setSelectedOfferId(isSelected ? null : offer.id); setUploadError(''); setUploadSuccess(''); }}
-                    style={{
-                      cursor: 'pointer',
-                      background: isSelected ? 'var(--primary-light)' : 'white',
-                      borderRadius: 8, padding: '10px 12px',
-                      border: isSelected ? '1.5px solid var(--primary)' : '1.5px solid transparent',
-                      transition: 'all 0.15s',
-                    }}>
-                    <div className="list-user">
-                      <div className="list-avatar" style={{
-                        background: offer.studentPhoto
-                          ? `url(${offer.studentPhoto}) center/cover` : `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
-                        backgroundSize: 'cover',
-                      }}>
-                        {!offer.studentPhoto && (
-                          <span style={{ color: 'white', fontSize: '13px', fontWeight: 700 }}>
-                            {offer.studentName?.charAt(0) || 'S'}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <div className="list-user-name" style={{ color: isSelected ? 'var(--primary)' : '' }}>
-                          {offer.studentName || 'Student'}
-                        </div>
-                        <div className="list-course">
-                          {offer.title || 'Untitled'} · {getTypeLabel(offer.type)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {isSelected && (
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--primary)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                            stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
-                        </div>
-                      )}
-                      {/* FIX 2: show "PDF" text instead of only icon */}
-                      {offer.fileUrl && (
-                        <a href={offer.fileUrl} target="_blank" rel="noopener noreferrer"
-                          className="badge-pdf badge-pdf-link" title="View Student PDF"
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="9" y1="13" x2="15" y2="13"/>
-                            <line x1="9" y1="17" x2="13" y2="17"/>
-                          </svg>
-                          <span style={{ fontSize: '11px', fontWeight: 700 }}>PDF</span>
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </>
-        )}
-
-        <button className="btn-publish"
-          disabled={uploading || (listOffers.length > 0 && !selectedOfferId)}
-          style={{ opacity: uploading || (listOffers.length > 0 && !selectedOfferId) ? 0.5 : 1 }}
-          onClick={activeContentTab === 'Online Course' ? handleGoLive : handleUploadVideo}>
-          {activeContentTab === 'Online Course' ? (
-            <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
-              </svg>
-              Go Live
-            </>
-          ) : (
-            <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                <path d="M5 21h14"/>
-              </svg>
-              {uploading ? 'Uploading...' : 'Upload and Publish'}
-              {!uploading && selectedOfferId && listOffers.find(o => o.id === selectedOfferId) && (
-                <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.85 }}>
-                  → {listOffers.find(o => o.id === selectedOfferId)?.studentName}
-                </span>
-              )}
-            </>
-          )}
-        </button>
-      </div>
-      )}
-
-      {/* Video Management — shows only after upload, Videos & Bootcamp tabs only */}
       {(activeContentTab === 'Videos' || activeContentTab === 'Bootcamp') && uploadedRows.length > 0 && (
         <div className="card">
           <div className="vm-header">
@@ -1139,7 +1275,9 @@ export default function Work({ onNavigateToStudentVideos }) {
               {filteredTableOffers.map((offer, index) => {
                 const videos = offer.videos || [{ url: offer.youtubeUrl || offer.videoUrl }];
                 const yId = extractYouTubeId(videos[0]?.url);
-                const thumb = getYouTubeThumbnail(yId);
+                const thumb = offer.type === 'bootcamp'
+                  ? (offer.thumbnailUrl || getYouTubeThumbnail(yId))
+                  : getYouTubeThumbnail(yId);
                 const limit = offer.watchLimit || 2;
                 const isBootcamp = offer.type === 'bootcamp';
                 return (
@@ -1151,15 +1289,20 @@ export default function Work({ onNavigateToStudentVideos }) {
                             <img src={thumb} alt="" style={{ width: '100%', height: '100%', borderRadius: 8, objectFit: 'cover' }} />
                           ) : (
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" strokeWidth="2">
-                              <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+                              <polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" />
                             </svg>
                           )}
                         </div>
                         <div>
                           <span className="video-name">{offer.title || 'Untitled'}</span>
-                          {isBootcamp && (offer.sections?.length > 0) && (
+                          {isBootcamp && offer.sections?.length > 0 && (
                             <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>
                               {offer.sections.length} section{offer.sections.length > 1 ? 's' : ''}
+                            </div>
+                          )}
+                          {isBootcamp && offer.price > 0 && (
+                            <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>
+                              {offer.price} · {offer.capacity ? `${offer.capacity} spots` : 'No limit'}
                             </div>
                           )}
                           {!isBootcamp && videos.length > 1 && (
@@ -1218,19 +1361,18 @@ export default function Work({ onNavigateToStudentVideos }) {
                             )}
                           </>
                         )}
-                        {/* FIX 3: Edit button */}
                         <button className="action-btn" title="Edit" onClick={() => setEditOffer(offer)}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                           </svg>
                         </button>
                         <button className="action-btn" title="Delete"
                           onClick={() => setUploadedRows((prev) => prev.filter((o) => o.id !== offer.id))}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                            <path d="M10 11v6M14 11v6"/>
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                            <path d="M10 11v6M14 11v6" />
                           </svg>
                         </button>
                       </div>
@@ -1247,13 +1389,9 @@ export default function Work({ onNavigateToStudentVideos }) {
         <VideoWatchModal offer={watchModal} maxWatches={watchModal.watchLimit || 2}
           onClose={() => setWatchModal(null)} onWatchComplete={handleWatchComplete} />
       )}
-
-      {/* FIX 3: Edit modal */}
       {editOffer && (
         <EditVideoModal offer={editOffer} onClose={() => setEditOffer(null)} onSave={handleEditSave} />
       )}
-
-      {/* Bootcamp management modals */}
       {sectionModalBootcampId && (
         <AddSectionModal
           bootcampId={sectionModalBootcampId}

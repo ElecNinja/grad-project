@@ -2,9 +2,6 @@ const supabase = require('../config/supabase');
 
 /**
  * Courses the student is enrolled in, with lesson progress.
- * Uses course_progress to find which courses the student has touched,
- * falls back to nothing if the student hasn't started any lesson yet
- * (adjust to use a real "enrollments" table if you add one for courses).
  */
 async function getStudentCourses(studentId) {
   const { data: progressRows, error: progressErr } = await supabase
@@ -75,7 +72,7 @@ async function getStudentCourses(studentId) {
         ? `${currentLesson.title}`
         : null,
       videoUrl: currentLesson?.video_url || null,
-      syllabus: lessons.map((l, idx) => {
+      syllabus: lessons.map((l) => {
         const p = progressForCourse.find(pr => pr.lesson_id === l.id);
         return {
           id: l.id,
@@ -91,6 +88,9 @@ async function getStudentCourses(studentId) {
 
 /**
  * Bootcamps the student is enrolled in (active/completed), with progress.
+ * Returns BOTH:
+ *  - `sections`: lessons grouped under their bootcamp_sections (used by CoursePlayer)
+ *  - `syllabus`: flat lesson list (kept for the Videos.jsx list view / backward compat)
  */
 async function getStudentBootcamps(studentId) {
   const { data: enrollments, error: enrollErr } = await supabase
@@ -109,6 +109,9 @@ async function getStudentBootcamps(studentId) {
         teacher_profiles:teacher_id (
           profile_id,
           profiles:profile_id ( full_name )
+        ),
+        bootcamp_sections (
+          id, title, sort_order
         ),
         bootcamp_lessons (
           id, title, video_url, duration_min, sort_order, section_id
@@ -133,13 +136,46 @@ async function getStudentBootcamps(studentId) {
 
   return enrollments.map((enrollment) => {
     const bootcamp = enrollment.bootcamps;
-    const lessons = (bootcamp.bootcamp_lessons || []).sort((a, b) => a.sort_order - b.sort_order);
+    const allLessons = (bootcamp.bootcamp_lessons || []).sort((a, b) => a.sort_order - b.sort_order);
     const progressForBootcamp = progressDetail.filter(p => p.bootcamp_id === bootcamp.id);
 
-    const currentLesson = lessons.find((l) => {
+    const currentLesson = allLessons.find((l) => {
       const p = progressForBootcamp.find(pr => pr.lesson_id === l.id);
       return !p || !p.completed;
-    }) || lessons[lessons.length - 1];
+    }) || allLessons[allLessons.length - 1];
+
+    const mapLesson = (l) => {
+      const p = progressForBootcamp.find(pr => pr.lesson_id === l.id);
+      return {
+        id: l.id,
+        title: l.title,
+        url: l.video_url,
+        duration: l.duration_min ? `${l.duration_min}:00` : '--:--',
+        done: !!p?.completed,
+        current: currentLesson?.id === l.id,
+      };
+    };
+
+    // ── Group lessons under their section, in section sort order ──
+    const sectionsSorted = (bootcamp.bootcamp_sections || [])
+      .sort((a, b) => a.sort_order - b.sort_order);
+
+    const sections = sectionsSorted.map((sec) => ({
+      id: sec.id,
+      title: sec.title,
+      lessons: allLessons.filter((l) => l.section_id === sec.id).map(mapLesson),
+    }));
+
+    // Lessons with no matching section (legacy data) — keep them visible
+    const groupedIds = new Set(sections.flatMap((s) => s.lessons.map((l) => l.id)));
+    const orphanLessons = allLessons.filter((l) => !groupedIds.has(l.id));
+    if (orphanLessons.length > 0) {
+      sections.push({
+        id: 'ungrouped',
+        title: 'Other Videos',
+        lessons: orphanLessons.map(mapLesson),
+      });
+    }
 
     return {
       id: bootcamp.id,
@@ -151,16 +187,8 @@ async function getStudentBootcamps(studentId) {
       progress: enrollment.progress_pct,
       currentLesson: currentLesson ? currentLesson.title : null,
       videoUrl: currentLesson?.video_url || null,
-      syllabus: lessons.map((l) => {
-        const p = progressForBootcamp.find(pr => pr.lesson_id === l.id);
-        return {
-          id: l.id,
-          title: l.title,
-          duration: l.duration_min ? `${l.duration_min}:00` : '--:--',
-          done: !!p?.completed,
-          current: currentLesson?.id === l.id,
-        };
-      }),
+      sections,                         // ← NEW: grouped sections for CoursePlayer
+      syllabus: allLessons.map(mapLesson), // kept flat for Videos.jsx list view
     };
   });
 }
