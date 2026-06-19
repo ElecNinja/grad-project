@@ -229,38 +229,27 @@ function CourseDetails() {
 
   return (
     <div className="cd-page">
-      <div className="cd-banner">
-        <div className="cd-banner-left">
-          <div className="cd-badge-row">
-            <span className="cd-premium-badge"><Sparkles size={12} /> Premium Bootcamp</span>
-          </div>
-          <h1>{course.title}</h1>
-          {course.subtitle && <p className="cd-subtitle">{course.subtitle}</p>}
-          {course.rating != null && course.rating > 0 && (
-            <div className="cd-rating-row">
-              <span className="stars">{renderStars(course.rating)}</span>
-              <span className="cd-rating-num">{course.rating}</span>
-              {course.reviews != null && (
-                <span className="cd-reviews">({course.reviews.toLocaleString()} ratings)</span>
-              )}
+      <div className="cd-body">
+        <div className="cd-main">
+          <div className="cd-header-details">
+            <div className="cd-badge-row">
+              <span className="cd-premium-badge"><Sparkles size={12} /> Premium Bootcamp</span>
             </div>
-          )}
-          {course.expert && <p className="cd-expert">Expert: <span>{course.expert}</span></p>}
-        </div>
-        <div className="cd-banner-img">
-          <img
-            src={course.image || PLACEHOLDER_IMAGE}
-            alt={course.title}
-            onError={(e) => {
-              e.currentTarget.src = PLACEHOLDER_IMAGE;
-            }}
-          />
-        </div>
-      </div>
+            <h1>{course.title}</h1>
+            {course.subtitle && <p className="cd-subtitle">{course.subtitle}</p>}
+            {course.rating != null && course.rating > 0 && (
+              <div className="cd-rating-row">
+                <span className="stars">{renderStars(course.rating)}</span>
+                <span className="cd-rating-num">{course.rating}</span>
+                {course.reviews != null && (
+                  <span className="cd-reviews">({course.reviews.toLocaleString()} ratings)</span>
+                )}
+              </div>
+            )}
+            {course.expert && <p className="cd-expert">Expert: <span>{course.expert}</span></p>}
+          </div>
 
-      <div className={`cd-body ${hasMainContent ? "" : "cd-body--sidebar-only"}`}>
-        {hasMainContent && (
-          <div className="cd-main">
+          {hasMainContent && (
             <div className="cd-box">
               <h2>What you'll learn</h2>
               <div className="cd-learn-grid">
@@ -277,10 +266,19 @@ function CourseDetails() {
                 </button>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="cd-sidebar">
+          <div className="cd-sidebar-img">
+            <img
+              src={course.image || PLACEHOLDER_IMAGE}
+              alt={course.title}
+              onError={(e) => {
+                e.currentTarget.src = PLACEHOLDER_IMAGE;
+              }}
+            />
+          </div>
           {course.price && <p className="cd-price">{course.price}</p>}
           <button
             className="cd-buy-btn"
