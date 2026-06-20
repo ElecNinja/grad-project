@@ -1,5 +1,17 @@
 const supabase = require('../config/supabase');
 
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+function getThumbnail(manualThumbnailUrl, firstLessonVideoUrl) {
+  if (manualThumbnailUrl) return manualThumbnailUrl;
+  const videoId = extractYouTubeId(firstLessonVideoUrl);
+  return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+}
+
 /**
  * Courses the student is enrolled in, with lesson progress.
  */
@@ -64,7 +76,7 @@ async function getStudentCourses(studentId) {
       type: 'COURSE',
       title: course.title,
       description: course.description,
-      thumbnail: course.thumbnail_url,
+      thumbnail: getThumbnail(course.thumbnail_url, lessons[0]?.video_url),
       expert: course.teacher_profiles?.profiles?.full_name || 'Unknown',
       videos: lessons.length ? `${completedCount}/${lessons.length}` : null,
       progress: progressPct,
@@ -88,9 +100,6 @@ async function getStudentCourses(studentId) {
 
 /**
  * Bootcamps the student is enrolled in (active/completed), with progress.
- * Returns BOTH:
- *  - `sections`: lessons grouped under their bootcamp_sections (used by CoursePlayer)
- *  - `syllabus`: flat lesson list (kept for the Videos.jsx list view / backward compat)
  */
 async function getStudentBootcamps(studentId) {
   const { data: enrollments, error: enrollErr } = await supabase
@@ -156,7 +165,6 @@ async function getStudentBootcamps(studentId) {
       };
     };
 
-    // ── Group lessons under their section, in section sort order ──
     const sectionsSorted = (bootcamp.bootcamp_sections || [])
       .sort((a, b) => a.sort_order - b.sort_order);
 
@@ -166,7 +174,6 @@ async function getStudentBootcamps(studentId) {
       lessons: allLessons.filter((l) => l.section_id === sec.id).map(mapLesson),
     }));
 
-    // Lessons with no matching section (legacy data) — keep them visible
     const groupedIds = new Set(sections.flatMap((s) => s.lessons.map((l) => l.id)));
     const orphanLessons = allLessons.filter((l) => !groupedIds.has(l.id));
     if (orphanLessons.length > 0) {
@@ -182,13 +189,13 @@ async function getStudentBootcamps(studentId) {
       type: 'BOOTCAMP',
       title: bootcamp.title,
       description: bootcamp.description,
-      thumbnail: bootcamp.thumbnail_url,
+      thumbnail: getThumbnail(bootcamp.thumbnail_url, allLessons[0]?.video_url),
       expert: bootcamp.teacher_profiles?.profiles?.full_name || 'Unknown',
       progress: enrollment.progress_pct,
       currentLesson: currentLesson ? currentLesson.title : null,
       videoUrl: currentLesson?.video_url || null,
-      sections,                         // ← NEW: grouped sections for CoursePlayer
-      syllabus: allLessons.map(mapLesson), // kept flat for Videos.jsx list view
+      sections,
+      syllabus: allLessons.map(mapLesson),
     };
   });
 }
