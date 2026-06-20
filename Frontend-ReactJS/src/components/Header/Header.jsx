@@ -104,7 +104,7 @@ function Header() {
               </>
             )}
 
-            {/* Logged in as TEACHER: Work & Offers */}
+            {/* Logged in as TEACHER: Work, Offers & Requests */}
             {user?.loggedIn && user?.role === 'teacher' && (
               <>
                 <li>
@@ -115,6 +115,11 @@ function Header() {
                 <li>
                   <NavLink to="/Offers" className="nav-link">
                     Offers
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/requests" className="nav-link">
+                    Requests
                   </NavLink>
                 </li>
               </>
@@ -251,7 +256,7 @@ function Header() {
             </>
           )}
 
-          {/* Logged in as TEACHER: Work & Offers */}
+          {/* Logged in as TEACHER: Work, Offers & Requests */}
           {user?.loggedIn && user?.role === 'teacher' && (
             <>
               <NavLink to="/work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
@@ -259,6 +264,9 @@ function Header() {
               </NavLink>
               <NavLink to="/Offers" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 Offers
+              </NavLink>
+              <NavLink to="/requests" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                Requests
               </NavLink>
               <NavLink to="/teacher-profile" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 My Profile

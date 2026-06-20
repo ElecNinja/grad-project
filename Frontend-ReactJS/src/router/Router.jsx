@@ -127,13 +127,13 @@ const Router = () => {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="work" element={<Work />} />
               <Route path="Work" element={<Work />} />
+              <Route path="requests" element={<Requests />} />
               {/* Community upload — any authenticated user (student OR teacher) */}
               <Route path="community/upload" element={<UploadResource />} />
             </Route>
 
             {/* Students only */}
             <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-              <Route path="requests" element={<Requests />} />
               <Route path="videos" element={<Videos />} />
               <Route path="course-player" element={<CoursePlayer />} />
               <Route path="my-list" element={<MyList />} />

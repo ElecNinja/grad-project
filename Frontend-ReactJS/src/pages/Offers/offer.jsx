@@ -23,6 +23,7 @@ function Offers() {
   const [acceptError, setAcceptError] = useState("");
   const [selectedType, setSelectedType] = useState("all");
   const [comments, setComments] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     getStudentRequests()
@@ -92,14 +93,16 @@ function Offers() {
       </div>
     );
   }
-  const filteredOffers =
-  selectedType === "all"
-    ? offers
-    : offers.filter(
-        (offer) =>
-          offer.preferred_mode?.toLowerCase() ===
-          selectedType.toLowerCase()
-      );
+
+  const filteredOffers = offers.filter((offer) => {
+    const matchesType =
+      selectedType === "all" ||
+      offer.preferred_mode?.toLowerCase() === selectedType.toLowerCase();
+    const matchesSearch =
+      !searchQuery.trim() ||
+      offer.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesSearch;
+  });
 
   return (
     <div className="offers-page">
@@ -109,17 +112,32 @@ function Offers() {
         Manage incoming learning requests and review student materials.
       </p>
       <div className="offers-filter">
-  <select
-    value={selectedType}
-    onChange={(e) => setSelectedType(e.target.value)}
-  >
-    {TypeMode.map((type) => (
-      <option key={type.value} value={type.value}>
-        {type.label}
-      </option>
-    ))}
-  </select>
-</div>
+        <div className="offers-search-box">
+          <svg className="offers-search-icon" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+            strokeLinejoin="round" width="16" height="16">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            className="offers-search-input"
+            placeholder="Search material description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <select
+          value={selectedType}
+          onChange={(e) => setSelectedType(e.target.value)}
+        >
+          {TypeMode.map((type) => (
+            <option key={type.value} value={type.value}>
+              {type.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {acceptError && (
         <p style={{ color: "red", textAlign: "center" }}>

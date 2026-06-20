@@ -66,7 +66,7 @@ function Addmaterial() {
     try {
       const subject = aiResult?.field || aiResult?.sub_field || '';
       await createStudentRequest(uploadedFile, description, materialType, subject);
-      navigate('/dashboard');
+      navigate('/requests');
     } catch {
       alert('Failed to submit request, please try again');
     } finally {
