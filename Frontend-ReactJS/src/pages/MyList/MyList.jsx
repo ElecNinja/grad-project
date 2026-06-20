@@ -1,57 +1,54 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { Heart, Star, AlertCircle, Users, ChevronLeft, ChevronRight, Filter, ArrowUpDown, Check, ChevronDown } from 'lucide-react';
+import { Heart, Star, AlertCircle, Users, ChevronLeft, ChevronRight, Filter, ArrowUpDown, ChevronDown, Check } from 'lucide-react';
 import { api } from '../../apis/axios';
 import { openChat, getOrCreateConversation, setActiveConversation } from '../../redux/chatSlice';
 import './MyList.css';
 
-function FilterDropdown({ icon: Icon, value, options, onChange, ariaLabel }) {
+function FilterSelect({ icon: Icon, value, options, onChange, label }) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
   const selectedOption = options.find((option) => option.value === value) || options[0];
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
+  const handleBlur = (event) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      setIsOpen(false);
+    }
+  };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSelect = (nextValue) => {
+  const handleChange = (nextValue) => {
     onChange(nextValue);
     setIsOpen(false);
   };
 
   return (
-    <div className={`ml-dropdown ${isOpen ? 'is-open' : ''}`} ref={dropdownRef}>
+    <div
+      className={`ml-filter-select-wrap ml-custom-select ${isOpen ? 'is-open' : ''}`}
+      onBlur={handleBlur}
+    >
+      <Icon size={16} />
       <button
         type="button"
-        className="ml-dropdown-trigger"
-        aria-label={ariaLabel}
+        className="ml-select-trigger"
+        aria-label={label}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
       >
-        <Icon size={16} className="ml-dropdown-leading-icon" />
         <span>{selectedOption.label}</span>
-        <ChevronDown size={16} className="ml-dropdown-chevron" />
+        <ChevronDown size={16} />
       </button>
 
       {isOpen && (
-        <div className="ml-dropdown-menu" role="listbox" aria-label={ariaLabel}>
+        <div className="ml-select-menu" role="listbox" aria-label={label}>
           {options.map((option) => (
             <button
               key={option.value}
               type="button"
-              className={`ml-dropdown-option ${option.value === value ? 'is-selected' : ''}`}
+              className={`ml-select-option ${option.value === value ? 'is-selected' : ''}`}
               role="option"
               aria-selected={option.value === value}
-              onClick={() => handleSelect(option.value)}
+              onClick={() => handleChange(option.value)}
             >
               <span>{option.label}</span>
               {option.value === value && <Check size={15} />}
@@ -232,20 +229,20 @@ function MyList() {
       {/* Filters bar */}
       <div className="ml-filters-bar">
         <div className="ml-filters-left">
-          <FilterDropdown
+          <FilterSelect
             icon={Filter}
             value={selectedSubject}
             options={subjectOptions}
             onChange={setSelectedSubject}
-            ariaLabel="Filter favorites by subject"
+            label="Filter favorites by subject"
           />
 
-          <FilterDropdown
+          <FilterSelect
             icon={ArrowUpDown}
             value={selectedSort}
             options={sortOptions}
             onChange={setSelectedSort}
-            ariaLabel="Sort favorites"
+            label="Sort favorites"
           />
         </div>
 
