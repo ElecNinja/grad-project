@@ -652,3 +652,137 @@
     padding: 16px 20px 40px;
   }
 }
+/* Payment Modal */
+.cd-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.cd-modal {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 32px;
+  max-width: 440px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: cdModalFade 0.25s ease;
+}
+
+@keyframes cdModalFade {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.cd-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #4b5563;
+  transition: color 0.2s;
+}
+.cd-modal-close:hover {
+  color: #1a1a1a;
+}
+
+.cd-modal h2 {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+
+.cd-modal-course {
+  font-weight: 600;
+  color: #1d4ed8;
+  margin-bottom: 4px;
+}
+
+.cd-modal-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 20px;
+}
+
+.cd-payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cd-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cd-form-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.cd-form-group input {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  background: #f9fafc;
+}
+.cd-form-group input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.cd-form-row {
+  display: flex;
+  gap: 12px;
+}
+.cd-form-row .cd-form-group {
+  flex: 1;
+}
+
+.cd-pay-btn {
+  padding: 12px;
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cd-pay-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+.cd-pay-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cd-payment-error {
+  margin-top: 4px;
+}
+
+.cd-modal-note {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 16px;
+  text-align: center;
+}

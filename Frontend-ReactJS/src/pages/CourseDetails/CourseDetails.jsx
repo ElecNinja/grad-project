@@ -22,7 +22,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Users
+  Users,
+  X
 } from "lucide-react";
 
 function CourseDetails() {
@@ -38,7 +39,15 @@ function CourseDetails() {
   const [enrolling, setEnrolling] = useState(false);
   const [enrolledCount, setEnrolledCount] = useState(initialCourse?.enrolledCount ?? 0);
   const [alreadyEnrolled, setAlreadyEnrolled] = useState(false);
-  const [enrollError, setEnrollError] = useState(null); // NEW: store error message
+  const [enrollError, setEnrollError] = useState(null);
+
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [cvv, setCvv] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   useEffect(() => {
     setCourse(initialCourse);
@@ -178,44 +187,80 @@ function CourseDetails() {
     el.scrollBy({ left: amount, behavior: "smooth" });
   };
 
-  // FIXED: handleBuyNow with better error handling and logging
-  const handleBuyNow = async () => {
+  // Open payment modal on Buy Now click
+  const handleBuyNow = () => {
     if (!course) {
       setEnrollError("Course data is missing. Please try again.");
       return;
     }
-
     if (enrolling || alreadyEnrolled || atCapacity) return;
+    // Show payment modal
+    setShowPaymentModal(true);
+    setEnrollError(null);
+    // Reset card fields (optional)
+    setCardNumber("");
+    setExpiryDate("");
+    setCvv("");
+    setCardName("");
+  };
 
-    // Ensure we have a valid course ID
-    const courseId = course.id;
-    if (!courseId) {
-      console.error("Course ID is undefined", course);
-      setEnrollError("Course ID is missing. Cannot enroll.");
+  // Handle payment form submission
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+
+    // Basic validation
+    const cardNumClean = cardNumber.replace(/\s/g, "");
+    if (cardNumClean.length !== 16 || !/^\d{16}$/.test(cardNumClean)) {
+      setEnrollError("Please enter a valid 16-digit card number.");
+      return;
+    }
+    if (!/^\d{2}\/\d{2}$/.test(expiryDate)) {
+      setEnrollError("Please enter expiry date in MM/YY format.");
+      return;
+    }
+    const [month, year] = expiryDate.split("/");
+    if (parseInt(month) < 1 || parseInt(month) > 12) {
+      setEnrollError("Invalid month.");
+      return;
+    }
+    if (!/^\d{3,4}$/.test(cvv)) {
+      setEnrollError("Please enter a valid CVV (3-4 digits).");
+      return;
+    }
+    if (!cardName.trim()) {
+      setEnrollError("Please enter the name on card.");
       return;
     }
 
-    setEnrolling(true);
+    // Proceed with enrollment
+    setProcessingPayment(true);
     setEnrollError(null);
 
     try {
-      console.log("Attempting enrollment for course ID:", courseId);
+      const courseId = course.id;
+      if (!courseId) {
+        throw new Error("Course ID is missing.");
+      }
+
+      console.log("Processing payment for course ID:", courseId);
+      // Simulate payment processing delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Call enrollment API
       const result = await enrollPublicBootcamp(courseId);
-      
-      // Check if the result indicates success
       if (result && result.response) {
         setEnrolledCount((prev) => prev + 1);
         setAlreadyEnrolled(true);
+        setShowPaymentModal(false);
         navigate("/videos");
       } else {
-        // If result is false or no response, treat as failure
         throw new Error(result?.message || "Enrollment failed. Please try again.");
       }
     } catch (err) {
-      console.error("Enrollment error:", err);
-      setEnrollError(err.message || "Something went wrong. Please try again later.");
+      console.error("Payment/enrollment error:", err);
+      setEnrollError(err.message || "Payment failed. Please try again.");
     } finally {
-      setEnrolling(false);
+      setProcessingPayment(false);
     }
   };
 
@@ -365,7 +410,6 @@ function CourseDetails() {
             />
           </div>
           {course.price && <p className="cd-price">{course.price}</p>}
-          {/* Buy Now button with error display */}
           <button
             className="cd-buy-btn"
             onClick={handleBuyNow}
@@ -491,6 +535,103 @@ function CourseDetails() {
           </div>
         )}
       </div>
+
+      {/* ===== PAYMENT MODAL ===== */}
+      {showPaymentModal && (
+        <div className="cd-modal-overlay" onClick={() => setShowPaymentModal(false)}>
+          <div className="cd-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="cd-modal-close"
+              onClick={() => setShowPaymentModal(false)}
+              disabled={processingPayment}
+            >
+              <X size={20} />
+            </button>
+            <h2>Complete Your Purchase</h2>
+            <p className="cd-modal-course">{course.title}</p>
+            <p className="cd-modal-price">{course.price}</p>
+
+            <form onSubmit={handlePaymentSubmit} className="cd-payment-form">
+              <div className="cd-form-group">
+                <label>Card Number</label>
+                <input
+                  type="text"
+                  placeholder="1234 5678 9012 3456"
+                  value={cardNumber}
+                  onChange={(e) => {
+                    // Allow only digits and spaces, max 19 chars (16 digits + 3 spaces)
+                    const val = e.target.value.replace(/[^\d\s]/g, "").slice(0, 19);
+                    setCardNumber(val);
+                  }}
+                  required
+                  disabled={processingPayment}
+                />
+              </div>
+              <div className="cd-form-row">
+                <div className="cd-form-group">
+                  <label>Expiry Date</label>
+                  <input
+                    type="text"
+                    placeholder="MM/YY"
+                    value={expiryDate}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/[^0-9/]/g, "");
+                      if (val.length > 5) val = val.slice(0, 5);
+                      // Auto-insert slash after 2 digits
+                      if (val.length === 2 && !val.includes("/")) {
+                        val += "/";
+                      }
+                      setExpiryDate(val);
+                    }}
+                    required
+                    disabled={processingPayment}
+                  />
+                </div>
+                <div className="cd-form-group">
+                  <label>CVV</label>
+                  <input
+                    type="text"
+                    placeholder="123"
+                    value={cvv}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      setCvv(val);
+                    }}
+                    required
+                    disabled={processingPayment}
+                  />
+                </div>
+              </div>
+              <div className="cd-form-group">
+                <label>Name on Card</label>
+                <input
+                  type="text"
+                  placeholder="John Doe"
+                  value={cardName}
+                  onChange={(e) => setCardName(e.target.value)}
+                  required
+                  disabled={processingPayment}
+                />
+              </div>
+              {enrollError && (
+                <div className="cd-payment-error" style={{ color: "#dc2626", fontSize: "0.9rem" }}>
+                  {enrollError}
+                </div>
+              )}
+              <button
+                type="submit"
+                className="cd-pay-btn"
+                disabled={processingPayment}
+              >
+                {processingPayment ? "Processing..." : `Pay ${course.price || "Now"}`}
+              </button>
+            </form>
+            <p className="cd-modal-note">
+              * This is a demo – no real charges will be made.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
