@@ -38,12 +38,14 @@ function CourseDetails() {
   const [enrolling, setEnrolling] = useState(false);
   const [enrolledCount, setEnrolledCount] = useState(initialCourse?.enrolledCount ?? 0);
   const [alreadyEnrolled, setAlreadyEnrolled] = useState(false);
+  const [enrollError, setEnrollError] = useState(null); // NEW: store error message
 
   useEffect(() => {
     setCourse(initialCourse);
     setEnrolledCount(initialCourse?.enrolledCount ?? 0);
     setOpenSections({ 0: true });
     setShowMore(false);
+    setEnrollError(null);
   }, [initialCourse]);
 
   useEffect(() => {
@@ -176,20 +178,42 @@ function CourseDetails() {
     el.scrollBy({ left: amount, behavior: "smooth" });
   };
 
+  // FIXED: handleBuyNow with better error handling and logging
   const handleBuyNow = async () => {
-    if (!course || enrolling || alreadyEnrolled || atCapacity) return;
+    if (!course) {
+      setEnrollError("Course data is missing. Please try again.");
+      return;
+    }
+
+    if (enrolling || alreadyEnrolled || atCapacity) return;
+
+    // Ensure we have a valid course ID
+    const courseId = course.id;
+    if (!courseId) {
+      console.error("Course ID is undefined", course);
+      setEnrollError("Course ID is missing. Cannot enroll.");
+      return;
+    }
 
     setEnrolling(true);
+    setEnrollError(null);
+
     try {
-      const result = await enrollPublicBootcamp(course.id);
-      if (!result.response) {
-        throw new Error(result.message || "Could not enroll");
+      console.log("Attempting enrollment for course ID:", courseId);
+      const result = await enrollPublicBootcamp(courseId);
+      
+      // Check if the result indicates success
+      if (result && result.response) {
+        setEnrolledCount((prev) => prev + 1);
+        setAlreadyEnrolled(true);
+        navigate("/videos");
+      } else {
+        // If result is false or no response, treat as failure
+        throw new Error(result?.message || "Enrollment failed. Please try again.");
       }
-      setEnrolledCount((prev) => prev + 1);
-      setAlreadyEnrolled(true);
-      navigate("/videos");
     } catch (err) {
-      console.error("Enrollment failed:", err);
+      console.error("Enrollment error:", err);
+      setEnrollError(err.message || "Something went wrong. Please try again later.");
     } finally {
       setEnrolling(false);
     }
@@ -267,6 +291,67 @@ function CourseDetails() {
               )}
             </div>
           )}
+
+          {/* ====== MOVED: Explore related topics & Course content ====== */}
+          {course.relatedTopics?.length > 0 && (
+            <div className="cd-related">
+              <h2>Explore related topics</h2>
+              <div className="cd-topics-row">
+                {course.relatedTopics.map((topic, index) => (
+                  <span key={index} className="cd-topic-tag">{topic}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {sections.length > 0 && (
+            <div className="cd-content-section">
+              <h2>Course content</h2>
+              <p className="cd-content-meta">
+                {sections.length} section{sections.length !== 1 ? "s" : ""}
+                {course.totalLectures > 0 && (
+                  <> • {course.totalLectures} lecture{course.totalLectures !== 1 ? "s" : ""}</>
+                )}
+                {course.totalDuration && <> • {course.totalDuration} total length</>}
+              </p>
+              <div className="cd-accordion">
+                {sections.map((section, index) => {
+                  const isOpen = !!openSections[index];
+                  return (
+                    <div key={index} className="cd-acc-item">
+                      <div className="cd-acc-header" onClick={() => toggleSection(index)}>
+                        <span className="cd-acc-title">
+                          <span className="cd-acc-arrow">
+                            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </span>
+                          {section.title}
+                        </span>
+                        <span className="cd-sec-meta">
+                          {section.lectures} lecture{section.lectures > 1 ? "s" : ""} • {section.duration}
+                        </span>
+                      </div>
+
+                      {isOpen && section.items?.length > 0 && (
+                        <div className="cd-acc-body">
+                          {section.items.map((videoTitle, lessonIndex) => (
+                            <div key={lessonIndex} className="cd-lecture-row">
+                              <span className="cd-lecture-icon">
+                                <PlayCircle size={14} color="#64748b" />
+                              </span>
+                              <span className="cd-lecture-title">{videoTitle}</span>
+                              <span className="cd-lecture-dur">{section.durations?.[lessonIndex] || "—"}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {/* ====== END OF MOVED SECTIONS ====== */}
+
         </div>
 
         <div className="cd-sidebar">
@@ -280,6 +365,7 @@ function CourseDetails() {
             />
           </div>
           {course.price && <p className="cd-price">{course.price}</p>}
+          {/* Buy Now button with error display */}
           <button
             className="cd-buy-btn"
             onClick={handleBuyNow}
@@ -287,6 +373,11 @@ function CourseDetails() {
           >
             {buyBtnLabel}
           </button>
+          {enrollError && (
+            <div className="cd-enroll-error" style={{ color: "#dc2626", fontSize: "0.9rem", marginTop: "8px" }}>
+              ⚠️ {enrollError}
+            </div>
+          )}
           
           <div className="cd-includes">
             <p className="cd-includes-title">This bootcamp includes:</p>
@@ -322,64 +413,6 @@ function CourseDetails() {
       </div>
 
       <div className="cd-full-width">
-        {course.relatedTopics?.length > 0 && (
-          <div className="cd-related">
-            <h2>Explore related topics</h2>
-            <div className="cd-topics-row">
-              {course.relatedTopics.map((topic, index) => (
-                <span key={index} className="cd-topic-tag">{topic}</span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {sections.length > 0 && (
-          <div className="cd-content-section">
-            <h2>Course content</h2>
-            <p className="cd-content-meta">
-              {sections.length} section{sections.length !== 1 ? "s" : ""}
-              {course.totalLectures > 0 && (
-                <> • {course.totalLectures} lecture{course.totalLectures !== 1 ? "s" : ""}</>
-              )}
-              {course.totalDuration && <> • {course.totalDuration} total length</>}
-            </p>
-            <div className="cd-accordion">
-              {sections.map((section, index) => {
-                const isOpen = !!openSections[index];
-                return (
-                  <div key={index} className="cd-acc-item">
-                    <div className="cd-acc-header" onClick={() => toggleSection(index)}>
-                      <span className="cd-acc-title">
-                        <span className="cd-acc-arrow">
-                          {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                        </span>
-                        {section.title}
-                      </span>
-                      <span className="cd-sec-meta">
-                        {section.lectures} lecture{section.lectures > 1 ? "s" : ""} • {section.duration}
-                      </span>
-                    </div>
-
-                    {isOpen && section.items?.length > 0 && (
-                      <div className="cd-acc-body">
-                        {section.items.map((videoTitle, lessonIndex) => (
-                          <div key={lessonIndex} className="cd-lecture-row">
-                            <span className="cd-lecture-icon">
-                              <PlayCircle size={14} color="#64748b" />
-                            </span>
-                            <span className="cd-lecture-title">{videoTitle}</span>
-                            <span className="cd-lecture-dur">{section.durations?.[lessonIndex] || "—"}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {course.requirements && (
           <div className="cd-requirements">
             <h2>Requirements</h2>
