@@ -8,7 +8,6 @@ const {
 } = require('../services/Publicbootcampservice');
 
 const supabase = require('../config/supabase');
-const { createNotification, createNotificationsForMany } = require('../utils/createNotification');
 
 async function uploadBootcampImage(fileBuffer, mimeType, bootcampId) {
   const ext = mimeType?.split('/')[1] || 'jpg';
@@ -135,43 +134,6 @@ async function addVideoController(req, res) {
     if (!url) return res.status(400).json({ error: 'Video url is required' });
 
     const lesson = await addVideoToSection({ profileUserId, bootcampId, sectionId, title, url });
-
-    // ─── Notify all enrolled students that a new lesson was added ───────
-    try {
-      // Get bootcamp title + teacher name
-      const { data: bootcampInfo } = await supabase
-        .from('bootcamps')
-        .select(`
-          title,
-          teacher_profiles!bootcamps_teacher_id_fkey (
-            profiles!teacher_profiles_profile_id_fkey ( full_name )
-          )
-        `)
-        .eq('id', bootcampId)
-        .single();
-
-      const teacherName = bootcampInfo?.teacher_profiles?.profiles?.full_name || 'The teacher';
-
-      // Fetch all active enrollments for this bootcamp
-      const { data: enrollments } = await supabase
-        .from('bootcamp_enrollments')
-        .select('student_id')
-        .eq('bootcamp_id', bootcampId);
-
-      const studentIds = (enrollments || []).map((e) => e.student_id).filter(Boolean);
-
-      if (studentIds.length > 0) {
-        await createNotificationsForMany(studentIds, {
-          type: 'new_lesson',
-          title: 'New lesson available',
-          body: `${teacherName} added a new lesson: ${title || 'Untitled video'}`,
-          data: { lesson_id: lesson?.id || null, bootcamp_id: bootcampId, section_id: sectionId },
-        });
-      }
-    } catch (notifErr) {
-      console.error('addVideoController notification error (non-fatal):', notifErr.message);
-    }
-
     return res.status(201).json({ data: lesson });
   } catch (err) {
     console.error('addVideoController error:', err);
@@ -224,33 +186,6 @@ async function enrollPublicBootcampController(req, res) {
     const result = await enrollStudentInBootcamp({ studentId, bootcampId });
     if (result?.success === false)
       return res.status(409).json({ error: result.message || 'Could not enroll' });
-
-    // ─── Notify the STUDENT they successfully joined the bootcamp ──────
-    try {
-      const { data: bootcampInfo } = await supabase
-        .from('bootcamps')
-        .select(`
-          title,
-          teacher_profiles!bootcamps_teacher_id_fkey (
-            profiles!teacher_profiles_profile_id_fkey ( full_name )
-          )
-        `)
-        .eq('id', bootcampId)
-        .single();
-
-      const teacherName = bootcampInfo?.teacher_profiles?.profiles?.full_name || 'The teacher';
-      const bootcampTitle = bootcampInfo?.title || 'a bootcamp';
-
-      await createNotification({
-        recipientId: studentId,
-        type: 'bootcamp_joined',
-        title: 'You joined a bootcamp',
-        body: `You\'ve been enrolled in ${teacherName}\'s bootcamp: ${bootcampTitle}`,
-        data: { bootcamp_id: bootcampId },
-      });
-    } catch (notifErr) {
-      console.error('enrollPublicBootcampController notification error (non-fatal):', notifErr.message);
-    }
 
     return res.status(200).json({ data: result });
   } catch (err) {
