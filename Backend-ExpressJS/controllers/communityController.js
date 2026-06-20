@@ -144,8 +144,64 @@ const listResources = async (req, res) => {
     }
 
     if (search && search.trim()) {
-      const s = `%${search.trim()}%`;
-      query = query.or(`title.ilike.${s},description.ilike.${s}`);
+      const cleanSearch = search.trim();
+      const s = `%${cleanSearch}%`;
+
+      // 1. Pre-fetch profile IDs of uploaders whose names match the search term
+      let uploaderIds = [];
+      try {
+        const { data: profiles, error: profileErr } = await supabase
+          .from("profiles")
+          .select("id")
+          .ilike("full_name", s);
+
+        if (!profileErr && profiles && profiles.length > 0) {
+          uploaderIds = profiles.map((p) => p.id);
+        }
+      } catch (err) {
+        console.error("Error pre-fetching profile IDs for search:", err);
+      }
+
+      // 2. Pre-fetch subject IDs whose names match the search term
+      let subjectIds = [];
+      try {
+        const { data: subjects, error: subjectErr } = await supabase
+          .from("subjects")
+          .select("id")
+          .ilike("name", s);
+
+        if (!subjectErr && subjects && subjects.length > 0) {
+          subjectIds = subjects.map((sub) => sub.id);
+        }
+      } catch (err) {
+        console.error("Error pre-fetching subject IDs for search:", err);
+      }
+
+      // 3. Build the OR filters
+      const orFilters = [
+        `title.ilike.${s}`,
+        `description.ilike.${s}`,
+        `file_url.ilike.${s}`,
+        `tags.cs.{"${cleanSearch}"}`
+      ];
+
+      // Add lowercase version of tag to support lowercase tag matches
+      const lowerSearch = cleanSearch.toLowerCase();
+      if (lowerSearch !== cleanSearch) {
+        orFilters.push(`tags.cs.{"${lowerSearch}"}`);
+      }
+
+      // Add uploader IDs filter if found
+      if (uploaderIds.length > 0) {
+        orFilters.push(`uploader_id.in.(${uploaderIds.join(",")})`);
+      }
+
+      // Add subject IDs filter if found
+      if (subjectIds.length > 0) {
+        orFilters.push(`subject_id.in.(${subjectIds.join(",")})`);
+      }
+
+      query = query.or(orFilters.join(","));
     }
 
     const { data: resources, error, count } = await query;

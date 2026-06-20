@@ -271,7 +271,7 @@ export default function CommunityPage() {
             <input
               id="community-search"
               type="text"
-              placeholder="Search resources by title or description…"
+              placeholder="Search by title, description, tags, filename, or uploader…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="community-search-input"
