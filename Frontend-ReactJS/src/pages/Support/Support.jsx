@@ -145,7 +145,7 @@ const FAQ_DATA = [
   {
     category: 'payments',
     question: "What are the platform fees?",
-    answer: "Aidemy charges a 10% platform fee on student transactions to cover hosting, payment processing, and our AI matching infrastructure. This is included in the final price shown during bid confirmation."
+    answer: "StudyBuddy charges a 10% platform fee on student transactions to cover hosting, payment processing, and our AI matching infrastructure. This is included in the final price shown during bid confirmation."
   },
   // 7. Reviews & Ratings
   {
@@ -182,8 +182,8 @@ const FAQ_DATA = [
   },
   {
     category: 'technical',
-    question: "Can I use Aidemy on my mobile device?",
-    answer: "Yes, Aidemy is fully responsive and optimized for mobile devices. If you experience mobile-specific bugs, please submit a ticket under the 'technical' category."
+    question: "Can I use StudyBuddy on my mobile device?",
+    answer: "Yes, StudyBuddy is fully responsive and optimized for mobile devices. If you experience mobile-specific bugs, please submit a ticket under the 'technical' category."
   }
 ];
 
@@ -282,7 +282,7 @@ function Support() {
 
   return (
     <section className="support-section">
-      <title>Support Center | Aidemy</title>
+      <title>Support Center | StudyBuddy</title>
 
       {/* ── HERO BANNER ────────────────────────────────────────── */}
       <div className="support-hero">

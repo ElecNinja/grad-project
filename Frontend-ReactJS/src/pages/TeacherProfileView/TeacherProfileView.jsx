@@ -221,15 +221,15 @@ function TeacherProfileView() {
 
   const dispatch = useDispatch();
 
-const handleMessage = async () => {
-  try {
-    const conversationId = await dispatch(getOrCreateConversation(id)).unwrap();
-    dispatch(setActiveConversation(conversationId));
-    dispatch(openChat());
-  } catch (error) {
-    console.error('Failed to open chat:', error);
-  }
-};
+  const handleMessage = async () => {
+    try {
+      const conversationId = await dispatch(getOrCreateConversation(id)).unwrap();
+      dispatch(setActiveConversation(conversationId));
+      dispatch(openChat());
+    } catch (error) {
+      console.error('Failed to open chat:', error);
+    }
+  };
   // ── Load profile ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!id) { setProfileError('Teacher ID is missing.'); setProfileLoading(false); return; }
@@ -279,8 +279,8 @@ const handleMessage = async () => {
 
   const languages = Array.isArray(profile?.teaching_languages)
     ? profile.teaching_languages.map((item) =>
-        typeof item === 'string' ? { lang: item, proficiency: 'native' } : item
-      )
+      typeof item === 'string' ? { lang: item, proficiency: 'native' } : item
+    )
     : [];
 
   const langTabs = ['All', ...new Set(languages.map((l) => l.proficiency))];
@@ -327,10 +327,10 @@ const handleMessage = async () => {
   return (
     <div className="tpv-page">
       <div className="tpv-layout">
-        
+
         {/* ══ LEFT COLUMN (Main Content) ════════════════════════════════ */}
         <div className="tpv-layout-main">
-          
+
           {/* Introduction Video (Moved above the name) */}
           {profile?.introduction_video && (
             <section className="tpv-section tpv-video-section">
@@ -401,8 +401,8 @@ const handleMessage = async () => {
                     {profile.hourly_rate_min && profile.hourly_rate_max
                       ? `$${profile.hourly_rate_min}–$${profile.hourly_rate_max}/hr`
                       : profile.hourly_rate_min
-                      ? `From $${profile.hourly_rate_min}/hr`
-                      : `Up to $${profile.hourly_rate_max}/hr`}
+                        ? `From $${profile.hourly_rate_min}/hr`
+                        : `Up to $${profile.hourly_rate_max}/hr`}
                   </span>
                 )}
               </div>
@@ -478,7 +478,7 @@ const handleMessage = async () => {
                   <span className="tpv-rating-count">Based on {ratingCount} reviews</span>
                 </div>
                 <div className="tpv-rating-bars">
-                  {(breakdown.length > 0 ? breakdown : [5,4,3,2,1].map(s => ({ stars: s, pct: 0 }))).map(({ stars, pct }) => (
+                  {(breakdown.length > 0 ? breakdown : [5, 4, 3, 2, 1].map(s => ({ stars: s, pct: 0 }))).map(({ stars, pct }) => (
                     <div key={stars} className="tpv-bar-row">
                       <span className="tpv-bar-label">{stars}★</span>
                       <div className="tpv-bar-track">

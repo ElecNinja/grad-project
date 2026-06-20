@@ -56,11 +56,11 @@ function Header() {
                 Find Expert
               </NavLink>
             </li>
-              <li>
-                <NavLink to="/add-material" className="nav-link">
-                  Add Material
-                </NavLink>
-              </li>
+            <li>
+              <NavLink to="/add-material" className="nav-link">
+                Add Material
+              </NavLink>
+            </li>
             <li>
               <NavLink to="/Bootcamp" className="nav-link">
                 Boot Camp
@@ -190,7 +190,7 @@ function Header() {
               </div>
               <div className="user-avatar">
                 {user?.avatar
-                  ? <img src={user.avatar} alt={user.name} className="avatar-img"/>
+                  ? <img src={user.avatar} alt={user.name} className="avatar-img" />
                   : <span className="avatar-letter">{(user?.name || 'A').charAt(0).toUpperCase()}</span>
                 }
               </div>
