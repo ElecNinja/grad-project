@@ -612,6 +612,28 @@
   color: #818cf8;
   flex-shrink: 0;
 }
+.videos-join-btn {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 10px 28px;
+  background: #1d4ed8;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 30px;
+  text-decoration: none;
+  transition: background 0.2s;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+}
+.videos-join-btn:hover {
+  background: #2563eb;
+}
+.videos-online-note {
+  margin-top: 16px;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
 
 /* ── Responsive ── */
 @media (max-width: 700px) {

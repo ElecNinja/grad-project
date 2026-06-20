@@ -44,6 +44,29 @@ const getLocalBootcamps = (studentId) => {
   }
 };
 
+const getLocalOnlineCourses = (studentId) => {
+  if (!studentId) return [];
+  try {
+    const raw = localStorage.getItem('work_uploadedRows');
+    const rows = raw ? JSON.parse(raw) : [];
+    return rows
+      .filter((r) => r.type === 'live_1on1' && r._studentId === studentId)
+      .map((r) => ({
+        id: r.id,
+        title: r.title || 'Live Session',
+        description: r.description || `Live session by ${r.teacherName || 'your teacher'}.`,
+        expert: r.teacherName || 'Your Teacher',
+        type: 'LIVE',
+        thumbnail: null,
+        isLive: true,
+        createdAt: r.createdAt,
+        meetingUrl: r.meetingUrl || null,
+      }));
+  } catch {
+    return [];
+  }
+};
+
 function Videos() {
   const [activeTab, setActiveTab] = useState('courses');
   const [courses, setCourses] = useState([]);
@@ -59,18 +82,27 @@ function Videos() {
   const userId = user?.id;
 
   const { notifs } = useNotifications(userId);
-  const onlineList = (notifs || [])
+
+  // ── Merge online courses from notifications + localStorage ──
+  const notifOnline = (notifs || [])
     .filter((n) => n.type === 'live')
     .map((n) => ({
       id: n.id,
       title: n.title || 'Live Session',
-      description: `Live session announced by ${n.teacherName || 'your teacher'}.`,
+      description: n.description || `Live session announced by ${n.teacherName || 'your teacher'}.`,
       expert: n.teacherName || 'Your Teacher',
       type: 'LIVE',
       thumbnail: null,
       isLive: true,
       createdAt: n.createdAt,
+      meetingUrl: n.meetingUrl || null,
     }));
+
+  const localOnline = getLocalOnlineCourses(userId);
+  // Deduplicate: localStorage entries that share a title with a notification entry are skipped
+  const notifTitles = new Set(notifOnline.map((n) => n.title));
+  const dedupedLocal = localOnline.filter((l) => !notifTitles.has(l.title));
+  const onlineList = [...notifOnline, ...dedupedLocal];
 
   useEffect(() => {
     let isMounted = true;
@@ -256,6 +288,19 @@ function Videos() {
                 <div className="videos-online-time">
                   {selected.createdAt ? `Announced at ${new Date(selected.createdAt).toLocaleString()}` : ''}
                 </div>
+                {/* ── NEW: Join Meeting button ── */}
+                {selected.meetingUrl ? (
+                  <a
+                    href={selected.meetingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="videos-join-btn"
+                  >
+                    📹 Join Meeting
+                  </a>
+                ) : (
+                  <div className="videos-online-note">No meeting link provided yet.</div>
+                )}
               </div>
             ) : (
               <>

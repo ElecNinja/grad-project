@@ -30,9 +30,6 @@ const extractYouTubeId = (url) => {
 const getYouTubeThumbnail = (videoId) =>
   videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
 
-
-
-
 function NotificationBell({ userId, onNavigateToVideos }) {
   const { notifs, markAllRead } = useNotifications(userId);
   const [open, setOpen] = useState(false);
@@ -404,6 +401,7 @@ export default function Work({ onNavigateToStudentVideos }) {
 
   const [liveTitle, setLiveTitle] = useState('');
   const [liveInfo, setLiveInfo] = useState('');
+  const [liveUrl, setLiveUrl] = useState(''); // NEW: meeting URL
 
   const [bootcampTitle, setBootcampTitle] = useState('');
   const [bootcampDesc, setBootcampDesc] = useState('');
@@ -706,17 +704,61 @@ export default function Work({ onNavigateToStudentVideos }) {
     }
   };
 
-  const handleGoLive = () => {
+  const handleGoLive = async () => {
     const selectedOffer = listOffers.find((o) => o.id === selectedOfferId);
     const studentIdToUpload = selectedOffer?.studentId;
 
     if (!liveTitle.trim()) { setUploadError('Please add a live session title.'); return; }
+    if (!liveUrl.trim()) { setUploadError('Please provide a meeting URL (e.g., Zoom/Google Meet).'); return; }
     if (!studentIdToUpload) { setUploadError('Please select a student from My Lists first.'); return; }
 
     setUploadError('');
-    notifyStudent(studentIdToUpload, { teacherName: userName, type: 'live', title: liveTitle });
-    setUploadSuccess('Live session announced to the student.');
-    setLiveTitle(''); setLiveInfo('');
+    setUploadSuccess('');
+    setUploading(true);
+
+    try {
+      // Persist to backend
+      await uploadTeacherVideo({
+        studentId: studentIdToUpload,
+        title: liveTitle,
+        description: liveInfo,
+        videoUrl: liveUrl,
+        videoType: 'live_1on1',
+        thumbnailUrl: null,
+      });
+
+      // Persist to localStorage so the student Videos page can read it
+      setUploadedRows((prev) => [...prev, {
+        id: `live_${Date.now()}`,
+        title: liveTitle,
+        description: liveInfo,
+        meetingUrl: liveUrl,
+        type: 'live_1on1',
+        bidStatus: 'accepted',
+        createdAt: new Date().toISOString(),
+        teacherName: userName,
+        _studentId: studentIdToUpload,
+      }]);
+
+      // Notify in-app (real-time bell)
+      notifyStudent(studentIdToUpload, {
+        teacherName: userName,
+        type: 'live',
+        title: liveTitle,
+        meetingUrl: liveUrl,
+        description: liveInfo,
+      });
+
+      setUploadSuccess('Live session published and meeting URL sent to the student.');
+      setLiveTitle('');
+      setLiveInfo('');
+      setLiveUrl('');
+      setSelectedOfferId(null);
+    } catch (err) {
+      setUploadError(err?.response?.data?.error || 'Failed to publish live session. Please try again.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleWatchComplete = (offerId, count) => {
@@ -865,7 +907,7 @@ export default function Work({ onNavigateToStudentVideos }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" />
             </svg>
-            Go Live
+            {uploading ? 'Publishing...' : 'Go Live'}
           </>
         ) : (
           <>
@@ -1008,7 +1050,7 @@ export default function Work({ onNavigateToStudentVideos }) {
               )}
               {tab === 'Bootcamp' && (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" />
+                  <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h12M12 17v4" />
                 </svg>
               )}
               {tab}
@@ -1071,6 +1113,19 @@ export default function Work({ onNavigateToStudentVideos }) {
               <div className="field-label">Description</div>
               <textarea className="field-textarea" placeholder="Describe what you'll cover in this live session..."
                 value={liveInfo} onChange={(e) => setLiveInfo(e.target.value)} />
+            </div>
+            {/* NEW: Meeting URL field */}
+            <div>
+              <div className="field-label">Meeting URL</div>
+              <input
+                className="field-input"
+                placeholder="https://zoom.us/j/... or https://meet.google.com/..."
+                value={liveUrl}
+                onChange={(e) => setLiveUrl(e.target.value)}
+              />
+              <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: 4 }}>
+                Students will receive this link in the notification.
+              </div>
             </div>
           </div>
         )}
