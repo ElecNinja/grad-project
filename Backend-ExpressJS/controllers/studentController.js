@@ -1,4 +1,5 @@
 const supabase = require("../config/supabase");
+const { createNotification, createNotificationsForMany } = require('../utils/createNotification');
 
 // ===============================
 // CREATE STUDENT REQUEST
@@ -252,6 +253,7 @@ const createRequest = async (req, res) => {
         proficiency,
         teacher_profiles!inner(
           id,
+          profile_id,
           avg_rating,
           total_sessions,
           is_accepting
@@ -300,6 +302,7 @@ const createRequest = async (req, res) => {
 
       return {
         teacher_id: t.teacher_id,
+        profile_id: t.teacher_profiles?.profile_id || null, // profiles.id for notification
         match_score: Number(score.toFixed(2)),
       };
     });
@@ -347,6 +350,22 @@ const createRequest = async (req, res) => {
       .from("student_requests")
       .update({ status: "matched" })
       .eq("id", request.id);
+
+    // =============================================
+    // NOTIFY MATCHED TEACHERS (fire-and-forget)
+    // =============================================
+    const matchedProfileIds = rankedTeachers
+      .map((t) => t.profile_id)
+      .filter(Boolean);
+
+    if (matchedProfileIds.length > 0) {
+      await createNotificationsForMany(matchedProfileIds, {
+        type: 'new_match',
+        title: 'New student request in your field',
+        body: `A student uploaded material in ${searchTerm} — check it out`,
+        data: { request_id: request.id },
+      });
+    }
 
     console.log("MATCHING COMPLETED SUCCESSFULLY");
 
@@ -504,10 +523,17 @@ const confirmBid = async (req, res) => {
       return res.status(400).json({ error: "bidId is required." });
     }
 
-    // Verify the bid belongs to a request owned by this student
+    // Fetch bid with full details needed for notifications
     const { data: bid, error: bidError } = await supabase
       .from("bids")
-      .select("id, request_id, student_requests!bids_request_id_fkey(student_id)")
+      .select(`
+        id, request_id, teaching_mode,
+        student_requests!bids_request_id_fkey ( student_id ),
+        teacher_profiles!bids_teacher_id_fkey (
+          profile_id,
+          profiles!teacher_profiles_profile_id_fkey ( full_name )
+        )
+      `)
       .eq("id", bidId)
       .single();
 
@@ -519,6 +545,7 @@ const confirmBid = async (req, res) => {
       return res.status(403).json({ error: "Unauthorized to confirm this bid." });
     }
 
+    // Accept the chosen bid
     const { data: updatedBid, error: updateError } = await supabase
       .from("bids")
       .update({ status: "accepted" })
@@ -529,6 +556,96 @@ const confirmBid = async (req, res) => {
     if (updateError) {
       console.error("Confirm bid update error:", updateError);
       return res.status(500).json({ error: "Could not confirm bid." });
+    }
+
+    // ─── Notifications (all fire-and-forget; never break the response) ──────
+    try {
+      const requestId      = bid.request_id;
+      const teachingMode   = bid.teaching_mode || 'recorded';
+      const teacherProfileId = bid.teacher_profiles?.profile_id;
+      const teacherName    = bid.teacher_profiles?.profiles?.full_name || 'The teacher';
+
+      // 1) Get student's name for the teacher notification
+      const { data: studentProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', studentId)
+        .single();
+      const studentName = studentProfile?.full_name || 'A student';
+
+      // 2) Notify the ACCEPTED teacher
+      if (teacherProfileId) {
+        await createNotification({
+          recipientId: teacherProfileId,
+          type: 'bid_accepted',
+          title: 'Your offer was accepted!',
+          body: `${studentName} accepted your offer`,
+          data: { bid_id: bidId, request_id: requestId },
+        });
+      }
+
+      // 3) Reject every OTHER pending bid on the same request + notify those teachers
+      const { data: otherBids } = await supabase
+        .from('bids')
+        .select(`
+          id,
+          teacher_profiles!bids_teacher_id_fkey ( profile_id )
+        `)
+        .eq('request_id', requestId)
+        .eq('status', 'pending')
+        .neq('id', bidId);
+
+      if (otherBids && otherBids.length > 0) {
+        // Mark them rejected in DB
+        await supabase
+          .from('bids')
+          .update({ status: 'rejected' })
+          .in('id', otherBids.map((b) => b.id));
+
+        // Notify each rejected teacher
+        const rejectedProfileIds = otherBids
+          .map((b) => b.teacher_profiles?.profile_id)
+          .filter(Boolean);
+
+        if (rejectedProfileIds.length > 0) {
+          await createNotificationsForMany(rejectedProfileIds, {
+            type: 'bid_rejected',
+            title: 'Offer not selected',
+            body: 'The student chose another teacher for this request',
+            data: { request_id: requestId },
+          });
+        }
+      }
+
+      // 4) Notify the STUDENT of what session type was booked
+      const sessionNotifMap = {
+        recorded: {
+          type: 'course_ready',
+          title: 'Your recorded course is ready',
+          body: `${teacherName} is preparing your recorded lessons`,
+        },
+        live_1on1: {
+          type: 'live_session_scheduled',
+          title: 'Live session booked',
+          body: `Your 1-on-1 session with ${teacherName} is confirmed`,
+        },
+        bootcamp: {
+          type: 'bootcamp_joined',
+          title: 'You joined a bootcamp',
+          body: `You've been enrolled in ${teacherName}'s bootcamp`,
+        },
+      };
+      const sessionNotif = sessionNotifMap[teachingMode] || sessionNotifMap['recorded'];
+      await createNotification({
+        recipientId: studentId,
+        type: sessionNotif.type,
+        title: sessionNotif.title,
+        body: sessionNotif.body,
+        data: { bid_id: bidId, request_id: requestId },
+      });
+
+    } catch (notifErr) {
+      console.error('confirmBid notification error (non-fatal):', notifErr.message);
     }
 
     return res.status(200).json({ message: "Bid confirmed successfully", bid: updatedBid });

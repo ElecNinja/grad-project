@@ -1,5 +1,6 @@
 const teacherService = require("../services/teacherService");
 const supabase = require("../config/supabase");
+const { createNotification } = require('../utils/createNotification');
 // Upload material (students)
 const uploadMaterial = async (req, res) => {
   try {
@@ -230,16 +231,16 @@ const acceptRequestController = async (req, res) => {
     if (tpError || !teacherProfile) {
       return res.status(404).json({ error: "Teacher profile not found." });
     }
-const { data: existingBid } = await supabase
-  .from("bids")
-  .select("id")
-  .eq("request_id", requestId)
-  .eq("teacher_id", teacherProfile.id)
-  .single();
+    const { data: existingBid } = await supabase
+      .from("bids")
+      .select("id")
+      .eq("request_id", requestId)
+      .eq("teacher_id", teacherProfile.id)
+      .single();
 
-if (existingBid) {
-  return res.status(200).json({ message: "Already accepted.", bid: existingBid });
-}
+    if (existingBid) {
+      return res.status(200).json({ message: "Already accepted.", bid: existingBid });
+    }
     // Store the teacher's comment in the existing bids.notes column.
     const bidPayload = {
       request_id: requestId,
@@ -265,20 +266,47 @@ if (existingBid) {
     }
 
     // Update request status to matched
-   // Update request status to matched
-const { data: updatedRequest, error: updateError } = await supabase
-  .from("student_requests")
-  .update({ status: 'in_progress' })
-  .eq("id", requestId)
-  .select();
+    // Update request status to matched
+    const { data: updatedRequest, error: updateError } = await supabase
+      .from("student_requests")
+      .update({ status: 'in_progress' })
+      .eq("id", requestId)
+      .select();
 
-if (updateError) {
-  console.error("Failed to update request status:", updateError);
-} else {
-  console.log("Request status updated:", updatedRequest);
-}
+    if (updateError) {
+      console.error("Failed to update request status:", updateError);
+    } else {
+      console.log("Request status updated:", updatedRequest);
+    }
 
-return res.status(201).json({ message: "Bid created successfully", bid });
+    // ─── Notify the STUDENT that a new bid arrived ───────────────────────
+    try {
+      const { data: requestRow } = await supabase
+        .from('student_requests')
+        .select('student_id, title')
+        .eq('id', requestId)
+        .single();
+
+      const { data: teacherProf } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', teacherId)
+        .single();
+
+      if (requestRow?.student_id) {
+        await createNotification({
+          recipientId: requestRow.student_id,
+          type: 'new_bid',
+          title: 'New offer received',
+          body: `${teacherProf?.full_name || 'A teacher'} sent you an offer for your request`,
+          data: { bid_id: bid.id, request_id: requestId, teacher_id: teacherId },
+        });
+      }
+    } catch (notifErr) {
+      console.error('acceptRequestController notification error (non-fatal):', notifErr.message);
+    }
+
+    return res.status(201).json({ message: "Bid created successfully", bid });
 
   } catch (err) {
     console.error(err);
@@ -379,6 +407,35 @@ const uploadCourseContent = async (req, res) => {
       return res.status(500).json({ error: "Could not save course content." });
     }
 
+    // ─── Notify the STUDENT a new lesson is available ───────────────────
+    try {
+      const { data: bidRow } = await supabase
+        .from('bids')
+        .select('request_id, student_requests!bids_request_id_fkey ( student_id )')
+        .eq('id', bidId)
+        .single();
+
+      const studentId = bidRow?.student_requests?.student_id;
+
+      if (studentId) {
+        const { data: teacherProf } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', teacherId)
+          .single();
+
+        await createNotification({
+          recipientId: studentId,
+          type: 'new_lesson',
+          title: 'New lesson available',
+          body: `${teacherProf?.full_name || 'Your teacher'} added a new lesson: ${title}`,
+          data: { lesson_id: content.id, bid_id: bidId },
+        });
+      }
+    } catch (notifErr) {
+      console.error('uploadCourseContent notification error (non-fatal):', notifErr.message);
+    }
+
     return res.status(201).json({ message: "Course content uploaded successfully", content });
 
   } catch (err) {
@@ -446,6 +503,25 @@ const uploadTeacherVideoController = async (req, res) => {
       videoType,
       thumbnailUrl
     );
+
+    // ─── Notify the STUDENT a new video was uploaded for them ───────────
+    try {
+      const { data: teacherProf } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', teacherProfileId)
+        .single();
+
+      await createNotification({
+        recipientId: studentId,
+        type: 'new_lesson',
+        title: 'New lesson available',
+        body: `${teacherProf?.full_name || 'Your teacher'} added a new video: ${title}`,
+        data: { video_id: video?.id || null },
+      });
+    } catch (notifErr) {
+      console.error('uploadTeacherVideoController notification error (non-fatal):', notifErr.message);
+    }
 
     return res.status(201).json({ message: "Video uploaded successfully", video });
   } catch (err) {
@@ -538,7 +614,7 @@ module.exports = {
   updateTeacherProfile,
   getStudentProfile,
   updateStudentProfile,
-  getRequestsController,   
+  getRequestsController,
   acceptRequestController,
   getAcceptedOffersTeacher,
   uploadCourseContent,
