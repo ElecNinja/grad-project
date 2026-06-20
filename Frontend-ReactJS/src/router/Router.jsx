@@ -31,6 +31,8 @@ import { getUser } from "../apis/handlers/getUser";
 import { PresenceProvider } from "../context/PresenceContext";
 import CoursePlayer from "../pages/Courseplayer/Courseplayer";
 import MyList from "../pages/MyList/MyList";
+import CommunityPage from "../pages/Community/Community";
+import UploadResource from "../pages/Community/UploadResource";
 
 // ─── NEW CHAT IMPORTS ────────────────────────────────────────────────
 import ChatFloatingButton from "../components/ChatFloatingButton/ChatFloatingButton";
@@ -113,6 +115,8 @@ const Router = () => {
             <Route path="/bootcamp" element={<Bootcamp />} />
             <Route path="/course" element={<CourseDetails />} />
             <Route path="add-material" element={<Addmaterial />} />
+            {/* Community Resources — browse is fully public */}
+            <Route path="community" element={<CommunityPage />} />
 
             <Route element={<ProtectedRoute />}>
               <Route path="find-expert" element={<FindExpert />} />
@@ -123,6 +127,8 @@ const Router = () => {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="work" element={<Work />} />
               <Route path="Work" element={<Work />} />
+              {/* Community upload — any authenticated user (student OR teacher) */}
+              <Route path="community/upload" element={<UploadResource />} />
             </Route>
 
             {/* Students only */}

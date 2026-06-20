@@ -66,6 +66,11 @@ function Header() {
                 Boot Camp
               </NavLink>
             </li>
+            <li>
+              <NavLink to="/community" className="nav-link">
+                Community
+              </NavLink>
+            </li>
 
             {/* Logged OUT: Work & Offers */}
             {!user?.loggedIn && (
@@ -217,6 +222,9 @@ function Header() {
           </NavLink>
           <NavLink to="/Bootcamp" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
             Boot Camp
+          </NavLink>
+          <NavLink to="/community" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            Community
           </NavLink>
 
           {/* Logged OUT: Work & Offers */}
