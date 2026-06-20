@@ -30,6 +30,7 @@ import TeacherCourseUpload from "../pages/TeacherCourseUpload/TeacherCourseUploa
 import { getUser } from "../apis/handlers/getUser";
 import { PresenceProvider } from "../context/PresenceContext";
 import CoursePlayer from "../pages/Courseplayer/Courseplayer";
+import MyList from "../pages/MyList/MyList";
 
 // ─── NEW CHAT IMPORTS ────────────────────────────────────────────────
 import ChatFloatingButton from "../components/ChatFloatingButton/ChatFloatingButton";
@@ -129,6 +130,7 @@ const Router = () => {
               <Route path="requests" element={<Requests />} />
               <Route path="videos" element={<Videos />} />
               <Route path="course-player" element={<CoursePlayer />} />
+              <Route path="my-list" element={<MyList />} />
               <Route path="student-profile" element={<StudentProfile />} />
             </Route>
 

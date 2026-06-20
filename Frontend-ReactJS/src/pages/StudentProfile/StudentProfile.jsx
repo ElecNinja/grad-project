@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   MapPin, Calendar, Mail, Edit2, Share2, BookOpen,
   Award, TrendingUp, X, Camera, User, Globe, Clock,
-  Briefcase, CheckCircle, AlertCircle, FileText, Inbox
+  Briefcase, CheckCircle, AlertCircle, FileText, Inbox, Heart
 } from 'lucide-react';
 import { getStudentProfile }   from '../../apis/handlers/getStudentProfile';
 import { updateStudentProfile } from '../../apis/handlers/updateStudentProfile';
@@ -45,6 +46,7 @@ const TIMEZONES = [
    ════════════════════════════════════════════════════════ */
 function StudentProfile() {
   const reduxUser = useSelector((s) => s.user);
+  const navigate = useNavigate();
 
   /* ── core data ── */
   const [profile,  setProfile]  = useState(null);
@@ -246,6 +248,9 @@ function StudentProfile() {
           <div className="sp-hero-actions">
             <button className="sp-btn-edit" id="edit-profile-btn" onClick={openEdit}>
               <Edit2 size={14}/> Edit Profile
+            </button>
+            <button className="sp-btn-edit" onClick={() => navigate('/my-list')}>
+              <Heart size={14} fill="#ef4444" color="#ef4444" /> Favorites
             </button>
             <button className="sp-btn-share" onClick={handleShare}>
               <Share2 size={16}/>

@@ -8,6 +8,7 @@ const studentRouter = require('../routes/student');
 // ─── NEW: import chat routes ──────────────────────────────
 const chatRoutes = require('../routes/chat');
 const supportRoutes = require('../routes/support');
+const savedTeachersRouter = require('../routes/savedTeachers');
 
 const { sanitizeInput, rateLimiter } = require("../middleware/securityMiddleware");
 const { errorHandler, notFound } = require("../utils/errorHandler");
@@ -44,6 +45,7 @@ app.use('/api/teacher', teacherRouter);
 app.use('/api/student', studentRouter);
 app.use('/api/chat', chatRoutes);   // ← ADD THIS LINE
 app.use('/api/support', supportRoutes);
+app.use('/api/saved-teachers', savedTeachersRouter);
 
 // Handle unknown routes
 app.use(notFound);

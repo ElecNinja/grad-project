@@ -341,8 +341,12 @@
 }
 .tpv-btn--outline:hover { background: #eff6ff; }
 .tpv-btn--saved {
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #fff1f2;
+  color: #e11d48;
+  border-color: rgba(225, 29, 72, 0.25);
+}
+.tpv-btn--saved:hover {
+  background: #ffe4e6;
 }
 
 .tpv-btn--ghost {

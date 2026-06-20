@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import {
   Star,
   MessageCircle,
-  Bookmark,
+  Heart,
   Share2,
   ChevronDown,
   ChevronUp,
@@ -23,6 +23,7 @@ import { useOnlineIds } from '../../context/PresenceContext';
 import './TeacherProfileView.css';
 import { useDispatch } from 'react-redux';
 import { openChat, getOrCreateConversation, setActiveConversation } from '../../redux/chatSlice';
+import { api } from '../../apis/axios';
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 
@@ -214,6 +215,7 @@ function TeacherProfileView() {
 
   const [recommended, setRecommended] = useState([]);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const [langFilter, setLangFilter] = useState('All');
   const [bioExpanded, setBioExpanded] = useState(false);
 
@@ -270,6 +272,21 @@ function TeacherProfileView() {
     })();
   }, [id]);
 
+  // ── Check if already favorited ─────────────────────────────────────────
+  useEffect(() => {
+    if (!id || currentUser?.role !== 'student') return;
+    (async () => {
+      try {
+        const res = await api.get('/api/saved-teachers');
+        const list = res.data.teachers || [];
+        const isSaved = list.some(t => t.teacherId === id);
+        setSaved(isSaved);
+      } catch (err) {
+        console.error('Failed to check if teacher is favorited:', err);
+      }
+    })();
+  }, [id, currentUser]);
+
   // ── Derived values ─────────────────────────────────────────────────────
   const isOwnProfile = currentUser?.id === id;
   const displayPhoto = profile?.photo || null;
@@ -296,6 +313,22 @@ function TeacherProfileView() {
   const handleShare = () => {
     if (navigator.share) navigator.share({ title: profile?.name, url: window.location.href });
     else navigator.clipboard.writeText(window.location.href);
+  };
+
+  const handleSave = async () => {
+    setSaveError(null);
+    try {
+      if (saved) {
+        await api.delete(`/api/saved-teachers/${id}`);
+        setSaved(false);
+      } else {
+        await api.post('/api/saved-teachers', { teacherId: id });
+        setSaved(true);
+      }
+    } catch (err) {
+      console.error('Failed to update favorites:', err);
+      setSaveError(saved ? 'Failed to remove from favorites' : 'Failed to save to favorites');
+    }
   };
 
   // ── Loading / Error ────────────────────────────────────────────────────
@@ -575,11 +608,12 @@ function TeacherProfileView() {
               </button>
               <button
                 className={`tpv-btn tpv-btn--outline tpv-btn--full ${saved ? 'tpv-btn--saved' : ''}`}
-                onClick={() => setSaved((v) => !v)}
+                onClick={handleSave}
               >
-                <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
-                {saved ? 'Saved' : 'Save to My List'}
+                <Heart size={16} fill={saved ? '#ef4444' : 'none'} color={saved ? '#ef4444' : 'currentColor'} />
+                {saved ? 'Favorited' : 'Add to Favorites'}
               </button>
+              {saveError && <p className="tpv-save-error">{saveError}</p>}
               <button className="tpv-btn tpv-btn--ghost tpv-btn--full" onClick={handleShare}>
                 <Share2 size={16} /> Share a Tutor
               </button>
