@@ -174,7 +174,11 @@ function Header() {
                   onClick={() => setNotificationsOpen((open) => !open)}
                 >
                   <Bell size={20} />
-                  {unreadCount > 0 && <span className="bell-dot" />}
+                  {unreadCount > 0 && (
+                    <span className="bell-badge">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
                 </button>
                 <PopupMessage
                   isOpen={notificationsOpen}
