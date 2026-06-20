@@ -15,16 +15,24 @@ const { errorHandler, notFound } = require("../utils/errorHandler");
 
 const app = express();
 
+const configuredOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://grad-project-eta.vercel.app"
+  "https://grad-project-eta.vercel.app",
+  ...configuredOrigins
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    const isAllowedVercelPreview = /^https:\/\/grad-project(?:-[a-z0-9-]+)?\.vercel\.app$/i.test(origin);
+
+    if (allowedOrigins.includes(origin) || isAllowedVercelPreview) {
       return callback(null, true);
     }
     return callback(new Error("Not allowed by CORS"));

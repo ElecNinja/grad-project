@@ -317,6 +317,11 @@ function TeacherProfileView() {
 
   const handleSave = async () => {
     setSaveError(null);
+    if (currentUser?.role !== 'student') {
+      setSaveError('Only students can save teachers to favorites');
+      return;
+    }
+
     try {
       if (saved) {
         await api.delete(`/api/saved-teachers/${id}`);
@@ -327,7 +332,10 @@ function TeacherProfileView() {
       }
     } catch (err) {
       console.error('Failed to update favorites:', err);
-      setSaveError(saved ? 'Failed to remove from favorites' : 'Failed to save to favorites');
+      setSaveError(
+        err.response?.data?.message ||
+        (saved ? 'Failed to remove from favorites' : 'Failed to save to favorites')
+      );
     }
   };
 

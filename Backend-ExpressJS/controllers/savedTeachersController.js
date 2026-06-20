@@ -6,19 +6,41 @@ async function saveTeacher(req, res) {
     const { teacherId } = req.body;
     const studentId = req.user.id;
 
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ success: false, message: 'Only students can save teachers' });
+    }
+
     if (!teacherId) {
       return res.status(400).json({ success: false, message: 'teacherId is required' });
     }
 
+    const { data: teacher, error: teacherError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', teacherId)
+      .eq('role', 'teacher')
+      .maybeSingle();
+
+    if (teacherError) {
+      console.error('saveTeacher teacher lookup error:', teacherError);
+      return res.status(500).json({ success: false, message: 'Failed to validate teacher' });
+    }
+
+    if (!teacher) {
+      return res.status(404).json({ success: false, message: 'Teacher not found' });
+    }
+
     const { error } = await supabase
       .from('saved_teachers')
-      .insert({
+      .upsert({
         student_id: studentId,
         teacher_id: teacherId
+      }, {
+        onConflict: 'student_id,teacher_id',
+        ignoreDuplicates: true
       });
 
-    // If error is due to UNIQUE constraint (already saved), treat as success
-    if (error && error.code !== '23505') {
+    if (error) {
       console.error('saveTeacher error:', error);
       return res.status(500).json({ success: false, message: 'Failed to save teacher' });
     }
