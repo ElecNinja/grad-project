@@ -522,9 +522,34 @@ export default function Work({ onNavigateToStudentVideos }) {
     return getTypeLabel(o.type).toLowerCase() === filterType.toLowerCase();
   });
 
+  const MAX_BOOTCAMP_IMAGE_SIZE = 5 * 1024 * 1024;
+  const ALLOWED_BOOTCAMP_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+  const resetBootcampImage = () => {
+    setBootcampImage(null);
+    setBootcampImagePreview('');
+    if (bootcampImageRef.current) {
+      bootcampImageRef.current.value = '';
+    }
+  };
+
   const handleBootcampImageChange = (e) => {
     const file = e.target.files?.[0];
+    setBootcampError('');
+    setBootcampSuccess('');
     if (!file) return;
+
+    if (!ALLOWED_BOOTCAMP_IMAGE_TYPES.includes(file.type)) {
+      resetBootcampImage();
+      setBootcampError('Cover image must be JPG, PNG, or WebP.');
+      return;
+    }
+    if (file.size > MAX_BOOTCAMP_IMAGE_SIZE) {
+      resetBootcampImage();
+      setBootcampError('Cover image must be 5MB or smaller.');
+      return;
+    }
+
     setBootcampImage(file);
     const reader = new FileReader();
     reader.onload = (ev) => setBootcampImagePreview(ev.target.result);
@@ -689,6 +714,9 @@ export default function Work({ onNavigateToStudentVideos }) {
         }
       }
 
+      const persistedThumbnailUrl =
+        result.data?.thumbnail_url || bootcampImagePreview || null;
+
       setUploadedRows((prev) => [...prev, {
         id: bootcampId || `bootcamp_${Date.now()}`,
         title: bootcampTitle,
@@ -705,7 +733,8 @@ export default function Work({ onNavigateToStudentVideos }) {
         tags: bootcampTags ? bootcampTags.split(',').map((t) => t.trim()).filter(Boolean) : [],
         requirements: bootcampRequirements || '',
         whatYouLearn: bootcampLearn || '',
-        thumbnailUrl: bootcampImagePreview || null,
+        thumbnailUrl: persistedThumbnailUrl,
+        thumbnail_url: result.data?.thumbnail_url || null,
         _studentId: studentIdToUpload,
       }]);
 
@@ -717,12 +746,14 @@ export default function Work({ onNavigateToStudentVideos }) {
 
       setBootcampTitle(''); setBootcampDesc(''); setBootcampTags(''); setBootcampRequirements('');
       setBootcampLearn(''); setBootcampPrice(''); setBootcampCapacity('');
-      setBootcampImage(null); setBootcampImagePreview('');
+      resetBootcampImage();
       setBootcampSections([{ title: '', videos: [{ url: '', title: '', durationMin: '' }] }]);
       setDeliveredOfferIds((prev) => prev.includes(selectedOfferId) ? prev : [...prev, selectedOfferId]);
       setSelectedOfferId(null);
       setBootcampSuccess(
-        `Bootcamp published on the Bootcamp page and added to ${selectedOffer.studentName}'s Videos.`
+        result.warning
+          ? `Bootcamp published, but ${result.warning}`
+          : `Bootcamp published on the Bootcamp page and added to ${selectedOffer.studentName}'s Videos.`
       );
     } catch (err) {
       setBootcampError(err?.response?.data?.error || 'Failed to create bootcamp. Please try again.');
@@ -1213,7 +1244,7 @@ export default function Work({ onNavigateToStudentVideos }) {
                   <img src={bootcampImagePreview} alt="Bootcamp cover preview"
                     style={{ width: '100%', maxHeight: 180, objectFit: 'cover',
                       borderRadius: 10, border: '1.5px solid #e2e8f0' }} />
-                  <button onClick={() => { setBootcampImage(null); setBootcampImagePreview(''); }}
+                  <button onClick={resetBootcampImage}
                     style={{ position: 'absolute', top: 8, right: 8,
                       background: 'rgba(0,0,0,0.55)', color: 'white', border: 'none',
                       borderRadius: '50%', width: 28, height: 28, cursor: 'pointer',

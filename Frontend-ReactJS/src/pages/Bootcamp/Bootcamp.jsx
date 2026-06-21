@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useSelector } from "react-redux";
 import "./Bootcamp.css";
 import { useNavigate } from "react-router-dom";
 import { fetchBootcampLessons } from "./bootcampApi";
@@ -16,6 +17,7 @@ import { Search, ChevronRight, ChevronLeft } from "lucide-react";
 
 function Bootcamp() {
   const navigate = useNavigate();
+  const currentUserId = useSelector((state) => state.user?.id);
   const scrollRefs = useRef({});
 
   const [bootcamps, setBootcamps] = useState([]);
@@ -30,7 +32,7 @@ function Bootcamp() {
     setLoading(true);
     setError(null);
 
-    const localBootcamps = getLocalWorkBootcamps();
+    const localBootcamps = getLocalWorkBootcamps(currentUserId);
 
     try {
       const rows = await fetchBootcampLessons();
@@ -53,7 +55,7 @@ function Bootcamp() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     loadCatalog();
