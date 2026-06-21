@@ -5,7 +5,6 @@ import { fetchBootcampLessons } from "../Bootcamp/bootcampApi";
 import {
   lessonsToBootcamps,
   bootcampToCourseState,
-  PLACEHOLDER_IMAGE,
   getLocalWorkBootcamps,
   mergeBootcampCatalogs,
 } from "../Bootcamp/bootcampUtils";
@@ -76,7 +75,7 @@ function CourseDetails() {
             setCourse((prev) => ({
               ...(prev || {}),
               ...resolvedCourse,
-              image: resolvedCourse.image || prev?.image || PLACEHOLDER_IMAGE,
+              image: resolvedCourse.image,
             }));
             setEnrolledCount(matched.enrolledCount ?? resolvedCourse.enrolledCount ?? 0);
           }
@@ -402,7 +401,7 @@ function CourseDetails() {
         <div className="cd-sidebar">
           <div className="cd-sidebar-img">
             <img
-              src={course.image || PLACEHOLDER_IMAGE}
+              src={course.image}
               alt={course.title}
               onError={(e) => {
                 e.currentTarget.src = PLACEHOLDER_IMAGE;
@@ -487,7 +486,7 @@ function CourseDetails() {
                   >
                     <div className="cd-bc-img-wrapper">
                       <img
-                        src={bootcamp.image || PLACEHOLDER_IMAGE}
+                        src={bootcamp.image}
                         alt={bootcamp.title}
                         onError={(e) => {
                           e.currentTarget.src = PLACEHOLDER_IMAGE;

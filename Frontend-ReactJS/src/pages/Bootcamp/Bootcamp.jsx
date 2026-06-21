@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import "./Bootcamp.css";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { fetchBootcampLessons } from "./bootcampApi";
 import {
   formatPrice,
@@ -8,7 +9,6 @@ import {
   filterBootcamps,
   lessonsToBootcamps,
   bootcampToCourseState,
-  PLACEHOLDER_IMAGE,
   getLocalWorkBootcamps,
   mergeBootcampCatalogs,
 } from "./bootcampUtils";
@@ -16,11 +16,11 @@ import { Search, ChevronRight, ChevronLeft, SlidersHorizontal, ChevronDown, X } 
 
 // ─── Sort options ───────────────────────────────────────────────
 const SORT_OPTIONS = [
-  { value: "newest",     label: "Newest" },
-  { value: "price_asc",  label: "Price: Low to High" },
+  { value: "newest", label: "Newest" },
+  { value: "price_asc", label: "Price: Low to High" },
   { value: "price_desc", label: "Price: High to Low" },
-  { value: "rating",     label: "Highest Rated" },
-  { value: "popular",    label: "Most Popular" },
+  { value: "rating", label: "Highest Rated" },
+  { value: "popular", label: "Most Popular" },
 ];
 
 function applySorting(bootcamps, sortKey) {
@@ -46,26 +46,26 @@ function applySorting(bootcamps, sortKey) {
 
 // ─── Component ──────────────────────────────────────────────────
 function Bootcamp() {
-  const navigate       = useNavigate();
-  const currentUserId  = useSelector((state) => state.user?.id);
-  const scrollRefs     = useRef({});
-  const sortDropRef    = useRef(null);
-  const topicDropRef   = useRef(null);
+  const navigate = useNavigate();
+  const currentUserId = useSelector((state) => state.user?.id);
+  const scrollRefs = useRef({});
+  const sortDropRef = useRef(null);
+  const topicDropRef = useRef(null);
 
   // Data
-  const [bootcamps,      setBootcamps]      = useState([]);
+  const [bootcamps, setBootcamps] = useState([]);
   const [categoriesList, setCategoriesList] = useState([]);
-  const [loading,        setLoading]        = useState(true);
-  const [error,          setError]          = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Filters
-  const [search,         setSearch]         = useState("");
-  const [topic,          setTopic]          = useState("all");
-  const [sort,           setSort]           = useState("newest");
+  const [search, setSearch] = useState("");
+  const [topic, setTopic] = useState("all");
+  const [sort, setSort] = useState("newest");
 
   // Dropdown open flags
-  const [sortOpen,       setSortOpen]       = useState(false);
-  const [topicOpen,      setTopicOpen]      = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [topicOpen, setTopicOpen] = useState(false);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -88,7 +88,7 @@ function Bootcamp() {
       const catRes = await api.get("/api/bootcamps/categories");
       if (catRes.status === 200) setCategoriesList(catRes.data.categories || []);
 
-      const rows            = await fetchBootcampLessons();
+      const rows = await fetchBootcampLessons();
       const remoteBootcamps = lessonsToBootcamps(rows);
       setBootcamps(mergeBootcampCatalogs(remoteBootcamps, localBootcamps));
     } catch (err) {
@@ -126,7 +126,6 @@ function Bootcamp() {
     () => applySorting(filtered, sort),
     [filtered, sort]
   );
-  const categories = useMemo(() => groupBootcamps(filtered), [filtered]);
 
   // Sorted + grouped (used in the grouped-sections view when not searching)
   const categories = useMemo(
@@ -171,8 +170,8 @@ function Bootcamp() {
 
   // ── Card renderer (shared between both views) ─────────────────
   const renderCard = (course) => {
-    const priceLabel    = formatPrice(course.price, course.currency);
-    const hasCapacity   = course.capacity != null && course.capacity > 0;
+    const priceLabel = formatPrice(course.price, course.currency);
+    const hasCapacity = course.capacity != null && course.capacity > 0;
     const studentsLabel = hasCapacity
       ? `${course.enrolledCount ?? 0}/${course.capacity} students`
       : null;
@@ -189,7 +188,7 @@ function Bootcamp() {
       >
         <div className="card-img-wrapper">
           <img
-            src={course.image || PLACEHOLDER_IMAGE}
+            src={course.image}
             alt={course.title}
             onError={(e) => { e.currentTarget.src = PLACEHOLDER_IMAGE; }}
           />
@@ -343,34 +342,34 @@ function Bootcamp() {
           bootcamps.length === 0
             ? <p className="bootcamp-status">No bootcamp lessons found.</p>
             : categories.map((category) =>
-                category.courses.length === 0 ? null : (
-                  <div key={category.name} className="category-section">
-                    <h2>{category.name}</h2>
-                    <div className="courses-wrapper">
-                      <div
-                        className="courses"
-                        ref={(el) => { scrollRefs.current[category.name] = el; }}
-                      >
-                        {category.courses.map((course) => renderCard(course))}
-                      </div>
-                      <button
-                        className="scroll-arrow left"
-                        onClick={() => scrollLeft(category.name)}
-                        aria-label="Scroll left"
-                      >
-                        <ChevronLeft size={24} color="#333" />
-                      </button>
-                      <button
-                        className="scroll-arrow right"
-                        onClick={() => scrollRight(category.name)}
-                        aria-label="Scroll right"
-                      >
-                        <ChevronRight size={24} color="#333" />
-                      </button>
+              category.courses.length === 0 ? null : (
+                <div key={category.name} className="category-section">
+                  <h2>{category.name}</h2>
+                  <div className="courses-wrapper">
+                    <div
+                      className="courses"
+                      ref={(el) => { scrollRefs.current[category.name] = el; }}
+                    >
+                      {category.courses.map((course) => renderCard(course))}
                     </div>
+                    <button
+                      className="scroll-arrow left"
+                      onClick={() => scrollLeft(category.name)}
+                      aria-label="Scroll left"
+                    >
+                      <ChevronLeft size={24} color="#333" />
+                    </button>
+                    <button
+                      className="scroll-arrow right"
+                      onClick={() => scrollRight(category.name)}
+                      aria-label="Scroll right"
+                    >
+                      <ChevronRight size={24} color="#333" />
+                    </button>
                   </div>
-                )
+                </div>
               )
+            )
         )}
 
       </div>

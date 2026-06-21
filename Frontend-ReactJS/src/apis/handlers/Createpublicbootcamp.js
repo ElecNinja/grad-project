@@ -2,6 +2,7 @@ import { api } from "../axios";
 
 export async function createPublicBootcamp({
   title,
+  category,
   description,
   sectionTitle,
   videos,
@@ -17,6 +18,7 @@ export async function createPublicBootcamp({
   try {
     const formData = new FormData();
     formData.append("title", title ?? "");
+    if (category) formData.append("category", category);
     if (description) formData.append("description", description);
     formData.append("sectionTitle", sectionTitle ?? "");
     formData.append("videos", JSON.stringify(videos ?? []));

@@ -13,6 +13,7 @@ async function getTeacherProfileId(profileUserId) {
 async function createPublicBootcamp({
   profileUserId,
   title,
+  category,
   description,
   sectionTitle,
   videos,
@@ -32,6 +33,7 @@ async function createPublicBootcamp({
     .insert({
       teacher_id: teacherProfileId,
       title,
+      category,
       description,
       delivery_type: 'recorded',
       max_students: capacity || null,

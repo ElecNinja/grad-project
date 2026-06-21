@@ -75,6 +75,7 @@ async function createPublicBootcampController(req, res) {
     const bootcamp = await createPublicBootcamp({
       profileUserId,
       title: String(title).trim(),
+      category: req.body?.category ? String(req.body.category).trim() : null,
       description: description ? String(description).trim() : '',
       sectionTitle: String(sectionTitle).trim(),
       videos,
