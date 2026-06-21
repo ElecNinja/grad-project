@@ -26,10 +26,7 @@ app.add_middleware(
 def health():
     return {"status": "AI service running"}
 
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+
 
     
 @app.post("/analyze-pdf")
@@ -92,3 +89,8 @@ async def summarize_from_url(body: dict):
 @app.options("/{path:path}")
 async def options_handler():
     return {}
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
