@@ -379,7 +379,7 @@ export default function Work({ onNavigateToStudentVideos }) {
   const [error, setError] = useState('');
   const [listOpen, setListOpen] = useState(true);
   const [filterType, setFilterType] = useState('All Categories');
-  const [selectedOfferId, setSelectedOfferId] = useState(null);
+  const [selectedOfferIds, setSelectedOfferIds] = useState(new Set());
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
@@ -435,6 +435,7 @@ export default function Work({ onNavigateToStudentVideos }) {
   const [bootcampImage, setBootcampImage] = useState(null);
   const [bootcampImagePreview, setBootcampImagePreview] = useState('');
   const bootcampImageRef = useRef(null);
+  const [bootcampPhotoUrl, setBootcampPhotoUrl] = useState('');
 
   const [bootcampSections, setBootcampSections] = useState([
     { title: '', videos: [{ url: '', title: '', durationMin: '' }] },
@@ -456,7 +457,7 @@ export default function Work({ onNavigateToStudentVideos }) {
       console.error('Failed to fetch categories:', err);
     }
   };
-  useEffect(() => { setSelectedOfferId(null); }, [activeContentTab]);
+  useEffect(() => { setSelectedOfferIds(new Set()); }, [activeContentTab]);
 
   useEffect(() => {
     if (!storageKey) return;
@@ -542,6 +543,7 @@ export default function Work({ onNavigateToStudentVideos }) {
   const resetBootcampImage = () => {
     setBootcampImage(null);
     setBootcampImagePreview('');
+    setBootcampPhotoUrl('');
     if (bootcampImageRef.current) {
       bootcampImageRef.current.value = '';
     }
@@ -572,45 +574,66 @@ export default function Work({ onNavigateToStudentVideos }) {
 
   const handleUploadVideo = async () => {
     const yId = extractYouTubeId(youtubeUrl);
-    const selectedOffer = listOffers.find((o) => o.id === selectedOfferId);
-    const studentIdToUpload = selectedOffer?.studentId;
+    const selectedOffers = listOffers.filter((o) => selectedOfferIds.has(o.id));
 
     if (!videoTitle.trim()) { setUploadError('Please add a video title.'); return; }
     if (!yId) { setUploadError('Please enter a valid YouTube URL.'); return; }
-    if (!studentIdToUpload) { setUploadError('Please select a student from My Lists first.'); return; }
+    if (selectedOffers.length === 0) { setUploadError('Please select at least one student from My Lists first.'); return; }
 
     setUploadError('');
     setUploadSuccess('');
     setUploading(true);
 
+    const thumbnailUrl = getYouTubeThumbnail(yId);
+    const successes = [];
+    const failures = [];
+
     try {
-      await uploadTeacherVideo({
-        studentId: studentIdToUpload,
-        title: videoTitle,
-        description: additionalInfo,
-        videoUrl: youtubeUrl,
-        videoType: 'recorded',
-        thumbnailUrl: getYouTubeThumbnail(yId),
-      });
+      for (const offer of selectedOffers) {
+        try {
+          await uploadTeacherVideo({
+            studentId: offer.studentId,
+            title: videoTitle,
+            description: additionalInfo,
+            videoUrl: youtubeUrl,
+            videoType: 'recorded',
+            thumbnailUrl,
+          });
+          notifyStudent(offer.studentId, { teacherName: userName, type: 'video', title: videoTitle });
+          successes.push(offer);
+        } catch (studentErr) {
+          console.error(`Failed to upload video for student ${offer.studentName}:`, studentErr);
+          failures.push(offer.studentName || offer.id);
+        }
+      }
 
-      notifyStudent(studentIdToUpload, { teacherName: userName, type: 'video', title: videoTitle });
-
-      setUploadedRows((prev) => [...prev, {
-        id: `uploaded_${Date.now()}`,
-        title: videoTitle,
-        description: additionalInfo,
-        youtubeUrl,
-        type: 'recorded',
-        bidStatus: 'accepted',
-        createdAt: new Date().toISOString(),
-        watchLimit,
-        _studentId: studentIdToUpload,
-      }]);
+      if (successes.length > 0) {
+        setUploadedRows((prev) => [...prev, {
+          id: `uploaded_${Date.now()}`,
+          title: videoTitle,
+          description: additionalInfo,
+          youtubeUrl,
+          type: 'recorded',
+          bidStatus: 'accepted',
+          createdAt: new Date().toISOString(),
+          watchLimit,
+          _studentId: successes[0].studentId,
+        }]);
+        setDeliveredOfferIds((prev) => {
+          const next = [...prev];
+          successes.forEach((o) => { if (!next.includes(o.id)) next.push(o.id); });
+          return next;
+        });
+      }
 
       setVideoTitle(''); setAdditionalInfo(''); setTags(''); setYoutubeUrl(''); setWatchLimit(2);
-      setDeliveredOfferIds((prev) => prev.includes(selectedOfferId) ? prev : [...prev, selectedOfferId]);
-      setSelectedOfferId(null);
-      setUploadSuccess('Video uploaded and published to the student.');
+      setSelectedOfferIds(new Set());
+
+      if (failures.length === 0) {
+        setUploadSuccess(`Video uploaded and published to ${successes.length} student${successes.length !== 1 ? 's' : ''}.`);
+      } else {
+        setUploadSuccess(`Published to ${successes.length} student${successes.length !== 1 ? 's' : ''}. Failed for: ${failures.join(', ')}.`);
+      }
     } catch (err) {
       setUploadError(err?.response?.data?.error || 'Failed to upload video. Please try again.');
     } finally {
@@ -619,10 +642,11 @@ export default function Work({ onNavigateToStudentVideos }) {
   };
 
   const handleUploadToGroup = () => {
-    const selectedOffer = listOffers.find((o) => o.id === selectedOfferId);
-    if (!selectedOffer) { setUploadError('Please select a student from My Lists first.'); return; }
+    const selectedOffers = listOffers.filter((o) => selectedOfferIds.has(o.id));
+    if (selectedOffers.length === 0) { setUploadError('Please select at least one student from My Lists first.'); return; }
     setUploadError('');
-    setUploadSuccess(`Video will be published to: ${selectedOffer.studentName}`);
+    const names = selectedOffers.map((o) => o.studentName).join(', ');
+    setUploadSuccess(`Video will be published to: ${names}`);
   };
 
   const updateSectionTitle = (sIdx, val) => {
@@ -662,13 +686,12 @@ export default function Work({ onNavigateToStudentVideos }) {
     setBootcampError('');
     setBootcampSuccess('');
 
-    const selectedOffer = listOffers.find((o) => o.id === selectedOfferId);
-    const studentIdToUpload = selectedOffer?.studentId;
+    const selectedOffers = listOffers.filter((o) => selectedOfferIds.has(o.id));
 
     if (!bootcampTitle.trim()) { setBootcampError('Please add a bootcamp title.'); return; }
     if (!bootcampCategory) { setBootcampError('Please select a category.'); return; }
     if (!bootcampSections[0]?.title.trim()) { setBootcampError('Please add a title for the first section.'); return; }
-    if (!studentIdToUpload) { setBootcampError('Please select a student from My Lists first.'); return; }
+    if (selectedOffers.length === 0) { setBootcampError('Please select at least one student from My Lists first.'); return; }
 
     const firstValidVideos = bootcampSections[0].videos
       .filter((v) => v.url.trim() && extractYouTubeId(v.url))
@@ -682,6 +705,10 @@ export default function Work({ onNavigateToStudentVideos }) {
 
     setUploading(true);
 
+    // Use the FIRST selected student to create the public bootcamp (one bootcamp record)
+    const primaryOffer   = selectedOffers[0];
+    const primaryStudentId = primaryOffer.studentId;
+
     try {
       const result = await createPublicBootcamp({
         title: bootcampTitle,
@@ -692,10 +719,11 @@ export default function Work({ onNavigateToStudentVideos }) {
         capacity: bootcampCapacity ? Number(bootcampCapacity) : null,
         price: bootcampPrice ? Number(bootcampPrice) : 0,
         image: bootcampImage || null,
+        photoUrl: bootcampPhotoUrl.trim() || null,
         tags: bootcampTags,
         requirements: bootcampRequirements,
         whatYouLearn: bootcampLearn,
-        studentId: studentIdToUpload,
+        studentId: primaryStudentId,
       });
 
       if (!result.response) {
@@ -730,8 +758,18 @@ export default function Work({ onNavigateToStudentVideos }) {
         }
       }
 
-      const persistedThumbnailUrl =
-        result.data?.thumbnail_url || bootcampImagePreview || null;
+      const persistedThumbnailUrl = result.data?.thumbnail_url || bootcampPhotoUrl.trim() || bootcampImagePreview || null;
+
+      // Notify ALL selected students; also upload a video record for each additional student
+      const notifyFailures = [];
+      for (const offer of selectedOffers) {
+        try {
+          notifyStudent(offer.studentId, { teacherName: userName, type: 'bootcamp', title: bootcampTitle });
+        } catch (notifErr) {
+          console.warn(`Notification failed for ${offer.studentName}:`, notifErr);
+          notifyFailures.push(offer.studentName);
+        }
+      }
 
       setUploadedRows((prev) => [...prev, {
         id: bootcampId || `bootcamp_${Date.now()}`,
@@ -745,31 +783,33 @@ export default function Work({ onNavigateToStudentVideos }) {
         isPublic: true,
         capacity: bootcampCapacity ? Number(bootcampCapacity) : null,
         price: bootcampPrice ? Number(bootcampPrice) : 0,
-        enrolledCount: 1,
+        enrolledCount: selectedOffers.length,
         tags: bootcampTags ? bootcampTags.split(',').map((t) => t.trim()).filter(Boolean) : [],
         requirements: bootcampRequirements || '',
         whatYouLearn: bootcampLearn || '',
         thumbnailUrl: persistedThumbnailUrl,
-        thumbnail_url: result.data?.thumbnail_url || null,
-        _studentId: studentIdToUpload,
+        thumbnail_url: result.data?.thumbnail_url || bootcampPhotoUrl.trim() || null,
+        _studentId: primaryStudentId,
       }]);
 
-      notifyStudent(studentIdToUpload, {
-        teacherName: userName,
-        type: 'bootcamp',
-        title: bootcampTitle,
-      });
-
       setBootcampTitle(''); setBootcampCategory(''); setBootcampDesc(''); setBootcampTags(''); setBootcampRequirements('');
-      setBootcampLearn(''); setBootcampPrice(''); setBootcampCapacity('');
+      setBootcampLearn(''); setBootcampPrice(''); setBootcampCapacity(''); setBootcampPhotoUrl('');
       resetBootcampImage();
       setBootcampSections([{ title: '', videos: [{ url: '', title: '', durationMin: '' }] }]);
-      setDeliveredOfferIds((prev) => prev.includes(selectedOfferId) ? prev : [...prev, selectedOfferId]);
-      setSelectedOfferId(null);
+      setDeliveredOfferIds((prev) => {
+        const next = [...prev];
+        selectedOffers.forEach((o) => { if (!next.includes(o.id)) next.push(o.id); });
+        return next;
+      });
+      setSelectedOfferIds(new Set());
+
+      const successMsg = selectedOffers.length === 1
+        ? `Bootcamp published on the Bootcamp page and added to ${primaryOffer.studentName}'s Videos.`
+        : `Bootcamp published and notified ${selectedOffers.length} students.`;
       setBootcampSuccess(
         result.warning
           ? `Bootcamp published, but ${result.warning}`
-          : `Bootcamp published on the Bootcamp page and added to ${selectedOffer.studentName}'s Videos.`
+          : successMsg
       );
     } catch (err) {
       setBootcampError(err?.response?.data?.error || 'Failed to create bootcamp. Please try again.');
@@ -779,56 +819,79 @@ export default function Work({ onNavigateToStudentVideos }) {
   };
 
   const handleGoLive = async () => {
-    const selectedOffer = listOffers.find((o) => o.id === selectedOfferId);
-    const studentIdToUpload = selectedOffer?.studentId;
+    const selectedOffers = listOffers.filter((o) => selectedOfferIds.has(o.id));
 
     if (!liveTitle.trim()) { setUploadError('Please add a live session title.'); return; }
     if (!liveUrl.trim()) { setUploadError('Please provide a meeting URL (e.g., Zoom/Google Meet).'); return; }
-    if (!studentIdToUpload) { setUploadError('Please select a student from My Lists first.'); return; }
+    if (selectedOffers.length === 0) { setUploadError('Please select at least one student from My Lists first.'); return; }
 
     setUploadError('');
     setUploadSuccess('');
     setUploading(true);
 
     try {
-      // Persist to backend
-      await uploadTeacherVideo({
-        studentId: studentIdToUpload,
-        title: liveTitle,
-        description: liveInfo,
-        videoUrl: liveUrl,
-        videoType: 'live_1on1',
-        thumbnailUrl: null,
-      });
+      const successes = [];
+      const failures  = [];
 
-      // Persist to localStorage so the student Videos page can read it
-      setUploadedRows((prev) => [...prev, {
-        id: `live_${Date.now()}`,
-        title: liveTitle,
-        description: liveInfo,
-        meetingUrl: liveUrl,
-        type: 'live_1on1',
-        bidStatus: 'accepted',
-        createdAt: new Date().toISOString(),
-        teacherName: userName,
-        _studentId: studentIdToUpload,
-      }]);
+      for (const offer of selectedOffers) {
+        try {
+          // Persist to backend — one record per student
+          await uploadTeacherVideo({
+            studentId:    offer.studentId,
+            title:        liveTitle,
+            description:  liveInfo,
+            videoUrl:     liveUrl,
+            videoType:    'live_1on1',
+            thumbnailUrl: null,
+          });
 
-      // Notify in-app (real-time bell)
-      notifyStudent(studentIdToUpload, {
-        teacherName: userName,
-        type: 'live',
-        title: liveTitle,
-        meetingUrl: liveUrl,
-        description: liveInfo,
-      });
+          // Notify in-app (real-time bell)
+          notifyStudent(offer.studentId, {
+            teacherName: userName,
+            type:        'live',
+            title:       liveTitle,
+            meetingUrl:  liveUrl,
+            description: liveInfo,
+          });
 
-      setUploadSuccess('Live session published and meeting URL sent to the student.');
+          successes.push(offer);
+        } catch (studentErr) {
+          console.error(`Failed to publish live session for ${offer.studentName}:`, studentErr);
+          failures.push(offer.studentName || offer.id);
+        }
+      }
+
+      if (successes.length > 0) {
+        // Persist to localStorage so the student Videos page can read it
+        setUploadedRows((prev) => [...prev, {
+          id:          `live_${Date.now()}`,
+          title:       liveTitle,
+          description: liveInfo,
+          meetingUrl:  liveUrl,
+          type:        'live_1on1',
+          bidStatus:   'accepted',
+          createdAt:   new Date().toISOString(),
+          teacherName: userName,
+          _studentId:  successes[0].studentId,
+        }]);
+
+        setDeliveredOfferIds((prev) => {
+          const next = [...prev];
+          successes.forEach((o) => { if (!next.includes(o.id)) next.push(o.id); });
+          return next;
+        });
+      }
+
       setLiveTitle('');
       setLiveInfo('');
       setLiveUrl('');
-      setDeliveredOfferIds((prev) => prev.includes(selectedOfferId) ? prev : [...prev, selectedOfferId]);
-      setSelectedOfferId(null);
+      setSelectedOfferIds(new Set());
+
+      if (failures.length === 0) {
+        setUploadSuccess(`Live session published and meeting URL sent to ${successes.length} student${successes.length !== 1 ? 's' : ''}.`);
+      } else {
+        setUploadSuccess(`Published to ${successes.length} student${successes.length !== 1 ? 's' : ''}. Failed for: ${failures.join(', ')}.`);
+      }
     } catch (err) {
       setUploadError(err?.response?.data?.error || 'Failed to publish live session. Please try again.');
     } finally {
@@ -874,8 +937,30 @@ export default function Work({ onNavigateToStudentVideos }) {
       </div>
 
       {listOpen && listOffers.length > 0 && (
-        <div style={{ fontSize: 12, color: 'var(--text-light)', marginBottom: 10 }}>
-          Click on a student to select them before uploading
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontSize: 12, color: 'var(--text-light)' }}>
+            {selectedOfferIds.size === 0
+              ? 'Click students to select them before uploading'
+              : `${selectedOfferIds.size} student${selectedOfferIds.size !== 1 ? 's' : ''} selected`}
+          </span>
+          <button
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 12, fontWeight: 600, color: 'var(--primary)',
+              padding: '2px 6px', borderRadius: 5,
+            }}
+            onClick={() => {
+              if (selectedOfferIds.size === listOffers.length) {
+                setSelectedOfferIds(new Set());
+              } else {
+                setSelectedOfferIds(new Set(listOffers.map((o) => o.id)));
+              }
+              setUploadError('');
+              setUploadSuccess('');
+            }}
+          >
+            {selectedOfferIds.size === listOffers.length ? 'Deselect all' : 'Select all'}
+          </button>
         </div>
       )}
 
@@ -902,10 +987,19 @@ export default function Work({ onNavigateToStudentVideos }) {
             </div>
           ) : (
             listOffers.map((offer, index) => {
-              const isSelected = selectedOfferId === offer.id;
+              const isSelected = selectedOfferIds.has(offer.id);
               return (
                 <div key={offer.id || index} className="list-item"
-                  onClick={() => { setSelectedOfferId(isSelected ? null : offer.id); setUploadError(''); setUploadSuccess(''); }}
+                  onClick={() => {
+                    setSelectedOfferIds((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(offer.id)) next.delete(offer.id);
+                      else next.add(offer.id);
+                      return next;
+                    });
+                    setUploadError('');
+                    setUploadSuccess('');
+                  }}
                   style={{
                     cursor: 'pointer',
                     background: isSelected ? 'var(--primary-light)' : 'white',
@@ -970,8 +1064,8 @@ export default function Work({ onNavigateToStudentVideos }) {
       )}
 
       <button className="btn-publish"
-        disabled={uploading || (listOffers.length > 0 && !selectedOfferId)}
-        style={{ opacity: uploading || (listOffers.length > 0 && !selectedOfferId) ? 0.5 : 1 }}
+        disabled={uploading || selectedOfferIds.size === 0}
+        style={{ opacity: uploading || selectedOfferIds.size === 0 ? 0.5 : 1, cursor: uploading || selectedOfferIds.size === 0 ? 'not-allowed' : 'pointer' }}
         onClick={
           activeContentTab === 'Online Course' ? handleGoLive :
           activeContentTab === 'Bootcamp' ? handleUploadToGroup :
@@ -982,7 +1076,13 @@ export default function Work({ onNavigateToStudentVideos }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" />
             </svg>
-            {uploading ? 'Publishing...' : 'Go Live'}
+            {uploading ? 'Publishing...' : (
+              selectedOfferIds.size === 0
+                ? 'Select students to upload'
+                : selectedOfferIds.size === 1
+                  ? <>Go Live → {listOffers.find((o) => selectedOfferIds.has(o.id))?.studentName}</>                  
+                  : <>Go Live → {selectedOfferIds.size} students</>
+            )}
           </>
         ) : (
           <>
@@ -990,11 +1090,12 @@ export default function Work({ onNavigateToStudentVideos }) {
               <polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
               <path d="M5 21h14" />
             </svg>
-            {uploading ? 'Uploading...' : 'Upload and Publish'}
-            {!uploading && selectedOfferId && listOffers.find((o) => o.id === selectedOfferId) && (
-              <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.85 }}>
-                → {listOffers.find((o) => o.id === selectedOfferId)?.studentName}
-              </span>
+            {uploading ? 'Uploading...' : (
+              selectedOfferIds.size === 0
+                ? 'Select students to upload'
+                : selectedOfferIds.size === 1
+                  ? <>Upload and Publish → <span style={{ marginLeft: 4, fontSize: 11, opacity: 0.85 }}>{listOffers.find((o) => selectedOfferIds.has(o.id))?.studentName}</span></>
+                  : <>Upload and Publish → {selectedOfferIds.size} students</>
             )}
           </>
         )}
@@ -1264,9 +1365,14 @@ export default function Work({ onNavigateToStudentVideos }) {
               <div className="field-label">Bootcamp Cover Image</div>
               <input ref={bootcampImageRef} type="file" accept="image/*"
                 style={{ display: 'none' }} onChange={handleBootcampImageChange} />
-              {bootcampImagePreview ? (
-                <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
-                  <img src={bootcampImagePreview} alt="Bootcamp cover preview"
+
+              {/* Preview: file upload takes priority, then photo URL */}
+              {(bootcampImagePreview || bootcampPhotoUrl.trim()) ? (
+                <div style={{ position: 'relative', display: 'inline-block', width: '100%', marginBottom: 10 }}>
+                  <img
+                    src={bootcampImagePreview || bootcampPhotoUrl.trim()}
+                    alt="Bootcamp cover preview"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     style={{ width: '100%', maxHeight: 180, objectFit: 'cover',
                       borderRadius: 10, border: '1.5px solid #e2e8f0' }} />
                   <button onClick={resetBootcampImage}
@@ -1274,11 +1380,13 @@ export default function Work({ onNavigateToStudentVideos }) {
                       background: 'rgba(0,0,0,0.55)', color: 'white', border: 'none',
                       borderRadius: '50%', width: 28, height: 28, cursor: 'pointer',
                       fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-                  <button onClick={() => bootcampImageRef.current?.click()}
-                    style={{ position: 'absolute', bottom: 8, right: 8,
-                      background: 'rgba(255,255,255,0.9)', color: 'var(--primary)',
-                      border: '1.5px solid var(--primary)', borderRadius: 8,
-                      padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Change</button>
+                  {bootcampImagePreview && (
+                    <button onClick={() => bootcampImageRef.current?.click()}
+                      style={{ position: 'absolute', bottom: 8, right: 8,
+                        background: 'rgba(255,255,255,0.9)', color: 'var(--primary)',
+                        border: '1.5px solid var(--primary)', borderRadius: 8,
+                        padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Change</button>
+                  )}
                 </div>
               ) : (
                 <button onClick={() => bootcampImageRef.current?.click()}
@@ -1296,6 +1404,29 @@ export default function Work({ onNavigateToStudentVideos }) {
                   <span style={{ fontSize: 11, color: 'var(--text-light)', fontWeight: 400 }}>PNG, JPG, WEBP · Recommended 16:9</span>
                 </button>
               )}
+
+              {/* OR: paste a direct image URL */}
+              <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+                <span style={{ fontSize: 12, color: '#94a3b8', whiteSpace: 'nowrap' }}>or paste image URL</span>
+                <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+              </div>
+              <input
+                className="field-input"
+                type="url"
+                placeholder="https://example.com/cover.jpg"
+                value={bootcampPhotoUrl}
+                onChange={(e) => {
+                  setBootcampPhotoUrl(e.target.value);
+                  // If user pastes a URL while a file is selected, clear the file
+                  if (e.target.value.trim() && bootcampImagePreview) {
+                    setBootcampImage(null);
+                    setBootcampImagePreview('');
+                    if (bootcampImageRef.current) bootcampImageRef.current.value = '';
+                  }
+                }}
+                style={{ marginTop: 8 }}
+              />
             </div>
 
             {bootcampSections.map((sec, sIdx) => (
@@ -1385,17 +1516,22 @@ export default function Work({ onNavigateToStudentVideos }) {
                 borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>{bootcampSuccess}</div>
             )}
 
-            {selectedOfferId && listOffers.find((o) => o.id === selectedOfferId) && (
-              <div style={{ background: '#eef2ff', color: '#3730a3', border: '1px solid #c7d2fe',
-                borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>
-                Bootcamp will be added to{' '}
-                <strong>{listOffers.find((o) => o.id === selectedOfferId)?.studentName}</strong>'s Videos → BootCamp tab
-              </div>
-            )}
+            {selectedOfferIds.size > 0 && (() => {
+              const firstSelected = listOffers.find((o) => selectedOfferIds.has(o.id));
+              return firstSelected ? (
+                <div style={{ background: '#eef2ff', color: '#3730a3', border: '1px solid #c7d2fe',
+                  borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>
+                  Bootcamp will be added to{' '}
+                  {selectedOfferIds.size === 1
+                    ? <><strong>{firstSelected.studentName}</strong>'s Videos → BootCamp tab</>
+                    : <><strong>{selectedOfferIds.size} students'</strong> Videos → BootCamp tab</>}
+                </div>
+              ) : null;
+            })()}
 
             <button className="btn-publish"
-              disabled={uploading || !selectedOfferId}
-              style={{ opacity: uploading || !selectedOfferId ? 0.5 : 1 }}
+              disabled={uploading || selectedOfferIds.size === 0}
+              style={{ opacity: uploading || selectedOfferIds.size === 0 ? 0.5 : 1, cursor: uploading || selectedOfferIds.size === 0 ? 'not-allowed' : 'pointer' }}
               onClick={handleUploadBootcamp}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />

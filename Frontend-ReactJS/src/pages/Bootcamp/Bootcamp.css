@@ -365,3 +365,133 @@ body {
 .bootcamp-status--error {
   color: #ef4444;
 }
+
+/* ─── Dropdown wrappers ─────────────────────────────────────────────── */
+.dropdown-wrap {
+  position: relative;
+}
+
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 190px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+  z-index: 100;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdown-option {
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.dropdown-option:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.dropdown-option--active {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* Active filter button highlight */
+.filter-btn--active {
+  border-color: #3b82f6 !important;
+  background: #eff6ff !important;
+  color: #2563eb !important;
+}
+
+/* Clear filter button */
+.filter-btn--clear {
+  border-color: #fca5a5 !important;
+  background: #fef2f2 !important;
+  color: #ef4444 !important;
+}
+
+.filter-btn--clear:hover {
+  background: #fee2e2 !important;
+}
+
+/* X button inside search bar */
+.search-clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.search-clear-btn:hover {
+  color: #475569;
+}
+
+/* ─── Flat grid (search/filter active) ──────────────────────────────── */
+.bootcamp-flat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  padding-bottom: 40px;
+}
+
+/* Results count label */
+.bootcamp-results-count {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+/* ─── Empty state ─────────────────────────────────────────────────── */
+.bootcamp-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 60px 20px;
+}
+
+.bootcamp-empty-state__msg {
+  font-size: 16px;
+  color: #64748b;
+  text-align: center;
+}
+
+.bootcamp-empty-state__btn {
+  padding: 10px 24px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: white;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bootcamp-empty-state__btn:hover {
+  border-color: #3b82f6;
+  color: #2563eb;
+  background: #eff6ff;
+}

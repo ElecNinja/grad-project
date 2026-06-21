@@ -9,6 +9,7 @@ export async function createPublicBootcamp({
   capacity,
   price,
   image,
+  photoUrl,
   tags,
   requirements,
   whatYouLearn,
@@ -24,6 +25,7 @@ export async function createPublicBootcamp({
     if (capacity != null && capacity !== "") formData.append("capacity", String(capacity));
     if (price != null && price !== "") formData.append("price", String(price));
     if (image) formData.append("image", image);
+    if (photoUrl && photoUrl.trim()) formData.append("photoUrl", photoUrl.trim());
     if (studentId) formData.append("studentId", studentId);
 
     if (tags && String(tags).trim()) {
@@ -45,7 +47,9 @@ export async function createPublicBootcamp({
 
     const response = await api.post("/api/teacher/public-bootcamps", formData, {
       headers: {
-        "Content-Type": "multipart/form-data",
+        // Let the browser set Content-Type automatically (multipart/form-data + boundary).
+        // Manually setting it breaks the boundary which causes multer to miss the file.
+        "Content-Type": undefined,
       },
       validateStatus: () => true,
     });

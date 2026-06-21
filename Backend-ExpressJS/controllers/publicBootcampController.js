@@ -13,7 +13,23 @@ const bootcampCategories = require('../utils/bootcampCategories');
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
+async function ensureBucketExists() {
+  const bucketName = 'bootcamp-images';
+  const { data: buckets, error: listErr } = await supabase.storage.listBuckets();
+  if (listErr) {
+    console.warn('Could not list storage buckets:', listErr.message);
+    return; // proceed anyway — bucket may already exist
+  }
+  const exists = (buckets || []).some((b) => b.name === bucketName);
+  if (!exists) {
+    const { error: createErr } = await supabase.storage.createBucket(bucketName, { public: true });
+    if (createErr) console.warn('Could not create storage bucket:', createErr.message);
+    else console.log(`Storage bucket '${bucketName}' created successfully.`);
+  }
+}
+
 async function uploadBootcampImage(fileBuffer, mimeType, bootcampId) {
+  await ensureBucketExists();
   const ext = mimeType?.split('/')[1] || 'jpg';
   const path = `bootcamp-covers/${bootcampId}.${ext}`;
 
@@ -97,6 +113,8 @@ async function createPublicBootcampController(req, res) {
       studentId: studentId ? String(studentId).trim() : null,
     });
 
+    const photoUrl = req.body?.photoUrl ? String(req.body.photoUrl).trim() : null;
+
     let warning = '';
 
     if (req.file) {
@@ -123,6 +141,21 @@ async function createPublicBootcampController(req, res) {
       } catch (imgErr) {
         console.warn('Bootcamp image upload failed:', imgErr.message);
         warning = 'the cover image could not be saved.';
+      }
+    } else if (photoUrl) {
+      try {
+        const { data: updatedBootcamp, error: updateError } = await supabase
+          .from('bootcamps')
+          .update({ thumbnail_url: photoUrl })
+          .eq('id', bootcamp.id)
+          .select('id, thumbnail_url')
+          .single();
+
+        if (updateError) throw updateError;
+        bootcamp.thumbnail_url = updatedBootcamp.thumbnail_url;
+      } catch (urlErr) {
+        console.warn('Bootcamp photo URL save failed:', urlErr.message);
+        warning = 'the cover image URL could not be saved.';
       }
     }
 

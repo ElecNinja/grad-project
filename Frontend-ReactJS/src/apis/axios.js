@@ -34,6 +34,17 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// If the request body is FormData, remove the Content-Type header so the browser
+// can auto-set "multipart/form-data; boundary=..." — setting it manually breaks
+// the boundary string and causes multer (on the backend) to fail to parse the file.
+api.interceptors.request.use((config) => {
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+    delete config.headers['content-type'];
+  }
+  return config;
+});
+
 const AI_BASE_URL = import.meta.env.VITE_AI_URL;
 
 export const uploadPdfForAnalysis = (file) => {

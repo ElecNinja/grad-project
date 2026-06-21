@@ -420,34 +420,62 @@ const getCourseContent = async (req, res) => {
 };
 
 // ===============================
-// TEACHER UPLOADS A VIDEO FOR A SPECIFIC STUDENT
+// TEACHER UPLOADS A VIDEO FOR ONE OR MORE STUDENTS
 // (powers the "Upload and Publish" button in Work.jsx;
-//  the video then shows up on that student's /videos page)
+//  the video then shows up on each student's /videos page)
 // ===============================
 const uploadTeacherVideoController = async (req, res) => {
   try {
     const teacherProfileId = req.user?.id;
-    const { studentId, title, description, videoUrl, videoType, thumbnailUrl } = req.body;
+    // Accept either a single studentId (legacy) or an array of studentIds (new multi-select)
+    const { studentId, studentIds, title, description, videoUrl, videoType, thumbnailUrl } = req.body;
 
     if (!teacherProfileId) {
       return res.status(401).json({ error: "Unauthorized." });
     }
 
-    if (!studentId || !title) {
-      return res.status(400).json({ error: "studentId and title are required." });
+    if (!title) {
+      return res.status(400).json({ error: "title is required." });
     }
 
-    const video = await teacherService.uploadTeacherVideo(
-      teacherProfileId,
-      studentId,
-      title,
-      description,
-      videoUrl,
-      videoType,
-      thumbnailUrl
-    );
+    // Normalise to an array — supports both the old single-student callers and the new multi-select
+    const targetIds = Array.isArray(studentIds)
+      ? studentIds.filter(Boolean)
+      : studentId
+        ? [studentId]
+        : [];
 
-    return res.status(201).json({ message: "Video uploaded successfully", video });
+    if (targetIds.length === 0) {
+      return res.status(400).json({ error: "At least one studentId is required." });
+    }
+
+    const results  = [];
+    const failures = [];
+
+    for (const sid of targetIds) {
+      try {
+        const video = await teacherService.uploadTeacherVideo(
+          teacherProfileId,
+          sid,
+          title,
+          description,
+          videoUrl,
+          videoType,
+          thumbnailUrl
+        );
+        results.push({ studentId: sid, success: true, video });
+      } catch (studentErr) {
+        console.error(`uploadTeacherVideoController: failed for student ${sid}:`, studentErr);
+        failures.push({ studentId: sid, error: studentErr.message || "DB error" });
+      }
+    }
+
+    const statusCode = results.length === 0 ? 500 : 201;
+    return res.status(statusCode).json({
+      message:  `Uploaded successfully for ${results.length} student(s).`,
+      results,
+      failures,
+    });
   } catch (err) {
     console.error("uploadTeacherVideoController error:", err);
     return res.status(500).json({ error: err.message || "Server error." });

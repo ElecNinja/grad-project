@@ -332,7 +332,7 @@ function mergeBootcampItem(primary = {}, fallback = {}) {
     rating: primary.rating ?? fallback.rating ?? null,
     reviews: primary.reviews ?? fallback.reviews ?? null,
     badge: primary.badge || fallback.badge || null,
-    image: primary.image || fallback.image || null,
+    image: primary.image || primary.thumbnail || primary.thumbnail_url || fallback.image || fallback.thumbnail || fallback.thumbnailUrl || null,
     tags: (primary.tags && primary.tags.length ? primary.tags : fallback.tags) || [],
     requirements: primary.requirements || fallback.requirements || null,
     whatYouLearn: primary.whatYouLearn || fallback.whatYouLearn || null,
@@ -402,7 +402,7 @@ export function groupBootcamps(bootcamps, categoriesList = []) {
   return Array.from(map.entries()).map(([name, courses]) => ({ name, courses }));
 }
 
-export function filterBootcamps(bootcamps, { search, topic, level }) {
+export function filterBootcamps(bootcamps, { search, topic }) {
   const q = search.trim().toLowerCase();
   return bootcamps.filter((course) => {
     const matchSearch =
@@ -412,9 +412,8 @@ export function filterBootcamps(bootcamps, { search, topic, level }) {
       course.expert?.toLowerCase().includes(q) ||
       course.lessons?.some((l) => l.title?.toLowerCase().includes(q));
 
-    const matchTopic = topic === "all" || !course.category || course.category === topic;
-    const matchLevel = level === "all" || !course.level || course.level === level;
-    return matchSearch && matchTopic && matchLevel;
+    const matchTopic = topic === "all" || course.category === topic;
+    return matchSearch && matchTopic;
   });
 }
 
