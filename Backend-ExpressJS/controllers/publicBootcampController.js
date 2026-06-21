@@ -9,23 +9,10 @@ const {
 
 const supabase = require('../config/supabase');
 
-async function ensureBucketExists() {
-  const bucketName = 'bootcamp-images';
-  const { data: buckets, error: listErr } = await supabase.storage.listBuckets();
-  if (listErr) {
-    console.warn('Could not list storage buckets:', listErr.message);
-    return; // proceed anyway — bucket may already exist
-  }
-  const exists = (buckets || []).some((b) => b.name === bucketName);
-  if (!exists) {
-    const { error: createErr } = await supabase.storage.createBucket(bucketName, { public: true });
-    if (createErr) console.warn('Could not create storage bucket:', createErr.message);
-    else console.log(`Storage bucket '${bucketName}' created successfully.`);
-  }
-}
+// ─── Removed ensureBucketExists() – bucket is created manually ───
 
 async function uploadBootcampImage(fileBuffer, mimeType, bootcampId) {
-  await ensureBucketExists();
+  // Assumes bucket 'bootcamp-images' already exists and is public
   const ext = mimeType?.split('/')[1] || 'jpg';
   const path = `bootcamp-covers/${bootcampId}.${ext}`;
 
@@ -38,6 +25,8 @@ async function uploadBootcampImage(fileBuffer, mimeType, bootcampId) {
   const { data } = supabase.storage.from('bootcamp-images').getPublicUrl(path);
   return data.publicUrl;
 }
+
+// ─── Controllers (unchanged, except the image upload no longer tries to create bucket) ───
 
 // POST /api/teacher/public-bootcamps
 async function createPublicBootcampController(req, res) {
@@ -90,17 +79,16 @@ async function createPublicBootcampController(req, res) {
     const photoUrl = req.body?.photoUrl ? String(req.body.photoUrl).trim() : null;
 
     let warning = '';
-    // Upload cover image if provided (non-fatal if it fails)
-   console.log('req.file received?', !!req.file, req.file?.originalname, req.file?.mimetype);
+    console.log('req.file received?', !!req.file, req.file?.originalname, req.file?.mimetype);
 
-if (req.file) {
-  try {
-    const imageUrl = await uploadBootcampImage(
-      req.file.buffer,
-      req.file.mimetype,
-      bootcamp.id
-    );
-    console.log('✅ Image uploaded successfully, URL:', imageUrl);
+    if (req.file) {
+      try {
+        const imageUrl = await uploadBootcampImage(
+          req.file.buffer,
+          req.file.mimetype,
+          bootcamp.id
+        );
+        console.log('✅ Image uploaded successfully, URL:', imageUrl);
         await supabase
           .from('bootcamps')
           .update({ thumbnail_url: imageUrl })

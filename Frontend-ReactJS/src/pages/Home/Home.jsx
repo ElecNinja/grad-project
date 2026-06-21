@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react'; // 👈 added useState
 import { Link, useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { useSelector } from 'react-redux';
@@ -20,17 +20,41 @@ import homeImg from '../../assets/images/betterhome.png';
 import vectorSvg from '../../assets/images/Vector.svg';
 import heisenPng from '../../assets/images/realheisen.png';
 import jinxPng from '../../assets/images/realjinx.webp';
-import dropPng from '../../assets/images/drop.png';      // Add this
-import findPng from '../../assets/images/find.png';      // Add this
-import progressPng from '../../assets/images/progress.png'; // Add this
+import dropPng from '../../assets/images/drop.png';
+import findPng from '../../assets/images/find.png';
+import progressPng from '../../assets/images/progress.png';
 import './home.css';
 
 function Homepage() {
   const navigate = useNavigate();
   const isLoggedIn = useSelector((state) => state.user.loggedIn);
-  console.log('isLoggedIn:', isLoggedIn);
+  
+  // ─── Search state ─────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState('');
 
-    const stats = [
+  // ─── Handle search ────────────────────────────────────────────
+  const handleSearch = () => {
+    const query = searchQuery.trim();
+    console.log('🔍 Searching for:', query || '(empty)');
+    
+    if (!query) {
+      // If empty, just go to Find Expert without a filter
+      navigate('/find-expert');
+      return;
+    }
+    // Navigate with the search query in state
+    navigate('/find-expert', { state: { searchQuery: query } });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearch();
+    }
+  };
+
+  // ─── Static content ────────────────────────────────────────────
+  const stats = [
     { value: '+30,000', label: 'Experienced Teachers' },
     { value: '+300,000', label: '5-star Teacher reviews' },
     { value: '+10,000', label: 'Subjects Taught' },
@@ -110,7 +134,6 @@ function Homepage() {
       image: jinxPng,
       description: "I'm Jinx, your math teacher. I've spent years twisting numbers, breaking rules, and finding patterns where others see chaos. To me, math isn't just logic — it's madness beautifully disguised as order. I've always believed that true genius lies on the edge between reason and insanity. People may think I'm unpredictable, but every move I make adds up perfectly. Math isn't just what I teach. It's what keeps my mind alive. Study with me, and you won't just solve equations — you'll explode them."
     }
-    
   ];
 
   return (
@@ -142,8 +165,15 @@ function Homepage() {
                 type="text" 
                 placeholder="Find someone who makes learning easy..."
                 className="search-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
               />
-              <button className="search-button">
+              <button 
+                className="search-button" 
+                onClick={handleSearch}
+                type="button"
+              >
                 <Search size={20} />
               </button>
             </div>
@@ -170,162 +200,161 @@ function Homepage() {
         </div>
       </section>
 
-     {/* How It Works Section - Updated with images and new number boxes */}
-<section className="how-it-works-section">
-  <div className="container">
-    <h2 className="section-title centered">How StudyBuddy works:</h2>
-    
-    <div className="steps-container">
-      {howItWorks.map((step, index) => (
-        <div key={index} className={`step-card step-${index + 1}`}>
-          <div className={`step-number-box step-number-${index + 1}`}>
-            <span className="step-number-text">{step.step}</span>
-          </div>
-          <h3 className="step-title">{step.title}</h3>
-          <p className="step-description">{step.description}</p>
+     {/* How It Works Section */}
+      <section className="how-it-works-section">
+        <div className="container">
+          <h2 className="section-title centered">How StudyBuddy works:</h2>
           
-          {/* Different image for each step */}
-          <div className="step-image-container">
-            <img 
-              src={
-                index === 0 ? dropPng : 
-                index === 1 ? findPng : 
-                progressPng
-              } 
-              alt={`Step ${index + 1} illustration`}
-              className="step-image"
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-</section>
-
-{/* Testimonials Section - Continuous Auto-Playing Carousel */}
-<section className="testimonials-section">
-  <div className="container">
-    <h2 className="section-title">What Students Are Saying</h2>
-    
-    <Swiper
-      modules={[Navigation, Pagination, Autoplay]}
-      spaceBetween={30}
-      slidesPerView={1}
-      navigation
-      pagination={{ clickable: true }}
-      autoplay={{
-        delay: 0, // No delay between transitions
-        disableOnInteraction: false,
-        pauseOnMouseEnter: true,
-        stopOnLastSlide: false,
-      }}
-      speed={3000} // Slow, smooth transition (3 seconds)
-      loop={true} // Infinite loop
-      breakpoints={{
-        640: { slidesPerView: 2 },
-        1024: { slidesPerView: 3 },
-      }}
-      className="testimonials-swiper continuous-carousel"
-    >
-      {testimonials.map((testimonial, index) => (
-        <SwiperSlide key={index}>
-          <div className="testimonial-card-modern">
-            <div className="testimonial-quote-icon-modern">"</div>
-            <div className="testimonial-header-modern">
-              <div className="testimonial-avatar-wrapper-modern">
-                <img 
-                  src={testimonial.image} 
-                  alt={testimonial.name} 
-                  className="testimonial-avatar-modern" 
-                />
-              </div>
-              <div>
-                <h4 className="testimonial-name-modern">{testimonial.name}</h4>
-                <div className="testimonial-rating-modern">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} fill="#fbbf24" color="#fbbf24" />
-                  ))}
+          <div className="steps-container">
+            {howItWorks.map((step, index) => (
+              <div key={index} className={`step-card step-${index + 1}`}>
+                <div className={`step-number-box step-number-${index + 1}`}>
+                  <span className="step-number-text">{step.step}</span>
+                </div>
+                <h3 className="step-title">{step.title}</h3>
+                <p className="step-description">{step.description}</p>
+                
+                <div className="step-image-container">
+                  <img 
+                    src={
+                      index === 0 ? dropPng : 
+                      index === 1 ? findPng : 
+                      progressPng
+                    } 
+                    alt={`Step ${index + 1} illustration`}
+                    className="step-image"
+                  />
                 </div>
               </div>
-            </div>
-            <p className="testimonial-quote-modern">"{testimonial.quote}"</p>
+            ))}
           </div>
-        </SwiperSlide>
-      ))}
-    </Swiper>
-  </div>
-</section>
+        </div>
+      </section>
 
-{/* Experts Section - SIMPLE FIX */}
-<section className="experts-section">
-  <div className="container">
-    <h2 className="section-title">Meet Some of Our Amazing Teachers</h2>
-    
-    <Swiper
-      modules={[Navigation, Pagination, Autoplay]}
-      spaceBetween={30}
-      slidesPerView={1}
-      navigation
-      pagination={{ clickable: true }}
-      autoplay={{ delay: 5000 }}
-      breakpoints={{
-        640: { slidesPerView: 2 },
-        1024: { slidesPerView: 3 },
-      }}
-      className="experts-swiper"
-    >
-      {experts.map((expert, index) => (
-        <SwiperSlide key={index}>
-          <div className="expert-card">
-            {/* SIMPLE: Just use an img tag with border-radius */}
-            <div className="expert-image-container">
-              <img 
-                src={expert.image} 
-                alt={expert.name} 
-                className="expert-image-simple" 
-              />
-            </div>
-            <h3 className="expert-name">{expert.name}</h3>
-            <p className="expert-role">{expert.role}</p>
-            <div className="expert-rating">
-              <div className="stars">
-                {[...Array(5)].map((_, i) => (
-                  <Star 
-                    key={i} 
-                    size={16} 
-                    fill={i < Math.floor(expert.rating) ? "#fbbf24" : "#e5e7eb"} 
-                    color={i < Math.floor(expert.rating) ? "#fbbf24" : "#e5e7eb"}
-                  />
-                ))}
-              </div>
-              <span className="rating-value">{expert.rating}</span>
-            </div>
-            <p className="expert-description">{expert.description}</p>
+      {/* Testimonials Section */}
+      <section className="testimonials-section">
+        <div className="container">
+          <h2 className="section-title">What Students Are Saying</h2>
+          
+          <Swiper
+            modules={[Navigation, Pagination, Autoplay]}
+            spaceBetween={30}
+            slidesPerView={1}
+            navigation
+            pagination={{ clickable: true }}
+            autoplay={{
+              delay: 0,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true,
+              stopOnLastSlide: false,
+            }}
+            speed={3000}
+            loop={true}
+            breakpoints={{
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 3 },
+            }}
+            className="testimonials-swiper continuous-carousel"
+          >
+            {testimonials.map((testimonial, index) => (
+              <SwiperSlide key={index}>
+                <div className="testimonial-card-modern">
+                  <div className="testimonial-quote-icon-modern">"</div>
+                  <div className="testimonial-header-modern">
+                    <div className="testimonial-avatar-wrapper-modern">
+                      <img 
+                        src={testimonial.image} 
+                        alt={testimonial.name} 
+                        className="testimonial-avatar-modern" 
+                      />
+                    </div>
+                    <div>
+                      <h4 className="testimonial-name-modern">{testimonial.name}</h4>
+                      <div className="testimonial-rating-modern">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} size={16} fill="#fbbf24" color="#fbbf24" />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="testimonial-quote-modern">"{testimonial.quote}"</p>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+      </section>
+
+      {/* Experts Section */}
+      <section className="experts-section">
+        <div className="container">
+          <h2 className="section-title">Meet Some of Our Amazing Teachers</h2>
+          
+          <Swiper
+            modules={[Navigation, Pagination, Autoplay]}
+            spaceBetween={30}
+            slidesPerView={1}
+            navigation
+            pagination={{ clickable: true }}
+            autoplay={{ delay: 5000 }}
+            breakpoints={{
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 3 },
+            }}
+            className="experts-swiper"
+          >
+            {experts.map((expert, index) => (
+              <SwiperSlide key={index}>
+                <div className="expert-card">
+                  <div className="expert-image-container">
+                    <img 
+                      src={expert.image} 
+                      alt={expert.name} 
+                      className="expert-image-simple" 
+                    />
+                  </div>
+                  <h3 className="expert-name">{expert.name}</h3>
+                  <p className="expert-role">{expert.role}</p>
+                  <div className="expert-rating">
+                    <div className="stars">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          size={16} 
+                          fill={i < Math.floor(expert.rating) ? "#fbbf24" : "#e5e7eb"} 
+                          color={i < Math.floor(expert.rating) ? "#fbbf24" : "#e5e7eb"}
+                        />
+                      ))}
+                    </div>
+                    <span className="rating-value">{expert.rating}</span>
+                  </div>
+                  <p className="expert-description">{expert.description}</p>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      {!isLoggedIn && (
+        <section className="cta-section">
+          <div className="container">
+            <h2 className="cta-title">
+              <span className="cta-stuck">Stuck?</span>{' '}
+              <span className="cta-blue">Upload your PDF. We'll take it from there.</span>
+            </h2>
+            <p className="cta-description">
+              Choosing who helps you matters.<br />
+              Let's make sure you work with the right teachers,<br />
+              in a clear, simple, and stress-free way.
+            </p>
+            <Link to="/signup" className="cta-button">
+              Join Us <ChevronRight size={20} />
+            </Link>
           </div>
-        </SwiperSlide>
-      ))}
-    </Swiper>
-  </div>
-</section>
-     {/* CTA Section */}
-{!isLoggedIn && (
-<section className="cta-section">
-  <div className="container">
-    <h2 className="cta-title">
-      <span className="cta-stuck">Stuck?</span>{' '}
-      <span className="cta-blue">Upload your PDF. We'll take it from there.</span>
-    </h2>
-    <p className="cta-description">
-      Choosing who helps you matters.<br />
-      Let's make sure you work with the right teachers,<br />
-      in a clear, simple, and stress-free way.
-    </p>
-    <Link to="/signup" className="cta-button">
-      Join Us <ChevronRight size={20} />
-    </Link>
-  </div>
-</section>
-)}
+        </section>
+      )}
     </div>
   );
 }

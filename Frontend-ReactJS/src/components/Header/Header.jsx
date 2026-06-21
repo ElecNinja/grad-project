@@ -18,9 +18,7 @@ function Header() {
   const bellRef = useRef(null);
 
   const moreLinks = [
-    { name: 'About Us', path: '/about' },
     { name: 'Help Center', path: '/help' },
-    { name: 'Contact Us', path: '/contact' },
   ];
   useEffect(() => {
     const handleClickOutside = (event) => {

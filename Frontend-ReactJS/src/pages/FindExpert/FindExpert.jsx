@@ -1,14 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom'; // 👈 added useLocation
 import { Search, Star, AlertCircle, Users, Heart, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getTeachers } from '../../apis/handlers/getTeachers';
 import './FindExpert.css';
 import { useDispatch } from 'react-redux';
 import { openChat, getOrCreateConversation, setActiveConversation } from '../../redux/chatSlice';
-
-
-
-
 
 const getYouTubeId = (url) => {
   if (!url) return null;
@@ -18,6 +14,10 @@ const getYouTubeId = (url) => {
 };
 
 function FindExpert() {
+  const location = useLocation(); // 👈 now available
+  const dispatch = useDispatch();
+
+  // State
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -28,17 +28,28 @@ function FindExpert() {
   const [favorites, setFavorites] = useState({});
   const [playingTeacherId, setPlayingTeacherId] = useState(null);
 
-const dispatch = useDispatch();
-  const handleMessage = async (teacherId) => {
-  try {
-    const conversationId = await dispatch(getOrCreateConversation(teacherId)).unwrap();
-    dispatch(setActiveConversation(conversationId));
-    dispatch(openChat());
-  } catch (error) {
-    console.error('Failed to open chat:', error);
-  }
-};
+  // ── Read search query from navigation state (if coming from Dashboard) ──
+  useEffect(() => {
+    const searchFromState = location.state?.searchQuery;
+    if (searchFromState) {
+      setQuery(searchFromState);
+      // Clear the state so it doesn't persist on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
+  // ── Chat handler ──────────────────────────────────────────────
+  const handleMessage = async (teacherId) => {
+    try {
+      const conversationId = await dispatch(getOrCreateConversation(teacherId)).unwrap();
+      dispatch(setActiveConversation(conversationId));
+      dispatch(openChat());
+    } catch (error) {
+      console.error('Failed to open chat:', error);
+    }
+  };
+
+  // ── Load teachers ─────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       const result = await getTeachers();
@@ -53,21 +64,20 @@ const dispatch = useDispatch();
     load();
   }, []);
 
-  // Reset page and playing video on filter changes
+  // ── Reset page and playing video on filter changes ───────────
   useEffect(() => {
     setCurrentPage(1);
     setPlayingTeacherId(null);
   }, [query, selectedSubject, selectedRating]);
 
+  // ── Derived data ──────────────────────────────────────────────
   const availableSubjects = useMemo(() => {
     const subjects = new Set();
-
     teachers.forEach((teacher) => {
       (teacher.specialties || []).forEach((specialty) => {
         if (specialty?.name) subjects.add(specialty.name);
       });
     });
-
     return Array.from(subjects).sort((a, b) => a.localeCompare(b));
   }, [teachers]);
 
@@ -89,7 +99,6 @@ const dispatch = useDispatch();
       });
     }
 
-
     // Subject filter
     if (selectedSubject) {
       result = result.filter((teacher) =>
@@ -102,9 +111,7 @@ const dispatch = useDispatch();
     // Rating filter
     if (selectedRating) {
       const minRating = parseFloat(selectedRating);
-      result = result.filter(
-        (teacher) => (teacher.rating || 0) >= minRating
-      );
+      result = result.filter((teacher) => (teacher.rating || 0) >= minRating);
     }
 
     return result;
@@ -122,6 +129,7 @@ const dispatch = useDispatch();
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  // ── Render ─────────────────────────────────────────────────────
   return (
     <div className="fe-page">
       <div className="fe-header-section">
@@ -246,8 +254,6 @@ const dispatch = useDispatch();
                         </div>
                         <div className="fe-stat-label">EXPERIENCE</div>
                       </div>
-
-                      
                     </div>
 
                     <div className="fe-card-buttons">
@@ -317,7 +323,6 @@ const dispatch = useDispatch();
           ) : (
             totalPages > 1 && (
               <div className="fe-pagination">
-                
                 <button
                   className="fe-page-btn"
                   disabled={currentPage === 1}

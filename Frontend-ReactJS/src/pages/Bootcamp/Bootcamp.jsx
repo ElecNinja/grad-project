@@ -44,7 +44,77 @@ function applySorting(bootcamps, sortKey) {
   }
 }
 
-// ─── Component ──────────────────────────────────────────────────
+// ─── CourseCard component ──────────────────────────────────────
+function CourseCard({ course, openCourse }) {
+  const [imgError, setImgError] = useState(false);
+
+  const priceLabel = formatPrice(course.price, course.currency);
+  const hasCapacity = course.capacity != null && course.capacity > 0;
+  const studentsLabel = hasCapacity
+    ? `${course.enrolledCount ?? 0}/${course.capacity} students`
+    : null;
+  const badgeClass = course.badge === "New" ? "badge-new" : "badge-highest";
+
+  const renderStars = (rating) =>
+    Array.from({ length: 5 }, (_, i) => (
+      <span
+        key={i}
+        style={{ color: i < Math.round(rating) ? "#f5a623" : "#e0e0e0", fontSize: "14px" }}
+      >
+        ★
+      </span>
+    ));
+
+  return (
+    <div
+      className="course-card"
+      role="button"
+      tabIndex={0}
+      onClick={() => openCourse(course)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") openCourse(course);
+      }}
+    >
+      <div className="card-img-wrapper">
+        {imgError ? (
+          <div className="broken-image-indicator">
+            <span>🖼️</span>
+            <span>Image missing</span>
+          </div>
+        ) : (
+          <img
+            src={course.image}
+            alt={course.title}
+            onError={(e) => {
+              console.error(`❌ Image failed for course ${course.id} (${course.title}):`, course.image);
+              setImgError(true);
+            }}
+          />
+        )}
+      </div>
+      <div className="card-body">
+        <h3>{course.title}</h3>
+        {course.expert && <p className="expert">Expert : {course.expert}</p>}
+        {course.rating != null && course.rating > 0 && (
+          <div className="rating-row">
+            <span className="rating-num">{course.rating}</span>
+            <span className="stars">{renderStars(course.rating)}</span>
+            {course.reviews != null && <span className="reviews">({course.reviews})</span>}
+          </div>
+        )}
+        {studentsLabel && <p className="students-count">{studentsLabel}</p>}
+        {(priceLabel || course.badge) && (
+          <div className="price-row">
+            {priceLabel && <span className="price">{priceLabel}</span>}
+            {course.badge && <span className={`badge ${badgeClass}`}>{course.badge}</span>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Bootcamp component ──────────────────────────────────────
 function Bootcamp() {
   const navigate = useNavigate();
   const currentUserId = useSelector((state) => state.user?.id);
@@ -107,33 +177,28 @@ function Bootcamp() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => { loadCatalog(); }, [loadCatalog]);
 
   // ── Derived state ─────────────────────────────────────────────
-  // True if the user has typed a search (switches to flat grid)
   const isFiltering = search.trim() !== "";
 
-  // Filtered list — level filter omitted (no `level` column in DB schema yet)
   const filtered = useMemo(
     () => filterBootcamps(bootcamps, { search, topic }),
     [bootcamps, search, topic]
   );
 
-  // Sorted flat list (used in the flat-grid view when searching)
   const sortedFiltered = useMemo(
     () => applySorting(filtered, sort),
     [filtered, sort]
   );
 
-  // Sorted + grouped (used in the grouped-sections view when not searching)
   const categories = useMemo(
     () => groupBootcamps(applySorting(filtered, sort), categoriesList),
     [filtered, sort, categoriesList]
   );
 
-  // Readable labels for active filter buttons
   const currentTopicLabel =
     topic === "all"
       ? "Topic"
@@ -148,14 +213,7 @@ function Bootcamp() {
     setSort("newest");
   };
 
-  // ── Helpers ───────────────────────────────────────────────────
-  const renderStars = (rating) =>
-    Array.from({ length: 5 }, (_, i) => (
-      <span key={i} style={{ color: i < Math.round(rating) ? "#f5a623" : "#e0e0e0", fontSize: "14px" }}>
-        ★
-      </span>
-    ));
-
+  // ── Navigation ─────────────────────────────────────────────────
   const openCourse = (bootcamp) =>
     navigate("/course", { state: { course: bootcampToCourseState(bootcamp) } });
 
@@ -166,53 +224,6 @@ function Bootcamp() {
   const scrollLeft = (categoryName) => {
     if (scrollRefs.current[categoryName])
       scrollRefs.current[categoryName].scrollBy({ left: -300, behavior: "smooth" });
-  };
-
-  // ── Card renderer (shared between both views) ─────────────────
-  const renderCard = (course) => {
-    const priceLabel = formatPrice(course.price, course.currency);
-    const hasCapacity = course.capacity != null && course.capacity > 0;
-    const studentsLabel = hasCapacity
-      ? `${course.enrolledCount ?? 0}/${course.capacity} students`
-      : null;
-    const badgeClass = course.badge === "New" ? "badge-new" : "badge-highest";
-
-    return (
-      <div
-        key={course.id}
-        className="course-card"
-        role="button"
-        tabIndex={0}
-        onClick={() => openCourse(course)}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCourse(course); }}
-      >
-        <div className="card-img-wrapper">
-          <img
-            src={course.image}
-            alt={course.title}
-            onError={(e) => { e.currentTarget.src = PLACEHOLDER_IMAGE; }}
-          />
-        </div>
-        <div className="card-body">
-          <h3>{course.title}</h3>
-          {course.expert && <p className="expert">Expert : {course.expert}</p>}
-          {course.rating != null && course.rating > 0 && (
-            <div className="rating-row">
-              <span className="rating-num">{course.rating}</span>
-              <span className="stars">{renderStars(course.rating)}</span>
-              {course.reviews != null && <span className="reviews">({course.reviews})</span>}
-            </div>
-          )}
-          {studentsLabel && <p className="students-count">{studentsLabel}</p>}
-          {(priceLabel || course.badge) && (
-            <div className="price-row">
-              {priceLabel && <span className="price">{priceLabel}</span>}
-              {course.badge && <span className={`badge ${badgeClass}`}>{course.badge}</span>}
-            </div>
-          )}
-        </div>
-      </div>
-    );
   };
 
   // ── Render ────────────────────────────────────────────────────
@@ -301,8 +312,6 @@ function Bootcamp() {
             )}
           </div>
 
-
-
           {/* Clear all active filters */}
           {(isFiltering || sort !== "newest") && (
             <button className="filter-btn filter-btn--clear" onClick={clearFilters}>
@@ -331,7 +340,9 @@ function Bootcamp() {
                 {sortedFiltered.length} bootcamp{sortedFiltered.length !== 1 ? "s" : ""} found
               </p>
               <div className="bootcamp-flat-grid">
-                {sortedFiltered.map((course) => renderCard(course))}
+                {sortedFiltered.map((course) => (
+                  <CourseCard key={course.id} course={course} openCourse={openCourse} />
+                ))}
               </div>
             </>
           )
@@ -342,34 +353,36 @@ function Bootcamp() {
           bootcamps.length === 0
             ? <p className="bootcamp-status">No bootcamp lessons found.</p>
             : categories.map((category) =>
-              category.courses.length === 0 ? null : (
-                <div key={category.name} className="category-section">
-                  <h2>{category.name}</h2>
-                  <div className="courses-wrapper">
-                    <div
-                      className="courses"
-                      ref={(el) => { scrollRefs.current[category.name] = el; }}
-                    >
-                      {category.courses.map((course) => renderCard(course))}
+                category.courses.length === 0 ? null : (
+                  <div key={category.name} className="category-section">
+                    <h2>{category.name}</h2>
+                    <div className="courses-wrapper">
+                      <div
+                        className="courses"
+                        ref={(el) => { scrollRefs.current[category.name] = el; }}
+                      >
+                        {category.courses.map((course) => (
+                          <CourseCard key={course.id} course={course} openCourse={openCourse} />
+                        ))}
+                      </div>
+                      <button
+                        className="scroll-arrow left"
+                        onClick={() => scrollLeft(category.name)}
+                        aria-label="Scroll left"
+                      >
+                        <ChevronLeft size={24} color="#333" />
+                      </button>
+                      <button
+                        className="scroll-arrow right"
+                        onClick={() => scrollRight(category.name)}
+                        aria-label="Scroll right"
+                      >
+                        <ChevronRight size={24} color="#333" />
+                      </button>
                     </div>
-                    <button
-                      className="scroll-arrow left"
-                      onClick={() => scrollLeft(category.name)}
-                      aria-label="Scroll left"
-                    >
-                      <ChevronLeft size={24} color="#333" />
-                    </button>
-                    <button
-                      className="scroll-arrow right"
-                      onClick={() => scrollRight(category.name)}
-                      aria-label="Scroll right"
-                    >
-                      <ChevronRight size={24} color="#333" />
-                    </button>
                   </div>
-                </div>
+                )
               )
-            )
         )}
 
       </div>

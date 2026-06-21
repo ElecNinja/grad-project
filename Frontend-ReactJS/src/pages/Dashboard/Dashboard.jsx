@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import { Search, Upload, Star } from 'lucide-react';
@@ -19,8 +20,35 @@ import progressPng from '../../assets/images/progress.png';
 import '../Home/home.css';
 
 function Dashboard() {
+  const navigate = useNavigate();
   const user = useSelector((state) => state.user);
 
+  // ─── Search state ─────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // ─── Handle search ────────────────────────────────────────────
+  const handleSearch = () => {
+    const query = searchQuery.trim();
+    console.log('🔍 Searching for:', query || '(empty)'); // debug
+
+    if (!query) {
+      // If empty, just go to Find Expert without a filter
+      navigate('/find-expert');
+      return;
+    }
+
+    // Navigate with the search query in state
+    navigate('/find-expert', { state: { searchQuery: query } });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // prevent any accidental form submission
+      handleSearch();
+    }
+  };
+
+  // ─── Static content ────────────────────────────────────────────
   const stats = [
     { value: '+30,000', label: 'Experienced Teachers' },
     { value: '+300,000', label: '5-star Teacher reviews' },
@@ -113,7 +141,7 @@ function Dashboard() {
             <div className="hero-content">
               <h1 className="hero-title">
                 <span className="struggling">Welcome back,</span>
-                <span className="simple">{user.name} 👋</span>
+                <span className="simple">{user?.name || 'Guest'} 👋</span>
               </h1>
             </div>
             <div className="hero-image">
@@ -133,8 +161,15 @@ function Dashboard() {
                 type="text"
                 placeholder="Find someone who makes learning easy..."
                 className="search-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
               />
-              <button className="search-button">
+              <button
+                className="search-button"
+                onClick={handleSearch}
+                type="button" // prevents any accidental form submission
+              >
                 <Search size={20} />
               </button>
             </div>
@@ -270,7 +305,7 @@ function Dashboard() {
         </div>
       </section>
 
-      {/* CTA Section - بدون Join Us button */}
+      {/* CTA Section */}
       <section className="cta-section">
         <div className="container">
           <h2 className="cta-title">
