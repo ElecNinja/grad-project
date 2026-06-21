@@ -73,6 +73,32 @@
   margin-bottom: 0.5rem;
 }
 
+/* Subject Select */
+.subject-select {
+  width: 100%;
+  height: 48px;
+  padding: 0 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #1f2937;
+  background: white;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  appearance: auto;
+}
+
+.subject-select:hover {
+  border-color: #d1d5db;
+}
+
+.subject-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Description Textarea */
 .description-textarea {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -184,4 +210,26 @@
   .upload-zone {
     padding: 1.5rem;
   }
+}
+/* AI Status */
+.ai-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.ai-status.analyzing {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.ai-status.success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
 }

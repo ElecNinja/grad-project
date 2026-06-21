@@ -1,22 +1,23 @@
 {
-  "name": "react-express-registration-template",
+  "name": "grad-project",
   "version": "1.0.0",
-  "description": "A website template with signup and login functionality built with React and Express JS",
+  "description": "An educational website that allows teachers and students to interact with each other. Teachers can enter their offers and students can request help. The website also includes a feature that allows teachers to upload PDF files and have them summarized using AI.",
   "main": "index.js",
   "scripts": {
+    "start": "node server.js",
     "devStart": "nodemon server.js",
     "test": "jest"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bgtti/react-express-registration-template.git"
+    "url": "git+https://github.com/ElecNinja/grad-project.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/bgtti/react-express-registration-template/issues"
+    "url": "https://github.com/ElecNinja/grad-project/issues"
   },
-  "homepage": "https://github.com/bgtti/react-express-registration-template#readme",
+  "homepage": "https://github.com/ElecNinja/grad-project#readme",
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1",
     "axios": "^1.13.6",

@@ -1,22 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useSelector } from "react-redux";
-import { ChevronDown, Menu, X, Bell } from 'lucide-react';
+import { ChevronDown, Menu, X, Bell, LogOut } from 'lucide-react';
+import { logoutUser } from '../../apis/handlers/logoutUser';
+import PopupMessage from '../popup/popupmessage';
 import logo from '../../assets/images/logo.png';
 import "./header.css"
 
 function Header() {
   const user = useSelector((state) => state.user);
+  const navigate = useNavigate();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
+  const bellRef = useRef(null);
 
   const moreLinks = [
-    { name: 'About Us', path: '/about' },
     { name: 'Help Center', path: '/help' },
-    { name: 'Contact Us', path: '/contact' },
   ];
-  console.log('redux user:', user);
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -26,6 +29,12 @@ function Header() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setIsMobileMenuOpen(false);
+    navigate('/login', { replace: true });
+  };
 
   return (
     <nav className="navbar">
@@ -55,12 +64,17 @@ function Header() {
                 Boot Camp
               </NavLink>
             </li>
+            <li>
+              <NavLink to="/community" className="nav-link">
+                Community
+              </NavLink>
+            </li>
 
             {/* Logged OUT: Work & Offers */}
             {!user?.loggedIn && (
               <>
                 <li>
-                  <NavLink to="/Work" className="nav-link">
+                  <NavLink to="/work" className="nav-link">
                     Work
                   </NavLink>
                 </li>
@@ -88,17 +102,22 @@ function Header() {
               </>
             )}
 
-            {/* Logged in as TEACHER: Work & Offers */}
+            {/* Logged in as TEACHER: Work, Offers & Requests */}
             {user?.loggedIn && user?.role === 'teacher' && (
               <>
                 <li>
-                  <NavLink to="/Work" className="nav-link">
+                  <NavLink to="/work" className="nav-link">
                     Work
                   </NavLink>
                 </li>
                 <li>
                   <NavLink to="/Offers" className="nav-link">
                     Offers
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/requests" className="nav-link">
+                    Requests
                   </NavLink>
                 </li>
               </>
@@ -144,17 +163,42 @@ function Header() {
 
           {user?.loggedIn && (
             <>
-              <button className="bell-btn" aria-label="Notifications">
-                <Bell size={20} />
-                <span className="bell-dot" />
+              <div className="bell-wrapper" ref={bellRef}>
+                <button
+                  type="button"
+                  className="bell-btn"
+                  aria-label="Notifications"
+                  aria-expanded={notificationsOpen}
+                  onClick={() => setNotificationsOpen((open) => !open)}
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && <span className="bell-dot" />}
+                </button>
+                <PopupMessage
+                  isOpen={notificationsOpen}
+                  onClose={() => setNotificationsOpen(false)}
+                  recipientId={user?.id}
+                  anchorRef={bellRef}
+                  onUnreadCountChange={setUnreadCount}
+                />
+              </div>
+              <button type="button" className="btn-logout" onClick={handleLogout}>
+                <LogOut size={18} />
+                <span>Logout</span>
               </button>
+              <NavLink
+                to={user?.role === 'teacher' ? '/teacher-profile' : '/student-profile'}
+                className="btn-primary"
+              >
+                My Profile
+              </NavLink>
               <div className="user-info">
-                <span className="user-name">{user?.name || 'Alex Johnson'}</span>
+                <span className="user-name">{user?.name || user?.profile?.full_name || 'Alex Johnson'}</span>
                 <span className="user-role">{user?.role || 'STUDENT'}</span>
               </div>
               <div className="user-avatar">
                 {user?.avatar
-                  ? <img src={user.avatar} alt={user.name} className="avatar-img"/>
+                  ? <img src={user.avatar} alt={user.name} className="avatar-img" />
                   : <span className="avatar-letter">{(user?.name || 'A').charAt(0).toUpperCase()}</span>
                 }
               </div>
@@ -182,11 +226,14 @@ function Header() {
           <NavLink to="/Bootcamp" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
             Boot Camp
           </NavLink>
+          <NavLink to="/community" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            Community
+          </NavLink>
 
           {/* Logged OUT: Work & Offers */}
           {!user?.loggedIn && (
             <>
-              <NavLink to="/Work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+              <NavLink to="/work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 Work
               </NavLink>
               <NavLink to="/Offers" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
@@ -207,16 +254,35 @@ function Header() {
             </>
           )}
 
-          {/* Logged in as TEACHER: Work & Offers */}
+          {/* Logged in as TEACHER: Work, Offers & Requests */}
           {user?.loggedIn && user?.role === 'teacher' && (
             <>
-              <NavLink to="/Work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+              <NavLink to="/work" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 Work
               </NavLink>
               <NavLink to="/Offers" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 Offers
               </NavLink>
+              <NavLink to="/requests" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                Requests
+              </NavLink>
+              <NavLink to="/teacher-profile" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                My Profile
+              </NavLink>
             </>
+          )}
+
+          {user?.loggedIn && user?.role === 'student' && (
+            <NavLink to="/student-profile" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+              My Profile
+            </NavLink>
+          )}
+
+          {user?.loggedIn && (
+            <button type="button" className="mobile-logout-btn" onClick={handleLogout}>
+              <LogOut size={18} />
+              <span>Logout</span>
+            </button>
           )}
 
           <div className="mobile-divider"></div>

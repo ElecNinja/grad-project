@@ -8,12 +8,30 @@ import ErrorMessage from '../../components/ErrorMessage/ErrorMessage.jsx';
 import { Eye, EyeOff } from 'lucide-react';
 import "./Login.css";
 
+const getProfileRedirectAfterSignup = (email, role) => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.localStorage.getItem('redirect_to_profile_after_signup');
+    if (!raw) return null;
+
+    const pending = JSON.parse(raw);
+    const sameUser = pending?.email?.toLowerCase() === email?.toLowerCase();
+    if (!sameUser) return null;
+
+    window.localStorage.removeItem('redirect_to_profile_after_signup');
+    return (role || pending.role) === 'teacher' ? '/teacher-profile' : '/student-profile';
+  } catch {
+    window.localStorage.removeItem('redirect_to_profile_after_signup');
+    return null;
+  }
+};
+
 function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const isComponentMounted = useIsComponentMounted();
 
-  const [role, setRole] = useState('student');
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -40,21 +58,20 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
 
     setIsLoading(true);
     dispatch(setLoader(true));
 
     try {
-      const res = await loginUser({ 
-        email: formData.email, 
+      const res = await loginUser({
+        email: formData.email,
         password: formData.password,
-        role: role
       });
       if (isComponentMounted) {
         if (res.response) {
-          navigate('/dashboard');
+          const firstLoginProfilePath = getProfileRedirectAfterSignup(formData.email, res.role);
+          navigate(firstLoginProfilePath || '/dashboard');
         } else {
           setError(res.message || 'Login failed. Please try again.');
         }
@@ -75,27 +92,7 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
-        
-        {/* Role Toggle Buttons */}
-        <div className="role-toggle">
-          <button
-            type="button"
-            className={`role-btn ${role === 'student' ? 'active' : ''}`}
-            onClick={() => setRole('student')}
-            disabled={isLoading}
-          >
-            Student
-          </button>
-          <button
-            type="button"
-            className={`role-btn ${role === 'teacher' ? 'active' : ''}`}
-            onClick={() => setRole('teacher')}
-            disabled={isLoading}
-          >
-            Teacher
-          </button>
-        </div>
-        
+
         <h1 className="login-title">Login to your account</h1>
 
         {error && <ErrorMessage message={error} onClose={() => setError('')} />}
@@ -141,16 +138,16 @@ function Login() {
             <Link to="/forgot-password">Forgot password?</Link>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="login-btn"
             disabled={isLoading}
           >
             {isLoading ? 'Logging in...' : 'Log in'}
           </button>
 
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="google-btn"
             onClick={handleGoogleLogin}
             disabled={isLoading}

@@ -14,7 +14,7 @@ export function signupUser(data) {
     message: ""
   };
 
-  if (!data.email || !data.password || !data.name) {
+  if (!data.email || !data.name) {
     res.message = "Error: Missing required fields.";
     return Promise.resolve(res);
   }
@@ -25,7 +25,7 @@ export function signupUser(data) {
         validateStatus: () => true
       });
 
-      const status = response.request.status;
+      const status = response.status;
 
       switch (status) {
         case 201:
@@ -46,8 +46,8 @@ export function signupUser(data) {
           res.message = "Error: Please refresh the page and try again.";
           break;
       }
-    } catch {
-      res.message = "Error: Please refresh the page and try again.";
+    } catch (err) {
+      res.message = err.message || "Error: Please refresh the page and try again.";
     }
     return res;
   };

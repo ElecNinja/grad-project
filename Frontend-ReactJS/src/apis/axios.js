@@ -1,5 +1,6 @@
 import axios from "axios";
 import { baseUrl } from "./apiEndpoints";
+import { store } from "../redux/store";
 
 export const api = axios.create({
   baseURL: baseUrl,
@@ -11,12 +12,47 @@ export const api = axios.create({
   }
 });
 
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = window.localStorage.getItem("supabase_access_token");
+
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  return config;
+});
+
+// Automatically send token with every request
+api.interceptors.request.use((config) => {
+  const token = store.getState().user?.token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// If the request body is FormData, remove the Content-Type header so the browser
+// can auto-set "multipart/form-data; boundary=..." — setting it manually breaks
+// the boundary string and causes multer (on the backend) to fail to parse the file.
+api.interceptors.request.use((config) => {
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+    delete config.headers['content-type'];
+  }
+  return config;
+});
+
+const AI_BASE_URL = import.meta.env.VITE_AI_URL;
+
 export const uploadPdfForAnalysis = (file) => {
   const formData = new FormData();
-  formData.append("file", file);
-  return axios.post("/api/ai/analyze-pdf", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  }).then((r) => r.data);
+  formData.append('file', file);
+  return axios.post(`${AI_BASE_URL}/analyze-pdf`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 };
 
 export const uploadTeacherMaterial = (studentId, file, description, materialType) => {
@@ -31,6 +67,37 @@ export const uploadTeacherMaterial = (studentId, file, description, materialType
   }).then((r) => r.data);
 };
 
+//  Student creates a request
+export const createStudentRequest = (file, description, materialType, subject) => {
+  const formData = new FormData();
+  if (file) formData.append("file", file);
+  formData.append("description", description || "");
+  formData.append("materialType", materialType);
+  formData.append("title", description || "New Request");
+  formData.append("subject", subject || "");
+  return api.post(`/api/student/request`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }).then((r) => r.data);
+};
+
+export const acceptRequest = (requestId, price, teachingMode, comment = "") =>
+  api.post(`/api/teacher/accept-request`, {
+    requestId,
+    price,
+    sessionDuration: 1,
+    teachingMode: teachingMode || 'recorded',
+    numSessions: 1,
+    comment,
+  }).then((r) => r.data);
+
+  
+// Student gets their requests
+export const getMyRequests = () =>
+  api.get(`/api/student/requests`).then((r) => r.data.requests); 
+
+export const confirmBid = (bidId) =>
+  api.post(`/api/student/confirm-bid`, { bidId }).then((r) => r.data);
+
 export const getTeacherOffers = (teacherId) =>
   api.get(`/api/teacher/offers/${teacherId}`).then((r) => r.data);
 
@@ -39,3 +106,13 @@ export const acceptOffer = (offerId, price) =>
 
 export const summarizePdf = (pdfUrl) =>
   api.post(`/api/teacher/summarize-pdf`, { pdfUrl }).then((r) => r.data);
+
+export const getStudentRequests = () =>
+  api.get(`/api/teacher/requests`).then((r) => {
+    // Handle both array response and wrapped response
+    if (Array.isArray(r.data)) return r.data;
+    if (Array.isArray(r.data?.requests)) return r.data.requests;
+    return [];
+  });
+
+export default api;

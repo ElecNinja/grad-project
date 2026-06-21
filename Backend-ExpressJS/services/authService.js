@@ -1,99 +1,104 @@
-// ===============================
-// Import required packages
-// ===============================
-const bcrypt = require("bcrypt");
+// services/authService.js
+
 const supabase = require("../config/supabase");
+
+const mapProfileToUser = (profile) => {
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    id: profile.id,
+    name: profile.full_name || profile.name || "",
+    full_name: profile.full_name || profile.name || "",
+    email: profile.email || "",
+    role: profile.role || "",
+    photo: profile.avatar_url || profile.photo || "",
+    avatar_url: profile.avatar_url || profile.photo || "",
+    bio: profile.bio || null,
+    is_verified: profile.is_verified ?? null,
+  };
+};
 
 // ===============================
 // Check if email already exists
 // ===============================
 const checkExistingEmail = async (email) => {
-  const { data } = await supabase
-    .from("login-users")
+  const { data, error } = await supabase
+    .from("profiles")
     .select("id")
     .eq("email", email)
     .limit(1);
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
 
   return data;
 };
 
 // ===============================
-// Create login account
+// Update profile created by trigger
 // ===============================
-const createLoginAccount = async (email, password, role) => {
-  // Hash password before saving
-  const hashedPassword = await bcrypt.hash(password, 10);
-
+const updateProfile = async (userId, fields) => {
   const { data, error } = await supabase
-    .from("login-users")
-    .insert([
-      {
-        email,
-        password: hashedPassword,
-        role
-      }
-    ])
-    .select("id")
+    .from("profiles")
+    .upsert({
+      id: userId,
+      email: fields.email,
+      full_name: fields.full_name,
+      role: fields.role,
+      bio: fields.bio,
+      avatar_url: fields.avatar_url,
+      updated_at: new Date().toISOString(), // force update timestamp
+    }, {
+      onConflict: 'id',        // if row exists, update it
+      ignoreDuplicates: false  // always update even if same data
+    })
+    .select()
     .single();
 
   return { data, error };
 };
 
 // ===============================
-// Create student/teacher profile
+// Get profile by profile id
 // ===============================
-const createProfile = async (
-  loginUserId,
-  name,
-  email,
-  phone,
-  about,
-  photo,
-  role,
-  education,
-  experience
-) => {
-  const table =
-    role === "teacher"
-      ? "signup-teachers"
-      : "signup-students";
-
-  const record =
-    role === "teacher"
-      ? {
-          id: loginUserId,
-          name,
-          email,
-          phone: phone || null,
-          education: education || null,
-          experience: experience || null,
-          photo: photo || null,
-          role: "teacher"
-        }
-      : {
-          id: loginUserId,
-          name,
-          email,
-          phone: phone || null,
-          about: about || null,
-          photo: photo || null,
-          role: "student"
-        };
-
+const getProfileById = async (profileId) => {
   const { data, error } = await supabase
-    .from(table)
-    .insert([record])
-    .select("id, name, email, role")
+    .from("profiles")
+    .select("id, full_name, email, role, bio, avatar_url, is_verified")
+    .eq("id", profileId)
+    .single();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data: mapProfileToUser(data), error: null };
+};
+
+// ===============================
+// Create teacher profile
+// ===============================
+const createTeacherProfile = async (profileId, fields) => {
+  const { data, error } = await supabase
+    .from("teacher_profiles")
+    .upsert(
+      { profile_id: profileId, ...fields },
+      { onConflict: "profile_id" }
+    )
+    .select()
     .single();
 
   return { data, error };
 };
 
-// ===============================
-// Export services
-// ===============================
 module.exports = {
   checkExistingEmail,
-  createLoginAccount,
-  createProfile
+  updateProfile,
+  createTeacherProfile,
+  getProfileById,
+  mapProfileToUser,
 };

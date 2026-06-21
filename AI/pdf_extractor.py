@@ -4,7 +4,13 @@ import numpy as np
 from PIL import Image
 import io
 
-reader = easyocr.Reader(['en'], verbose=False)
+# reader = easyocr.Reader(['en'], verbose=False)
+def get_reader():
+    global reader
+    if reader is None:
+        import easyocr
+        reader = easyocr.Reader(['en'], gpu=False)
+    return reader
 
 def extract_text_from_pdf(path):
     doc = fitz.open(path)
@@ -26,7 +32,7 @@ def extract_text_from_pdf(path):
                 image = Image.open(io.BytesIO(image_bytes))
                 image_np = np.array(image)
 
-                ocr_text = reader.readtext(image_np, detail=0)
+                ocr_text = get_reader().readtext(image_np, detail=0)
                 full_text += " ".join(ocr_text) + "\n"
 
     return full_text
