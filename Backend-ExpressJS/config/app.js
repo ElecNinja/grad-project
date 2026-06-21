@@ -10,6 +10,7 @@ const chatRoutes = require('../routes/chat');
 const supportRoutes = require('../routes/support');
 const savedTeachersRouter = require('../routes/savedTeachers');
 const communityRouter = require('../routes/community');
+const bootcampCategoriesRouter = require('../routes/bootcampCategories');
 
 const { sanitizeInput, rateLimiter } = require("../middleware/securityMiddleware");
 const { errorHandler, notFound } = require("../utils/errorHandler");
@@ -56,6 +57,7 @@ app.use('/api/chat', chatRoutes);   // ← ADD THIS LINE
 app.use('/api/support', supportRoutes);
 app.use('/api/saved-teachers', savedTeachersRouter);
 app.use('/api/community', communityRouter);
+app.use('/api/bootcamps/categories', bootcampCategoriesRouter);
 
 // Handle unknown routes
 app.use(notFound);
