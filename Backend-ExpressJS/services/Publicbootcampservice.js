@@ -14,7 +14,6 @@ async function createPublicBootcamp({
   profileUserId,
   title,
   description,
-  category,
   sectionTitle,
   videos,
   capacity,
@@ -34,7 +33,6 @@ async function createPublicBootcamp({
       teacher_id: teacherProfileId,
       title,
       description,
-      category,
       delivery_type: 'recorded',
       max_students: capacity || null,
       enrolled_count: 0,
@@ -211,7 +209,7 @@ async function listAvailablePublicBootcamps(studentId) {
     .from('bootcamps')
     .select(`
       id, title, description, max_students, enrolled_count, thumbnail_url, created_at,
-      total_price, tags, requirements, what_you_learn, category,
+      total_price, tags, requirements, what_you_learn,
       teacher_id,
       teacher_profiles:teacher_id ( profile_id, profiles:profile_id ( full_name ) ),
       bootcamp_sections ( id, title, sort_order,
@@ -248,7 +246,6 @@ async function listAvailablePublicBootcamps(studentId) {
         id: b.id,
         title: b.title,
         description: b.description,
-        category: b.category,
         thumbnail: b.thumbnail_url || null,
         teacherName: b.teacher_profiles?.profiles?.full_name || 'Teacher',
         capacity: b.max_students,
