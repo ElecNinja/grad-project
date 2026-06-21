@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useSelector } from "react-redux";
 import "./Bootcamp.css";
 import { useNavigate } from "react-router-dom";
 import { fetchBootcampLessons } from "./bootcampApi";
@@ -16,9 +17,11 @@ import { Search, ChevronRight, ChevronLeft } from "lucide-react";
 
 function Bootcamp() {
   const navigate = useNavigate();
+  const currentUserId = useSelector((state) => state.user?.id);
   const scrollRefs = useRef({});
 
   const [bootcamps, setBootcamps] = useState([]);
+  const [categoriesList, setCategoriesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -30,9 +33,15 @@ function Bootcamp() {
     setLoading(true);
     setError(null);
 
-    const localBootcamps = getLocalWorkBootcamps();
+    const localBootcamps = getLocalWorkBootcamps(currentUserId);
 
     try {
+      const { api } = await import('../../apis/axios');
+      const catRes = await api.get('/api/bootcamps/categories');
+      if (catRes.status === 200) {
+        setCategoriesList(catRes.data.categories || []);
+      }
+
       const rows = await fetchBootcampLessons();
       const remoteBootcamps = lessonsToBootcamps(rows);
       setBootcamps(mergeBootcampCatalogs(remoteBootcamps, localBootcamps));
@@ -53,7 +62,7 @@ function Bootcamp() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     loadCatalog();
@@ -64,7 +73,7 @@ function Bootcamp() {
     [bootcamps, search, topic, level]
   );
 
-  const categories = useMemo(() => groupBootcamps(filtered), [filtered]);
+  const categories = useMemo(() => groupBootcamps(filtered, categoriesList), [filtered, categoriesList]);
 
   const renderStars = (rating) =>
     Array.from({ length: 5 }, (_, i) => (

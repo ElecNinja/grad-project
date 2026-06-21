@@ -8,6 +8,10 @@ const {
 } = require('../services/Publicbootcampservice');
 
 const supabase = require('../config/supabase');
+const bootcampCategories = require('../utils/bootcampCategories');
+
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 async function uploadBootcampImage(fileBuffer, mimeType, bootcampId) {
   const ext = mimeType?.split('/')[1] || 'jpg';
@@ -20,13 +24,32 @@ async function uploadBootcampImage(fileBuffer, mimeType, bootcampId) {
   if (error) throw error;
 
   const { data } = supabase.storage.from('bootcamp-images').getPublicUrl(path);
-  return data.publicUrl;
+  return { path, publicUrl: data.publicUrl };
+}
+
+async function removeBootcampImage(path) {
+  if (!path) return;
+  const { error } = await supabase.storage.from('bootcamp-images').remove([path]);
+  if (error) {
+    console.warn('Failed to cleanup bootcamp image:', error.message);
+  }
 }
 
 // POST /api/teacher/public-bootcamps
 async function createPublicBootcampController(req, res) {
   try {
     const profileUserId = req.user?.id;
+
+    if (!profileUserId) return res.status(401).json({ error: 'Not authenticated' });
+
+    if (req.file) {
+      if (!ALLOWED_IMAGE_TYPES.has(req.file.mimetype)) {
+        return res.status(400).json({ error: 'Cover image must be JPG, PNG, or WebP.' });
+      }
+      if (req.file.size > MAX_IMAGE_SIZE) {
+        return res.status(400).json({ error: 'Cover image must be 5MB or smaller.' });
+      }
+    }
 
     const title        = req.body?.title;
     const description  = req.body?.description;
@@ -36,6 +59,7 @@ async function createPublicBootcampController(req, res) {
     const requirements = req.body?.requirements;
     const whatYouLearn = req.body?.whatYouLearn ?? null;
     const studentId    = req.body?.studentId ?? null;
+    const category     = req.body?.category ?? null;
 
     let tags = req.body?.tags;
     if (typeof tags === 'string') {
@@ -48,8 +72,10 @@ async function createPublicBootcampController(req, res) {
       try { videos = JSON.parse(videos); } catch { videos = []; }
     }
 
-    if (!profileUserId) return res.status(401).json({ error: 'Not authenticated' });
     if (!title || !String(title).trim()) return res.status(400).json({ error: 'Title is required' });
+    if (!category || !bootcampCategories.some(c => c.value === category)) {
+      return res.status(400).json({ error: 'Invalid or missing category' });
+    }
     if (!sectionTitle || !String(sectionTitle).trim()) return res.status(400).json({ error: 'Section title is required' });
     if (!Array.isArray(videos) || videos.length === 0)
       return res.status(400).json({ error: 'At least one video is required' });
@@ -60,6 +86,7 @@ async function createPublicBootcampController(req, res) {
       profileUserId,
       title: String(title).trim(),
       description: description ? String(description).trim() : '',
+      category,
       sectionTitle: String(sectionTitle).trim(),
       videos,
       capacity: capacity ? Number(capacity) : null,
@@ -70,28 +97,36 @@ async function createPublicBootcampController(req, res) {
       studentId: studentId ? String(studentId).trim() : null,
     });
 
-    // Upload cover image if provided (non-fatal if it fails)
-   console.log('req.file received?', !!req.file, req.file?.originalname, req.file?.mimetype);
+    let warning = '';
 
-if (req.file) {
-  try {
-    const imageUrl = await uploadBootcampImage(
-      req.file.buffer,
-      req.file.mimetype,
-      bootcamp.id
-    );
-    console.log('✅ Image uploaded successfully, URL:', imageUrl);
-        await supabase
+    if (req.file) {
+      try {
+        const uploadedImage = await uploadBootcampImage(
+          req.file.buffer,
+          req.file.mimetype,
+          bootcamp.id
+        );
+
+        const { data: updatedBootcamp, error: updateError } = await supabase
           .from('bootcamps')
-          .update({ thumbnail_url: imageUrl })
-          .eq('id', bootcamp.id);
-        bootcamp.thumbnail_url = imageUrl;
+          .update({ thumbnail_url: uploadedImage.publicUrl })
+          .eq('id', bootcamp.id)
+          .select('id, thumbnail_url')
+          .single();
+
+        if (updateError) {
+          await removeBootcampImage(uploadedImage.path);
+          throw updateError;
+        }
+
+        bootcamp.thumbnail_url = updatedBootcamp.thumbnail_url;
       } catch (imgErr) {
-        console.warn('Bootcamp image upload failed (non-fatal):', imgErr.message);
+        console.warn('Bootcamp image upload failed:', imgErr.message);
+        warning = 'the cover image could not be saved.';
       }
     }
 
-    return res.status(201).json({ data: bootcamp });
+    return res.status(201).json({ data: bootcamp, warning });
   } catch (err) {
     console.error('createPublicBootcampController error:', err);
     return res.status(500).json({ error: err.message || 'Failed to create bootcamp' });
