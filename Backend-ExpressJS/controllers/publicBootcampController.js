@@ -8,6 +8,7 @@ const {
 } = require('../services/Publicbootcampservice');
 
 const supabase = require('../config/supabase');
+const bootcampCategories = require('../utils/bootcampCategories');
 
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -58,6 +59,7 @@ async function createPublicBootcampController(req, res) {
     const requirements = req.body?.requirements;
     const whatYouLearn = req.body?.whatYouLearn ?? null;
     const studentId    = req.body?.studentId ?? null;
+    const category     = req.body?.category ?? null;
 
     let tags = req.body?.tags;
     if (typeof tags === 'string') {
@@ -71,6 +73,9 @@ async function createPublicBootcampController(req, res) {
     }
 
     if (!title || !String(title).trim()) return res.status(400).json({ error: 'Title is required' });
+    if (!category || !bootcampCategories.some(c => c.value === category)) {
+      return res.status(400).json({ error: 'Invalid or missing category' });
+    }
     if (!sectionTitle || !String(sectionTitle).trim()) return res.status(400).json({ error: 'Section title is required' });
     if (!Array.isArray(videos) || videos.length === 0)
       return res.status(400).json({ error: 'At least one video is required' });
@@ -81,6 +86,7 @@ async function createPublicBootcampController(req, res) {
       profileUserId,
       title: String(title).trim(),
       description: description ? String(description).trim() : '',
+      category,
       sectionTitle: String(sectionTitle).trim(),
       videos,
       capacity: capacity ? Number(capacity) : null,

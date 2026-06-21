@@ -424,6 +424,8 @@ export default function Work({ onNavigateToStudentVideos }) {
   const [liveUrl, setLiveUrl] = useState(''); // NEW: meeting URL
 
   const [bootcampTitle, setBootcampTitle] = useState('');
+  const [bootcampCategory, setBootcampCategory] = useState('');
+  const [bootcampCategoriesList, setBootcampCategoriesList] = useState([]);
   const [bootcampDesc, setBootcampDesc] = useState('');
   const [bootcampTags, setBootcampTags] = useState('');
   const [bootcampRequirements, setBootcampRequirements] = useState('');
@@ -441,7 +443,19 @@ export default function Work({ onNavigateToStudentVideos }) {
   const [watchModal, setWatchModal] = useState(null);
   const [watchCounts, setWatchCounts] = useState({});
 
-  useEffect(() => { fetchAcceptedOffers(); }, [userRole]);
+  useEffect(() => { fetchAcceptedOffers(); fetchCategories(); }, [userRole]);
+
+  const fetchCategories = async () => {
+    try {
+      const { api } = await import('../../apis/axios');
+      const res = await api.get('/api/bootcamps/categories');
+      if (res.status === 200) {
+        setBootcampCategoriesList(res.data.categories || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    }
+  };
   useEffect(() => { setSelectedOfferId(null); }, [activeContentTab]);
 
   useEffect(() => {
@@ -652,6 +666,7 @@ export default function Work({ onNavigateToStudentVideos }) {
     const studentIdToUpload = selectedOffer?.studentId;
 
     if (!bootcampTitle.trim()) { setBootcampError('Please add a bootcamp title.'); return; }
+    if (!bootcampCategory) { setBootcampError('Please select a category.'); return; }
     if (!bootcampSections[0]?.title.trim()) { setBootcampError('Please add a title for the first section.'); return; }
     if (!studentIdToUpload) { setBootcampError('Please select a student from My Lists first.'); return; }
 
@@ -670,6 +685,7 @@ export default function Work({ onNavigateToStudentVideos }) {
     try {
       const result = await createPublicBootcamp({
         title: bootcampTitle,
+        category: bootcampCategory,
         description: bootcampDesc,
         sectionTitle: bootcampSections[0].title,
         videos: firstValidVideos,
@@ -744,7 +760,7 @@ export default function Work({ onNavigateToStudentVideos }) {
         title: bootcampTitle,
       });
 
-      setBootcampTitle(''); setBootcampDesc(''); setBootcampTags(''); setBootcampRequirements('');
+      setBootcampTitle(''); setBootcampCategory(''); setBootcampDesc(''); setBootcampTags(''); setBootcampRequirements('');
       setBootcampLearn(''); setBootcampPrice(''); setBootcampCapacity('');
       resetBootcampImage();
       setBootcampSections([{ title: '', videos: [{ url: '', title: '', durationMin: '' }] }]);
@@ -1195,6 +1211,15 @@ export default function Work({ onNavigateToStudentVideos }) {
               <div className="field-label">Bootcamp Title</div>
               <input className="field-input" placeholder="Add a title for your bootcamp"
                 value={bootcampTitle} onChange={(e) => setBootcampTitle(e.target.value)} />
+            </div>
+            <div>
+              <div className="field-label">Category <span style={{color: 'red'}}>*</span></div>
+              <select className="field-input" value={bootcampCategory} onChange={(e) => setBootcampCategory(e.target.value)}>
+                <option value="" disabled>Select a category</option>
+                {bootcampCategoriesList.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
             </div>
             <div>
               <div className="field-label">Description</div>

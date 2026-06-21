@@ -21,6 +21,7 @@ function Bootcamp() {
   const scrollRefs = useRef({});
 
   const [bootcamps, setBootcamps] = useState([]);
+  const [categoriesList, setCategoriesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -35,6 +36,12 @@ function Bootcamp() {
     const localBootcamps = getLocalWorkBootcamps(currentUserId);
 
     try {
+      const { api } = await import('../../apis/axios');
+      const catRes = await api.get('/api/bootcamps/categories');
+      if (catRes.status === 200) {
+        setCategoriesList(catRes.data.categories || []);
+      }
+
       const rows = await fetchBootcampLessons();
       const remoteBootcamps = lessonsToBootcamps(rows);
       setBootcamps(mergeBootcampCatalogs(remoteBootcamps, localBootcamps));
@@ -66,7 +73,7 @@ function Bootcamp() {
     [bootcamps, search, topic, level]
   );
 
-  const categories = useMemo(() => groupBootcamps(filtered), [filtered]);
+  const categories = useMemo(() => groupBootcamps(filtered, categoriesList), [filtered, categoriesList]);
 
   const renderStars = (rating) =>
     Array.from({ length: 5 }, (_, i) => (

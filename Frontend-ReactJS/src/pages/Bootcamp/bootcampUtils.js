@@ -381,15 +381,21 @@ export function formatDuration(totalMinutes) {
   return `${m}min`;
 }
 
-export function groupBootcamps(bootcamps) {
+export function groupBootcamps(bootcamps, categoriesList = []) {
   const hasCategories = bootcamps.some((b) => b.category);
   if (!hasCategories) {
     return [{ name: "Bootcamps", courses: bootcamps }];
   }
 
+  const getLabel = (slug) => {
+    const found = categoriesList.find(c => c.value === slug);
+    return found ? found.label : slug;
+  };
+
   const map = new Map();
   bootcamps.forEach((course) => {
-    const name = course.category || "General";
+    const slug = course.category || "General";
+    const name = getLabel(slug);
     if (!map.has(name)) map.set(name, []);
     map.get(name).push(course);
   });
