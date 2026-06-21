@@ -850,7 +850,51 @@ async function getRecommendedTeachers(teacherId) {
     avg_rating: t.avg_rating || null,
   }));
 }
+// ===============================
+// Add a new review + recompute teacher's avg_rating/rating_count
+// ===============================
+async function addTeacherReview({ reviewerId, teacherId, rating, comment, sessionId, courseId }) {
+  // teacherId هنا هو profile UUID بتاع المدرس — لازم نحوّله لـ teacher_profiles.id
+  const { data: tpRow, error: tpErr } = await supabase
+    .from("teacher_profiles")
+    .select("id")
+    .eq("profile_id", teacherId)
+    .single();
 
+  if (tpErr || !tpRow) throw new Error("Teacher not found.");
+
+  const { data: review, error } = await supabase
+    .from("reviews")
+    .insert([{
+      session_id: sessionId || null,
+      course_id: courseId || null,
+      reviewer_id: reviewerId,
+      teacher_id: tpRow.id,
+      rating,
+      body: comment || null,
+    }])
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Recompute avg_rating + rating_count على teacher_profiles
+  // (ده اللي بيخلي أي صفحة تانية تعرض الرقم المحدث فورًا — TeacherProfileView, profile card, الخ)
+  const { data: allRatings } = await supabase
+    .from("reviews")
+    .select("rating")
+    .eq("teacher_id", tpRow.id);
+
+  const ratings = (allRatings || []).map((r) => r.rating).filter((n) => n != null);
+  const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+
+  await supabase
+    .from("teacher_profiles")
+    .update({ avg_rating: avg, rating_count: ratings.length })
+    .eq("id", tpRow.id);
+
+  return review;
+}
 module.exports = {
   uploadMaterial,
   getOffers,
@@ -868,4 +912,5 @@ module.exports = {
   updateStudentProfile,
   getTeacherReviews,
   getRecommendedTeachers,
+  addTeacherReview,
 };

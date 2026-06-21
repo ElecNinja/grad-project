@@ -78,6 +78,12 @@ async function getStudentCourses(studentId) {
       description: course.description,
       thumbnail: getThumbnail(course.thumbnail_url, lessons[0]?.video_url),
       expert: course.teacher_profiles?.profiles?.full_name || 'Unknown',
+      // ── FIX: the actual profiles.id UUID for this teacher, needed by
+      // addTeacherReview (which looks up teacher_profiles by profile_id).
+      // course.teacher_id is teacher_profiles.id, NOT what the reviews
+      // endpoint expects — that's why teacherId was coming through as
+      // undefined on the frontend before.
+      teacherId: course.teacher_profiles?.profile_id || null,
       videos: lessons.length ? `${completedCount}/${lessons.length}` : null,
       progress: progressPct,
       currentLesson: currentLesson
@@ -187,10 +193,13 @@ async function getStudentBootcamps(studentId) {
     return {
       id: bootcamp.id,
       type: 'BOOTCAMP',
+      isBootcamp: true, // explicit flag — used by CoursePlayer.jsx to skip the watch limit
       title: bootcamp.title,
       description: bootcamp.description,
       thumbnail: getThumbnail(bootcamp.thumbnail_url, allLessons[0]?.video_url),
       expert: bootcamp.teacher_profiles?.profiles?.full_name || 'Unknown',
+      // Same fix as courses — useful if/when bootcamp reviews are wired up.
+      teacherId: bootcamp.teacher_profiles?.profile_id || null,
       progress: enrollment.progress_pct,
       currentLesson: currentLesson ? currentLesson.title : null,
       videoUrl: currentLesson?.video_url || null,
