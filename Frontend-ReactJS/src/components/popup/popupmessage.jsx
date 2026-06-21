@@ -26,25 +26,19 @@ import {
 import "./popupmessage.css";
 
 const TYPE_META = {
-  // New matching and bidding flow
-  new_match: { icon: UserCheck, label: "Match found", color: "match" },
-  new_bid: { icon: CreditCard, label: "New bid", color: "bid" },
-  bid_accepted: { icon: CheckCheck, label: "Bid accepted", color: "accepted" },
-  bid_rejected: { icon: X, label: "Bid rejected", color: "rejected" },
-  
-  // Sessions and courses
-  course_ready: { icon: Video, label: "Course ready", color: "live" },
-  live_session_scheduled: { icon: Video, label: "Session booked", color: "live" },
-  bootcamp_joined: { icon: GraduationCap, label: "Bootcamp", color: "bootcamp" },
-  new_lesson: { icon: Video, label: "New lesson", color: "live" },
-  
-  // Existing ones
-  session_reminder: { icon: Video, label: "Reminder", color: "live" },
-  session_started: { icon: Video, label: "Live now", color: "live" },
-  new_message: { icon: MessageSquare, label: "Message", color: "message" },
-  payment_received: { icon: CreditCard, label: "Payment", color: "payment" },
-  payment_failed: { icon: CreditCard, label: "Payment", color: "payment" },
-  review_received: { icon: Star, label: "Review", color: "review" },
+  bid_received: { icon: CreditCard, label: "New bid" },
+  bid_accepted: { icon: CheckCheck, label: "Bid accepted" },
+  bid_rejected: { icon: X, label: "Bid rejected" },
+  request_matched: { icon: UserCheck, label: "Match found" },
+  session_scheduled: { icon: Video, label: "Session" },
+  session_reminder: { icon: Video, label: "Reminder" },
+  session_started: { icon: Video, label: "Live now" },
+  new_message: { icon: MessageSquare, label: "Message" },
+  payment_received: { icon: CreditCard, label: "Payment" },
+  payment_failed: { icon: CreditCard, label: "Payment" },
+  bootcamp_enrollment: { icon: GraduationCap, label: "Bootcamp" },
+  bootcamp_update: { icon: GraduationCap, label: "Bootcamp" },
+  review_received: { icon: Star, label: "Review" },
 };
 
 function formatRelativeTime(isoDate) {
@@ -69,41 +63,20 @@ function formatRelativeTime(isoDate) {
 }
 
 function getNotificationMeta(type) {
-  return TYPE_META[type] || { icon: Bell, label: "Update", color: "default" };
+  return TYPE_META[type] || { icon: Bell, label: "Update" };
 }
 
-// Route map keyed by notification type.
-// Paths match routes defined in Router.jsx exactly.
-const ROUTE_BY_TYPE = {
-  // Teacher receives these
-  new_match:              (role) => "/requests",
-  bid_accepted:           (role) => "/work",
-  bid_rejected:           (role) => "/requests",
-  review_received:        (role) => "/work",
-  payment_received:       (role) => "/work",
-  payment_failed:         (role) => "/work",
-  // Student receives these
-  new_bid:                (role) => "/requests",
-  course_ready:           (role) => "/videos",
-  live_session_scheduled: (role) => "/videos",
-  bootcamp_joined:        (role) => "/videos",
-  new_lesson:             (role) => "/videos",
-  session_reminder:       (role) => "/videos",
-  // Both can receive
-  new_message:            null, // handled separately via chat dispatch
-};
-
 function getNotificationRoute(notification, role) {
-  const fn = ROUTE_BY_TYPE[notification?.type];
-  if (fn === null) return null;           // new_message — handled elsewhere
-  if (typeof fn === "function") return fn(role);
-
-  // Fallback: use data fields for legacy / unknown types
   const data = notification?.data || {};
-  if (data.bootcamp_id) return "/videos";
-  if (data.request_id)  return role === "teacher" ? "/requests" : "/requests";
-  if (data.bid_id)      return role === "teacher" ? "/work" : "/requests";
-  if (data.session_id)  return role === "teacher" ? "/work" : "/videos";
+
+  if (data.bootcamp_id) return "/bootcamp";
+  if (data.course_id) return "/course";
+  if (data.request_id) {
+    return role === "teacher" ? "/work" : "/requests";
+  }
+  if (data.bid_id) return "/Offers";
+  if (data.session_id) return role === "teacher" ? "/work" : "/videos";
+
   return null;
 }
 
@@ -209,57 +182,57 @@ function PopupMessage({
   }, [anchorRef, isOpen, onClose]);
 
   const handleNotificationClick = async (notification) => {
-    // Mark as read if unread
-    if (!notification.is_read) {
-      const updated = await markNotificationRead(notification.id);
-      if (updated) {
-        setNotifications((prev) =>
-          prev.map((item) =>
-            item.id === notification.id
-              ? { ...item, is_read: true, read_at: new Date().toISOString() }
-              : item
-          )
-        );
-        await syncUnreadCount(
-          notifications.map((item) =>
-            item.id === notification.id ? { ...item, is_read: true } : item
-          )
-        );
+  // Mark as read if unread
+  if (!notification.is_read) {
+    const updated = await markNotificationRead(notification.id);
+    if (updated) {
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.id === notification.id
+            ? { ...item, is_read: true, read_at: new Date().toISOString() }
+            : item
+        )
+      );
+      await syncUnreadCount(
+        notifications.map((item) =>
+          item.id === notification.id ? { ...item, is_read: true } : item
+        )
+      );
+    }
+  }
+
+  // ─── NEW: handle new_message notifications ──────────────────────────
+  if (notification.type === 'new_message') {
+    const data = notification.data || {};
+    const conversationId = data.conversation_id;
+    const senderId = data.sender_id;
+
+    try {
+      if (conversationId) {
+        dispatch(setActiveConversation(conversationId));
+      } else if (senderId) {
+        const convId = await dispatch(getOrCreateConversation(senderId)).unwrap();
+        dispatch(setActiveConversation(convId));
+      } else {
+        // fallback: cannot open chat
+        return;
       }
+      dispatch(openChat());
+    } catch (error) {
+      console.error('Failed to open chat from notification:', error);
+    } finally {
+      onClose(); // close notification dropdown
     }
+    return; // don't navigate
+  }
 
-    // ─── NEW: handle new_message notifications ──────────────────────────
-    if (notification.type === 'new_message') {
-      const data = notification.data || {};
-      const conversationId = data.conversation_id;
-      const senderId = data.sender_id;
-
-      try {
-        if (conversationId) {
-          dispatch(setActiveConversation(conversationId));
-        } else if (senderId) {
-          const convId = await dispatch(getOrCreateConversation(senderId)).unwrap();
-          dispatch(setActiveConversation(convId));
-        } else {
-          // fallback: cannot open chat
-          return;
-        }
-        dispatch(openChat());
-      } catch (error) {
-        console.error('Failed to open chat from notification:', error);
-      } finally {
-        onClose(); // close notification dropdown
-      }
-      return; // don't navigate
-    }
-
-    // ─── Existing navigation logic ──────────────────────────────────────
-    const route = getNotificationRoute(notification, userRole);
-    if (route) {
-      navigate(route);
-      onClose();
-    }
-  };
+  // ─── Existing navigation logic ──────────────────────────────────────
+  const route = getNotificationRoute(notification, userRole);
+  if (route) {
+    navigate(route);
+    onClose();
+  }
+};
 
   const handleMarkAllRead = async () => {
     if (!recipientId || markingAll) return;
@@ -350,7 +323,7 @@ function PopupMessage({
                     className={`popup-message__item ${notification.is_read ? "" : "popup-message__item--unread"}`}
                     onClick={() => handleNotificationClick(notification)}
                   >
-                    <span className={`popup-message__icon popup-message__icon--${meta.color || "default"}`}>
+                    <span className={`popup-message__icon popup-message__icon--${notification.type || "default"}`}>
                       <Icon size={16} />
                     </span>
                     <span className="popup-message__content">
@@ -360,7 +333,7 @@ function PopupMessage({
                           {formatRelativeTime(notification.created_at)}
                         </span>
                       </span>
-                      <span className={`popup-message__badge popup-message__badge--${meta.color || "default"}`}>{meta.label}</span>
+                      <span className="popup-message__badge">{meta.label}</span>
                       {notification.body && (
                         <span className="popup-message__item-body">{notification.body}</span>
                       )}

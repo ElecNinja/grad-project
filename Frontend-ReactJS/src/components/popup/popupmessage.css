@@ -136,53 +136,24 @@
   background: rgba(29, 78, 216, 0.1);
 }
 
-/* ── Icon color variants (keyed by meta.color) ──────────────────── */
-.popup-message__icon--bid,
-.popup-message__icon--payment {
+.popup-message__icon--payment_received,
+.popup-message__icon--payment_failed,
+.popup-message__icon--bid_received,
+.popup-message__icon--bid_accepted,
+.popup-message__icon--bid_rejected {
   color: #0f766e;
   background: rgba(15, 118, 110, 0.12);
 }
 
-.popup-message__icon--accepted {
-  color: #15803d;
-  background: rgba(21, 128, 61, 0.12);
-}
-
-.popup-message__icon--rejected {
-  color: #b91c1c;
-  background: rgba(185, 28, 28, 0.12);
-}
-
-.popup-message__icon--match {
-  color: #4f46e5;
-  background: rgba(79, 70, 229, 0.12);
-}
-
-.popup-message__icon--live {
-  color: #e11d48;
-  background: rgba(225, 29, 72, 0.12);
-}
-
-.popup-message__icon--bootcamp,
-.popup-message__icon--course,
-.popup-message__icon--lesson {
-  color: #c2410c;
-  background: rgba(194, 65, 12, 0.12);
-}
-
-.popup-message__icon--message {
+.popup-message__icon--new_message {
   color: #7c3aed;
   background: rgba(124, 58, 237, 0.12);
 }
 
-.popup-message__icon--review {
-  color: #ca8a04;
-  background: rgba(202, 138, 4, 0.12);
-}
-
-.popup-message__icon--default {
-  color: #1d4ed8;
-  background: rgba(29, 78, 216, 0.1);
+.popup-message__icon--bootcamp_enrollment,
+.popup-message__icon--bootcamp_update {
+  color: #c2410c;
+  background: rgba(194, 65, 12, 0.12);
 }
 
 .popup-message__content {
@@ -223,47 +194,6 @@
   background: rgba(29, 78, 216, 0.08);
   padding: 2px 8px;
   border-radius: 999px;
-}
-
-/* ── Badge color variants (keyed by meta.color) ─────────────────── */
-.popup-message__badge--bid,
-.popup-message__badge--payment {
-  color: #0f766e;
-  background: rgba(15, 118, 110, 0.08);
-}
-.popup-message__badge--accepted {
-  color: #15803d;
-  background: rgba(21, 128, 61, 0.08);
-}
-.popup-message__badge--rejected {
-  color: #b91c1c;
-  background: rgba(185, 28, 28, 0.08);
-}
-.popup-message__badge--match {
-  color: #4f46e5;
-  background: rgba(79, 70, 229, 0.08);
-}
-.popup-message__badge--live {
-  color: #e11d48;
-  background: rgba(225, 29, 72, 0.08);
-}
-.popup-message__badge--bootcamp,
-.popup-message__badge--course,
-.popup-message__badge--lesson {
-  color: #c2410c;
-  background: rgba(194, 65, 12, 0.08);
-}
-.popup-message__badge--message {
-  color: #7c3aed;
-  background: rgba(124, 58, 237, 0.08);
-}
-.popup-message__badge--review {
-  color: #ca8a04;
-  background: rgba(202, 138, 4, 0.08);
-}
-.popup-message__badge--default {
-  color: #1d4ed8;
-  background: rgba(29, 78, 216, 0.08);
 }
 
 .popup-message__item-body {

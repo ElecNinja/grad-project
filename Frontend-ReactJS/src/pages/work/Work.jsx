@@ -367,6 +367,12 @@ function MakePublicModal({ bootcampId, onClose, onSaved }) {
 }
 
 export default function Work({ onNavigateToStudentVideos }) {
+  // ── user/auth state MUST come first because storageKey depends on userId ──
+  const user = useSelector((state) => state.user);
+  const userRole = user?.role || 'student';
+  const userName = user?.name || 'Username';
+  const userId = user?.id;
+
   const [activeContentTab, setActiveContentTab] = useState('Videos');
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -382,9 +388,23 @@ export default function Work({ onNavigateToStudentVideos }) {
   const [bootcampError, setBootcampError] = useState('');
   const [bootcampSuccess, setBootcampSuccess] = useState('');
 
+  // Per-user storage key so different teachers on the same browser don't see each other's data
+  const storageKey = userId ? `work_uploadedRows_${userId}` : null;
+  const deliveredKey = userId ? `work_deliveredOffers_${userId}` : null;
+
   const [uploadedRows, setUploadedRows] = useState(() => {
+    if (!storageKey) return [];
     try {
-      const saved = localStorage.getItem('work_uploadedRows');
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+
+  // Offer IDs that already received content — used to hide them from "My Lists"
+  const [deliveredOfferIds, setDeliveredOfferIds] = useState(() => {
+    if (!deliveredKey) return [];
+    try {
+      const saved = localStorage.getItem(deliveredKey);
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
@@ -421,19 +441,22 @@ export default function Work({ onNavigateToStudentVideos }) {
   const [watchModal, setWatchModal] = useState(null);
   const [watchCounts, setWatchCounts] = useState({});
 
-  const user = useSelector((state) => state.user);
-  const userRole = user?.role || 'student';
-  const userName = user?.name || 'Username';
-  const userId = user?.id;
-
   useEffect(() => { fetchAcceptedOffers(); }, [userRole]);
   useEffect(() => { setSelectedOfferId(null); }, [activeContentTab]);
 
   useEffect(() => {
+    if (!storageKey) return;
     try {
-      localStorage.setItem('work_uploadedRows', JSON.stringify(uploadedRows));
+      localStorage.setItem(storageKey, JSON.stringify(uploadedRows));
     } catch {}
-  }, [uploadedRows]);
+  }, [uploadedRows, storageKey]);
+
+  useEffect(() => {
+    if (!deliveredKey) return;
+    try {
+      localStorage.setItem(deliveredKey, JSON.stringify(deliveredOfferIds));
+    } catch {}
+  }, [deliveredOfferIds, deliveredKey]);
 
   const fetchAcceptedOffers = async () => {
     setLoading(true);
@@ -465,11 +488,13 @@ export default function Work({ onNavigateToStudentVideos }) {
   };
 
   const getListOffers = () => {
-    if (activeContentTab === 'Online Course') return offers.filter((o) => o.type === 'live_1on1');
-    if (activeContentTab === 'Videos') return offers.filter((o) => o.type === 'recorded');
+    let base;
+    if (activeContentTab === 'Online Course') base = offers.filter((o) => o.type === 'live_1on1');
+    else if (activeContentTab === 'Videos') base = offers.filter((o) => o.type === 'recorded');
     // Bootcamp: any accepted student can receive the bootcamp in their Videos page
-    if (activeContentTab === 'Bootcamp') return offers.filter((o) => o.studentId);
-    return offers;
+    else if (activeContentTab === 'Bootcamp') base = offers.filter((o) => o.type === 'bootcamp' && o.studentId);
+    else base = offers;
+    return base.filter((o) => !deliveredOfferIds.includes(o.id));
   };
 
   const listOffers = getListOffers();
@@ -544,6 +569,7 @@ export default function Work({ onNavigateToStudentVideos }) {
       }]);
 
       setVideoTitle(''); setAdditionalInfo(''); setTags(''); setYoutubeUrl(''); setWatchLimit(2);
+      setDeliveredOfferIds((prev) => prev.includes(selectedOfferId) ? prev : [...prev, selectedOfferId]);
       setSelectedOfferId(null);
       setUploadSuccess('Video uploaded and published to the student.');
     } catch (err) {
@@ -693,6 +719,7 @@ export default function Work({ onNavigateToStudentVideos }) {
       setBootcampLearn(''); setBootcampPrice(''); setBootcampCapacity('');
       setBootcampImage(null); setBootcampImagePreview('');
       setBootcampSections([{ title: '', videos: [{ url: '', title: '', durationMin: '' }] }]);
+      setDeliveredOfferIds((prev) => prev.includes(selectedOfferId) ? prev : [...prev, selectedOfferId]);
       setSelectedOfferId(null);
       setBootcampSuccess(
         `Bootcamp published on the Bootcamp page and added to ${selectedOffer.studentName}'s Videos.`
@@ -753,6 +780,7 @@ export default function Work({ onNavigateToStudentVideos }) {
       setLiveTitle('');
       setLiveInfo('');
       setLiveUrl('');
+      setDeliveredOfferIds((prev) => prev.includes(selectedOfferId) ? prev : [...prev, selectedOfferId]);
       setSelectedOfferId(null);
     } catch (err) {
       setUploadError(err?.response?.data?.error || 'Failed to publish live session. Please try again.');
