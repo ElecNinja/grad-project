@@ -12,6 +12,14 @@ const extractYTId = (url) => {
   return m ? m[1] : '';
 };
 
+// A course's watch limit lives in localStorage (same keys CoursePlayer.jsx
+// reads/writes), so we can check it here without touching the backend.
+const isCourseLimitReached = (course) => {
+  const limit = course?.watchLimit || 2;
+  const count = Number(localStorage.getItem(`course_watch_count_${course.id}`) || 0);
+  return count >= limit;
+};
+
 const getLocalBootcamps = (studentId) => {
   if (!studentId) return [];
   try {
@@ -160,9 +168,13 @@ function Videos() {
         const mergedCourses = [...(coursesData || []), ...uploadedCourses];
         const mergedBootcamps = [...(bootcampsData || []), ...localBootcamps, ...dedupedFallback];
 
-        setCourses(mergedCourses);
+        // Courses whose watch limit is already used up are hidden from the
+        // list entirely. Bootcamps have no limit, so they're untouched.
+        const visibleCourses = mergedCourses.filter((c) => !isCourseLimitReached(c));
+
+        setCourses(visibleCourses);
         setBootcamps(mergedBootcamps);
-        setSelected(mergedCourses[0] || null);
+        setSelected(visibleCourses[0] || null);
       } catch (err) {
         if (!isMounted) return;
         setError('Failed to load your courses and bootcamps. Please try again.');

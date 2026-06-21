@@ -38,6 +38,12 @@ import UploadResource from "../pages/Community/UploadResource";
 import ChatFloatingButton from "../components/ChatFloatingButton/ChatFloatingButton";
 import ChatPopup from "../components/ChatPopup/ChatPopup";
 
+// ─── GLOBAL RATING PROMPT ────────────────────────────────────────────
+// Page-agnostic "rate your teacher / rate this bootcamp" floating modal.
+// Any page can call openRatingPrompt(...) from Ratingstore.js and this
+// single instance (mounted once below, inside BrowserRouter) will pop up.
+import RatingModalHost from "../pages/Courseplayer/Ratingmodal";
+
 // Pages where the Header (navbar) should NOT be shown
 const NO_HEADER_PAGES = ['/login', '/signup', '/deletedAccount'];
 
@@ -167,6 +173,9 @@ const Router = () => {
         )}
 
         <Footer />
+
+        {/* Global rating prompt — works from any page, any course/bootcamp */}
+        <RatingModalHost />
       </BrowserRouter>
     </PresenceProvider>
   );

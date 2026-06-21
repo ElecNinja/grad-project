@@ -19,4 +19,5 @@ export const apiEndpoints = {
  updateStudentProfile: `${baseUrl}/api/teacher/student/profile`,
  getTeacherReviews: `${baseUrl}/api/teacher/profile`,      // /:id/reviews appended at call site
  getRecommendedTeachers: `${baseUrl}/api/teacher/profile`,  // /:id/recommended appended at call site
+ addTeacherReview: `${baseUrl}/api/teacher/profile`,       // POST /:id/reviews appended at call site
 }

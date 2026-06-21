@@ -2,7 +2,6 @@ export const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=240&fit=crop";
 
 const WORK_BOOTCAMPS_STORAGE_KEY = "work_uploadedRows";
-const WORK_BOOTCAMPS_STORAGE_PREFIX = `${WORK_BOOTCAMPS_STORAGE_KEY}_`;
 
 export function extractYouTubeId(url) {
   if (!url) return "";
@@ -253,63 +252,14 @@ function mapLocalBootcamp(row, index) {
   };
 }
 
-function safeParseRows(raw) {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function getScopedKeys(userId) {
-  const keys = [];
-  if (userId) keys.push(`${WORK_BOOTCAMPS_STORAGE_KEY}_${userId}`);
-  keys.push(WORK_BOOTCAMPS_STORAGE_KEY); // legacy/global fallback
-  return keys;
-}
-
-function readRowsFromKeys(keys) {
-  if (typeof window === "undefined") return [];
-  return keys.flatMap((key) => safeParseRows(window.localStorage.getItem(key)));
-}
-
-function readAnyPrefixedRows() {
-  if (typeof window === "undefined") return [];
-  const rows = [];
-  for (let i = 0; i < window.localStorage.length; i += 1) {
-    const key = window.localStorage.key(i);
-    if (key && key.startsWith(WORK_BOOTCAMPS_STORAGE_PREFIX)) {
-      rows.push(...safeParseRows(window.localStorage.getItem(key)));
-    }
-  }
-  return rows;
-}
-
-function dedupeRows(rows) {
-  const seen = new Set();
-  return rows.filter((row) => {
-    const key = String(row?.id || `${row?.title || "bootcamp"}_${row?.createdAt || ""}`);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-export function getLocalWorkBootcamps(userId) {
+export function getLocalWorkBootcamps() {
   if (typeof window === "undefined") return [];
 
   try {
-    let rows = readRowsFromKeys(getScopedKeys(userId));
+    const raw = window.localStorage.getItem(WORK_BOOTCAMPS_STORAGE_KEY);
+    const rows = raw ? JSON.parse(raw) : [];
 
-    // fall back to scanning all per-user keys if we don't know the user id
-    // (or the current user has no rows under their own key yet)
-    if (!rows.length) {
-      rows = readAnyPrefixedRows();
-    }
-
-    return dedupeRows(rows)
+    return rows
       .filter((row) => row?.type === "bootcamp")
       .map((row, index) => mapLocalBootcamp(row, index));
   } catch (error) {
@@ -381,21 +331,15 @@ export function formatDuration(totalMinutes) {
   return `${m}min`;
 }
 
-export function groupBootcamps(bootcamps, categoriesList = []) {
+export function groupBootcamps(bootcamps) {
   const hasCategories = bootcamps.some((b) => b.category);
   if (!hasCategories) {
     return [{ name: "Bootcamps", courses: bootcamps }];
   }
 
-  const getLabel = (slug) => {
-    const found = categoriesList.find(c => c.value === slug);
-    return found ? found.label : slug;
-  };
-
   const map = new Map();
   bootcamps.forEach((course) => {
-    const slug = course.category || "General";
-    const name = getLabel(slug);
+    const name = course.category || "General";
     if (!map.has(name)) map.set(name, []);
     map.get(name).push(course);
   });

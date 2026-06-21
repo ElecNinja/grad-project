@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { useSelector } from "react-redux";
 import "./Bootcamp.css";
 import { useNavigate } from "react-router-dom";
 import { fetchBootcampLessons } from "./bootcampApi";
@@ -108,7 +107,7 @@ function Bootcamp() {
     } finally {
       setLoading(false);
     }
-  }, [currentUserId]);
+  }, []);
 
   useEffect(() => { loadCatalog(); }, [loadCatalog]);
 
@@ -127,6 +126,7 @@ function Bootcamp() {
     () => applySorting(filtered, sort),
     [filtered, sort]
   );
+  const categories = useMemo(() => groupBootcamps(filtered), [filtered]);
 
   // Sorted + grouped (used in the grouped-sections view when not searching)
   const categories = useMemo(
